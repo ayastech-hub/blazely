@@ -1,0 +1,42 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.0.3",
+    "autoprefixer": "^10.4.21",
+    "dotenv": "^17.2.3",
+    "eslint": "^8.45.0",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.3",
+    "hardhat": "^3.0.9",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.12",
+    "vite": "^4.4.5"
+  },
+  "description": "{\r   \"name\": \"base-launchpad-frontend\",\r   \"version\": \"1.0.0\",\r   \"private\": true,\r   \"description\": \"Frontend for Base Launchpad project\",\r   \"scripts\": {\r     \"start\": \"react-scripts start\",\r     \"build\": \"react-scripts build\",\r     \"test\": \"react-scripts test\",\r     \"eject\": \"react-scripts eject\"\r   },\r   \"dependencies\": {\r     \"react\": \"^18.3.0\",\r     \"react-dom\": \"^18.3.0\",\r     \"react-router-dom\": \"^6.17.0\",          // For routing pages like Home, TokenDetail, Profile\r     \"web3\": \"^1.10.0\",                        // For wallet & blockchain interactions\r     \"ethers\": \"^6.9.0\",                       // Another option for smart contract interactions\r     \"axios\": \"^1.5.0\",                        // For API requests\r     \"socket.io-client\": \"^4.9.0\",             // Real-time updates\r     \"tailwindcss\": \"^4.3.0\",                  // UI framework\r     \"classnames\": \"^2.4.2\",                   // Conditional styling helper\r     \"react-icons\": \"^4.11.0\"                  // For icons in UI\r   },\r   \"devDependencies\": {\r     \"postcss\": \"^8.4.30\",\r     \"autoprefixer\": \"^10.4.20\"\r   },\r   \"browserslist\": {\r     \"production\": [\r       \">0.2%\",\r       \"not dead\",\r       \"not op_mini all\"\r     ],\r     \"development\": [\r       \"last 1 chrome version\",\r       \"last 1 firefox version\",\r       \"last 1 safari version\"\r     ]\r   }\r }",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
