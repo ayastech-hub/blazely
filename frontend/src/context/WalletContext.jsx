@@ -1,8 +1,14 @@
-// src/components/WalletProvider.jsx
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 import { useAccount, useWalletClient, useChainId } from "wagmi";
 import { base } from "wagmi/chains";
-import { requestNonce, signAndLogin, getSession } from "../api/auth";
+import { supabase } from "../lib/supabaseClient";
+import { BrowserProvider } from "ethers";
 
 const WalletContext = createContext();
 
@@ -11,55 +17,88 @@ export function WalletProvider({ children }) {
   const { data: walletClient } = useWalletClient();
   const chainId = useChainId();
 
-  const [isDeveloper, setIsDeveloper] = useState(false);
-  const [devProfile, setDevProfile] = useState(null);
-  const [session, setSession] = useState(() => getSession());
+  const [wallet, setWallet] = useState(null);
+  const [signer, setSigner] = useState(null);
+  const upsertedAddressRef = useRef(null);
 
-  // normalize
-  const wallet = address || (session && session.wallet) || null;
-  const signer = walletClient || null;
-
+  // Keep wallet in sync with wagmi connection
   useEffect(() => {
-    if (wallet && !session) {
-      // start nonce/sign/login flow
-      (async () => {
-        try {
-          const { message } = await requestNonce(wallet);
-          // signer should sign; walletClient from wagmi provides a signer-like object
-          await signAndLogin(
-            window.ethereum
-              ? new (
-                  await import("ethers")
-                ).ethers.providers.Web3Provider(window.ethereum).getSigner()
-              : signer,
-            wallet,
-            message
-          );
-          const s = JSON.parse(localStorage.getItem("lp_auth"));
-          setSession(s);
-        } catch (e) {
-          console.error("Auth failed:", e);
+    setWallet(isConnected && address ? address.toLowerCase() : null);
+  }, [address, isConnected]);
+
+  // Generate ethers signer
+  useEffect(() => {
+    const getEthersSigner = async () => {
+      try {
+        if (typeof window === "undefined") return null;
+
+        // MetaMask / injected provider
+        if (window.ethereum) {
+          const provider = new BrowserProvider(window.ethereum);
+          return await provider.getSigner();
         }
-      })();
-    }
-  }, [wallet]);
 
-  useEffect(() => {
-    if (wallet) {
-      if (wallet.toLowerCase().startsWith("0x1234")) {
-        setIsDeveloper(true);
-        setDevProfile({
-          name: "Demo Dev",
-          createdTokens: 2,
-          feesEarned: "420 USDC",
-        });
-      } else {
-        setIsDeveloper(false);
-        setDevProfile(null);
+        // WalletConnect or wagmi walletClient
+        if (walletClient && walletClient.transport) {
+          const provider = new BrowserProvider(
+            walletClient.transport,
+            walletClient.chain?.id
+          );
+          const addr = walletClient.account?.address;
+          return addr
+            ? await provider.getSigner(addr)
+            : await provider.getSigner();
+        }
+
+        // Fallback signer for custom wallets
+        if (walletClient && typeof walletClient.signMessage === "function") {
+          return {
+            signMessage: async (msg) => {
+              const raw = await walletClient.signMessage({
+                message: String(msg),
+              });
+              return typeof raw === "string"
+                ? raw
+                : (raw?.signature ?? JSON.stringify(raw));
+            },
+            getAddress: async () => walletClient.account?.address ?? null,
+          };
+        }
+
+        return null;
+      } catch (err) {
+        console.warn("getEthersSigner error:", err);
+        return null;
       }
-    }
-  }, [wallet]);
+    };
 
+    getEthersSigner().then(setSigner);
+  }, [walletClient]);
+
+  // Auto-create / upsert user row
+  useEffect(() => {
+    if (!isConnected || !address) return; // wallet not connected
+    if (upsertedAddressRef.current === address) return; // already upserted
+
+    (async () => {
+      try {
+        console.debug("Auto-upserting user row for wallet:", address);
+        await supabase.from("users").upsert(
+          {
+            wallet: address.toLowerCase(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: ["wallet"] }
+        );
+        upsertedAddressRef.current = address;
+      } catch (e) {
+        console.warn("Auto-create users row failed:", e);
+      }
+    })();
+  }, [address, isConnected]);
+
+  // Network warning
   useEffect(() => {
     if (isConnected && chainId !== base.id) {
       console.warn("⚠️ Not on Base network — please switch in wallet.");
@@ -67,16 +106,7 @@ export function WalletProvider({ children }) {
   }, [isConnected, chainId]);
 
   return (
-    <WalletContext.Provider
-      value={{
-        wallet,
-        signer,
-        isDeveloper,
-        devProfile,
-        session,
-        setSession,
-      }}
-    >
+    <WalletContext.Provider value={{ wallet, signer, isConnected }}>
       {children}
     </WalletContext.Provider>
   );

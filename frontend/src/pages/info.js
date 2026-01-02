@@ -201,8 +201,7 @@ function mapRowToUI(normalized) {
   const row = normalized?.__raw || {}; // original DB row for optional fields
   const symbol = normalized?.symbol || row.symbol || "TKN";
   const name = normalized?.name || row.name || symbol;
-  const tokenAddress =
-    normalized?.token_address || row.address || row.token_address || "";
+  const tokenAddress = normalized?.address || row.address || row.address || "";
 
   // metrics: prefer DB fields then fallbacks
   const price_usd = Number(
@@ -245,12 +244,13 @@ function mapRowToUI(normalized) {
     ];
 
   const top_holders_db = row.top_holders ?? row.holders_list ?? null;
+
   // Build main token object in the same shape your UI expects
   const tokenUI = {
     project: {
       name,
       symbol,
-      token_address: tokenAddress,
+      address: tokenAddress,
       description:
         row.description ?? row.about ?? normalized?.description ?? "",
       total_supply:
@@ -279,9 +279,7 @@ function mapRowToUI(normalized) {
     top_holders: top_holders_db
       ? top_holders_db
       : generateMockHolders(
-          {
-            project: { symbol, total_supply: row.total_supply ?? 1000000000 },
-          },
+          { project: { symbol, total_supply: row.total_supply ?? 1000000000 } },
           25,
           (
             row.creator_wallet ||
@@ -380,8 +378,6 @@ const TokenHoldersList = ({ token, isMobile, className = "" }) => {
 // =========================================================================
 const CompactInfo = ({ token }) => {
   const isPositive = (token.metrics?.price_change_24h || 0) >= 0;
-  const contract = token.project?.token_address;
-  const creator = token.project?.creator_wallet;
 
   return (
     <motion.div
@@ -407,6 +403,7 @@ const CompactInfo = ({ token }) => {
             token.project?.symbol?.charAt(0) || "T"
           )}
         </motion.div>
+
         <div className="flex flex-col min-w-0 items-center sm:items-start flex-grow">
           <div className="flex items-center gap-2">
             <span className="text-base font-bold text-white truncate">
@@ -416,6 +413,7 @@ const CompactInfo = ({ token }) => {
               {token.project?.symbol}
             </span>
           </div>
+
           <motion.span
             initial={{ x: 10, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -472,15 +470,16 @@ const CompactInfo = ({ token }) => {
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-slate-400">Contract:</span>
           <a
-            href={getExplorerLink(token.project?.token_address)}
+            href={getExplorerLink(token.project?.address)}
             target="_blank"
             rel="noopener noreferrer"
             className="font-mono text-xs text-blue-300 hover:text-blue-400 transition-colors"
           >
-            {shortenAddress(token.project?.token_address)}
+            {shortenAddress(token.project?.address
           </a>
-          <CopyButton textToCopy={token.project?.token_address} />
+          <CopyButton textToCopy={token.project?.address} />
         </div>
+
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-slate-400">Creator:</span>
           <a
@@ -541,7 +540,6 @@ const CompactInfo = ({ token }) => {
 
 // =========================================================================
 // --- TradeCard, CommunityChat, ChartAndActivity ---
-// --- (kept same as your original file with small adjustments) ---
 // =========================================================================
 
 // TradeCard component (unchanged logic except uses token structure)
@@ -611,7 +609,7 @@ const TradeCard = ({ token }) => {
           <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
             <span>{isBuy ? "You Pay" : "You Sell"}</span>
             <span>
-              Balance:{" "}
+              Balance:
               {isBuy
                 ? `${userBalance.toLocaleString()} USD`
                 : `${userTokenBalance.toLocaleString()} ${
@@ -681,8 +679,8 @@ const TradeCard = ({ token }) => {
         title={`Confirm ${isBuy ? "Buy" : "Sell"}`}
       >
         <p className="text-slate-300 mb-3">
-          You're about to {isBuy ? "spend" : "sell"}{" "}
-          <strong className="text-white">{tradeAmount || "0.00"}</strong>{" "}
+          You're about to {isBuy ? "spend" : "sell"}
+          <strong className="text-white">{tradeAmount || "0.00"}</strong>
           {isBuy ? "USD" : token.project?.symbol}. This action cannot be undone.
         </p>
         <div className="flex items-center gap-3 justify-end">
@@ -715,7 +713,7 @@ const TradeCard = ({ token }) => {
               {isBuy ? "Buy" : "Sell"} completed
             </p>
             <p className="text-slate-400 text-sm">
-              {tradeAmount || "0.00"}{" "}
+              {tradeAmount || "0.00"}
               {isBuy ? "USD spent" : token.project?.symbol + " sold"}
             </p>
           </div>
@@ -979,7 +977,7 @@ export default function TokenDetail() {
 
             <div className="hidden lg:flex flex-col">
               <h1 className="text-lg font-semibold">
-                {token.project?.name}{" "}
+                {token.project?.name}
                 <span className="text-slate-400 font-mono text-sm">
                   ({token.project?.symbol})
                 </span>
@@ -1019,7 +1017,7 @@ export default function TokenDetail() {
             <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
               <ChartAndActivity
                 token={token}
-                address={token.project?.token_address}
+                address={token.project?.address}
                 className="flex-grow"
               />
               <CommunityChat
@@ -1104,7 +1102,7 @@ export default function TokenDetail() {
             <div className="space-y-4">
               <ChartAndActivity
                 token={token}
-                address={token.project?.token_address}
+                address={token.project?.address}
               />
             </div>
           )}

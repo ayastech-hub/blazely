@@ -9,17 +9,18 @@ import { WalletProvider } from "./context/WalletContext";
 import { RefreshProvider } from "./context/RefreshContext";
 
 import { WagmiProvider, createConfig, http } from "wagmi";
-import { base } from "wagmi/chains";
+import { sepolia } from "wagmi/chains"; // ✅ changed to Sepolia
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // ✅ setup query client
 const queryClient = new QueryClient();
 
-// ✅ wagmi config (Base chain only, add others if needed)
+// ✅ wagmi config (Sepolia chain)
 const config = createConfig({
-  chains: [base],
+  chains: [sepolia],
   transports: {
-    [base.id]: http("https://mainnet.base.org"),
+    [sepolia.id]: http("https://sepolia.infura.io/v3/YOUR_INFURA_KEY"),
+    // or: http("https://rpc.sepolia.org")
   },
 });
 

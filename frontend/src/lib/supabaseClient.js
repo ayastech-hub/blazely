@@ -3,24 +3,24 @@ import { createClient } from "@supabase/supabase-js";
 
 /**
  * Make sure these environment variables exist in your Vite/.env:
- * VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+ * VITE_REACT_APP_REACT_APP_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
  *
  * Example .env (at project root):
- * VITE_SUPABASE_URL=https://your-project-id.supabase.co
+ * VITE_REACT_APP_SUPABASE_URL=https://your-project-id.supabase.co
  * VITE_SUPABASE_ANON_KEY=eyJ...yourAnonKey...
  *
  * NOTE: Vite exposes only variables prefixed with VITE_ to the client.
  */
 
 // Read env vars (Vite exposes import.meta.env.VITE_*)
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const REACT_APP_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+if (!REACT_APP_SUPABASE_URL || !SUPABASE_ANON_KEY) {
   // Helpful console warning for dev — remove or change in production if desired
   // eslint-disable-next-line no-console
   console.warn(
-    "Missing Supabase env vars: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. Check your .env"
+    "Missing Supabase env vars: VITE_REACT_APP_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. Check your .env"
   );
 }
 
@@ -28,7 +28,10 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
  * Create the client.
  * Creating a single client here and re-using it avoids duplicate connections.
  */
-const supabase = createClient(SUPABASE_URL || "", SUPABASE_ANON_KEY || "");
+const supabase = createClient(
+  REACT_APP_SUPABASE_URL || "",
+  SUPABASE_ANON_KEY || ""
+);
 
 /**
  * Helper: normalize getPublicUrl response across SDK versions / shapes.

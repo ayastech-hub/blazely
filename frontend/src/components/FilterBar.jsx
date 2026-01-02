@@ -1,19 +1,16 @@
 // src/components/FilterBar.jsx
-import React, { useState, useRef, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search,
-  ChevronDown,
   RefreshCw,
   Check,
   ListFilter,
+  ChevronDown,
+  Search,
+  X,
 } from "lucide-react";
 
-const filters = ["All", "AI", "Meme", "DeFi", "GameFi", "Infrastructure"];
-const sorts = ["", "Marketcap", "Recently Listed", "24h Volume"];
-
-/* ---------- improved useClickOutside (handles pointer + touch) ---------- */
 const useClickOutside = (ref, handler) => {
   useEffect(() => {
     if (!ref) return;
@@ -21,9 +18,7 @@ const useClickOutside = (ref, handler) => {
       if (!ref.current || ref.current.contains(event.target)) return;
       handler(event);
     };
-    // pointerdown covers mouse + touch + pen
     document.addEventListener("pointerdown", listener);
-    // fallback for some mobile environments
     document.addEventListener("touchstart", listener);
     return () => {
       document.removeEventListener("pointerdown", listener);
@@ -32,14 +27,17 @@ const useClickOutside = (ref, handler) => {
   }, [ref, handler]);
 };
 
-/* ----------------- Dropdown with portal (not clipped) ----------------- */
-const Dropdown = ({ options, selectedValue, onSelect, label, children }) => {
+const Dropdown = ({
+  options,
+  selectedValue,
+  onSelect,
+  label,
+  children,
+  width = 180,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef(null);
   const containerRef = useRef(null);
-  const menuRef = useRef(null);
-
-  // store portal root (create if not exists)
   const [portalRoot] = useState(() => {
     if (typeof document === "undefined") return null;
     let node = document.getElementById("dropdown-portal-root");
@@ -51,34 +49,18 @@ const Dropdown = ({ options, selectedValue, onSelect, label, children }) => {
     return node;
   });
 
-  // computed menu styles (absolute in viewport)
-  const [menuStyles, setMenuStyles] = useState({ left: 0, top: 0, width: 192 });
-
+  const [menuStyles, setMenuStyles] = useState({ left: 0, top: 0, width });
   useClickOutside(containerRef, () => setIsOpen(false));
 
   useEffect(() => {
     if (!isOpen || !triggerRef.current) return;
-
     const rect = triggerRef.current.getBoundingClientRect();
-    const menuWidth = 192; // matches w-48
     const padding = 8;
-    // Default align right edge of trigger to right edge of menu
-    let left = rect.right - menuWidth;
+    let left = rect.right - width;
     if (left < padding) left = padding;
-    // Prefer below the trigger, if not enough space open upward
     let top = rect.bottom + 8;
-    const estimatedMenuHeight = Math.min(options.length * 40 + 8, 320); // rough estimate
-    if (top + estimatedMenuHeight > window.innerHeight - padding) {
-      // open upward
-      top = rect.top - 8 - estimatedMenuHeight;
-      if (top < padding) top = padding;
-    }
-    setMenuStyles({
-      left: Math.round(left),
-      top: Math.round(top),
-      width: menuWidth,
-    });
-  }, [isOpen, options.length]);
+    setMenuStyles({ left: Math.round(left), top: Math.round(top), width });
+  }, [isOpen, width]);
 
   return (
     <div className="relative" ref={containerRef}>
@@ -86,17 +68,15 @@ const Dropdown = ({ options, selectedValue, onSelect, label, children }) => {
         type="button"
         ref={triggerRef}
         onClick={() => setIsOpen((p) => !p)}
-        className="h-11 flex items-center justify-between gap-2 px-3.5 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg text-sm font-medium hover:bg-slate-800/60 hover:border-purple-500/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 whitespace-nowrap"
+        className="h-11 flex items-center justify-between gap-2 px-3.5 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-xl text-sm font-medium hover:bg-slate-800/60 hover:border-purple-500/50 transition-all"
       >
         {children}
         <span className="text-slate-400 text-xs hidden sm:inline">
           {label}:
         </span>
-        <span className="text-white font-medium text-sm">{selectedValue}</span>
+        <span className="text-white font-medium">{selectedValue}</span>
         <ChevronDown
-          className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
 
@@ -105,20 +85,18 @@ const Dropdown = ({ options, selectedValue, onSelect, label, children }) => {
           <AnimatePresence>
             {isOpen && (
               <motion.div
-                ref={menuRef}
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.15 }}
                 style={{
-                  position: "absolute",
-                  left: `${menuStyles.left}px`,
-                  top: `${menuStyles.top}px`,
-                  width: `${menuStyles.width}px`,
+                  position: "fixed",
+                  left: menuStyles.left,
+                  top: menuStyles.top,
+                  width: menuStyles.width,
                   zIndex: 9999,
                 }}
               >
-                <div className="bg-slate-800/95 backdrop-blur-md border border-slate-700/70 rounded-lg shadow-xl overflow-hidden">
+                <div className="bg-slate-900 border border-slate-700/70 rounded-xl shadow-2xl overflow-hidden">
                   {options.map((option) => (
                     <button
                       key={option}
@@ -126,15 +104,11 @@ const Dropdown = ({ options, selectedValue, onSelect, label, children }) => {
                         onSelect(option);
                         setIsOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-slate-700/60 transition-colors ${
-                        selectedValue === option
-                          ? "text-white bg-slate-700/40"
-                          : "text-slate-300"
-                      }`}
+                      className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-slate-800 ${selectedValue === option ? "text-purple-400 bg-purple-500/10" : "text-slate-300"}`}
                     >
-                      <span>{option}</span>
+                      {option}
                       {selectedValue === option && (
-                        <Check className="w-4 h-4 text-purple-400" />
+                        <Check className="w-4 h-4" />
                       )}
                     </button>
                   ))}
@@ -148,97 +122,89 @@ const Dropdown = ({ options, selectedValue, onSelect, label, children }) => {
   );
 };
 
-/* --------------------------- FilterBar --------------------------- */
 export default function FilterBar({
-  onFilterChange = () => {},
-  onSortChange = () => {},
-  onRefresh = async () => {},
-  onSearchChange = () => {},
+  onSortChange,
+  onSearchChange,
+  onRefresh,
+  onListedToggle,
+  onPauseToggle,
+  searchTerm = "",
+  listedOnly = false,
+  isPaused = false,
+  initialSort = "Last Trade",
 }) {
-  const [selectedFilter, setSelectedFilter] = useState("All");
-  const [selectedSort, setSelectedSort] = useState("Marketcap");
-  const [searchTerm, setSearchTerm] = useState("");
+  const sorts = ["Marketcap", "Last Trade", "Recently Listed", "24h Volume"];
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const handleRefreshClick = async () => {
-    if (isRefreshing || !onRefresh) return;
-    try {
-      setIsRefreshing(true);
-      await onRefresh();
-    } finally {
-      setIsRefreshing(false);
-    }
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await onRefresh();
+    setIsRefreshing(false);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: 0.05 }}
-      className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full"
-    >
-      {/* Search Bar - Full width on mobile */}
-      <div className="relative flex-1 w-full sm:max-w-xs md:max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+    <div className="w-full flex flex-col md:flex-row items-center gap-3 mb-6">
+      {/* Search Input */}
+      <div className="relative w-full md:w-80 group">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-purple-400" />
         <input
           type="text"
           value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            onSearchChange(e.target.value);
-          }}
-          placeholder="Search tokens..."
-          className="h-11 w-full pl-10 pr-4 bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg text-sm text-white placeholder:text-slate-500 outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Search by name or symbol..."
+          className="w-full h-11 pl-10 pr-10 bg-slate-800/40 border border-slate-700/50 rounded-xl text-sm focus:border-purple-500/50 outline-none transition-all"
         />
+        {searchTerm && (
+          <button
+            onClick={() => onSearchChange("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
-      {/* Filters Row - Horizontal scroll on small screens */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar sm:overflow-visible">
-        {/* Category dropdown */}
-        <div className="flex-shrink-0">
-          <Dropdown
-            options={filters}
-            selectedValue={selectedFilter}
-            onSelect={(value) => {
-              setSelectedFilter(value);
-              onFilterChange(value);
-            }}
-            label="Category"
-          >
-            <ListFilter className="w-4 h-4 text-slate-400" />
-          </Dropdown>
-        </div>
+      {/* Filter Actions */}
+      <div className="flex items-center gap-2 w-full overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+        <Dropdown
+          options={sorts}
+          selectedValue={initialSort}
+          onSelect={onSortChange}
+          label="Sort"
+        >
+          <ListFilter className="w-4 h-4 text-slate-400" />
+        </Dropdown>
 
-        {/* Sort dropdown */}
-        <div className="flex-shrink-0">
-          <Dropdown
-            options={sorts}
-            selectedValue={selectedSort}
-            onSelect={(value) => {
-              setSelectedSort(value);
-              onSortChange(value);
-            }}
-            label="Sort by"
-          >
-            <ListFilter className="w-4 h-4 text-slate-400" />
-          </Dropdown>
-        </div>
+        <button
+          onClick={() => onPauseToggle(!isPaused)}
+          className={`h-11 flex items-center gap-2 px-3.5 rounded-xl text-sm font-medium border transition-all ${isPaused ? "bg-orange-500/10 border-orange-500/50 text-orange-400" : "bg-slate-800/40 border-slate-700/50 text-slate-300"}`}
+        >
+          <div
+            className={`w-3 h-3 rounded-full ${isPaused ? "bg-orange-500 animate-pulse" : "bg-slate-600"}`}
+          />
+          <span>{isPaused ? "Live Paused" : "Pause Live"}</span>
+        </button>
 
-        {/* Refresh */}
-        <motion.button
-          type="button"
-          onClick={handleRefreshClick}
-          aria-label="Refresh list"
+        <button
+          onClick={() => onListedToggle(!listedOnly)}
+          className={`h-11 flex items-center gap-2 px-3.5 rounded-xl text-sm font-medium border transition-all ${listedOnly ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-400" : "bg-slate-800/40 border-slate-700/50 text-slate-300"}`}
+        >
+          <Check
+            className={`w-4 h-4 ${listedOnly ? "text-emerald-400" : "text-slate-600"}`}
+          />
+          <span>Graduated</span>
+        </button>
+
+        <button
+          onClick={handleRefresh}
           disabled={isRefreshing}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="h-11 w-11 flex-shrink-0 flex items-center justify-center rounded-lg bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 text-slate-400 hover:text-white hover:border-purple-500/50 hover:bg-slate-800/60 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-11 w-11 flex items-center justify-center rounded-xl bg-slate-800/40 border border-slate-700/50 text-slate-400 hover:text-white disabled:opacity-50"
         >
           <RefreshCw
-            className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+            className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`}
           />
-        </motion.button>
+        </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

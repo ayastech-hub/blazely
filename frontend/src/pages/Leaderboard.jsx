@@ -1,522 +1,336 @@
-// src/pages/Leaderboard.jsx
-import React, { useEffect, useMemo, useState } from "react";
+// src/pages/TokenList.jsx
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Copy, Check } from "lucide-react";
-import { ConnectKitButton } from "connectkit";
-import { useAccount } from "wagmi";
+import {
+  TrendingUp,
+  TrendingDown,
+  Flame,
+  Star,
+  ChevronRight,
+} from "lucide-react";
+import { supabase } from "../lib/supabaseClient";
 
-/* -------------------------------------------------------------------------- */
-/* ----------------------------- Mock / Seed Data ---------------------------- */
-/* -------------------------------------------------------------------------- */
-const initialLeaderboard = [
-  { rank: 1, address: "0x7a2...b3c4", volumeETH: 15.23, invites: 112 },
-  { rank: 2, address: "0xf8d...a1e9", volumeETH: 12.81, invites: 98 },
-  { rank: 3, address: "0x3e9...c5f0", volumeETH: 11.05, invites: 85 },
-  { rank: 4, address: "0x9c1...d6a3", volumeETH: 9.77, invites: 76 },
-  { rank: 5, address: "0xb4a...f2e1", volumeETH: 8.91, invites: 71 },
-  { rank: 6, address: "0x1d5...e8c7", volumeETH: 8.24, invites: 65 },
-  { rank: 7, address: "0x5f0...b9d2", volumeETH: 7.66, invites: 63 },
-];
+// Helper function for compact number formatting (assuming this exists or is needed)
+const formatNumberCompact = (num) => {
+  if (num === null || num === undefined) return "—";
+  const number = Number(num);
+  const abs = Math.abs(number);
+  if (abs < 1000) return `$${Math.round(abs).toLocaleString()}`;
 
-const ETH_PRICE_USD = 2000;
-const REWARD_RATE = 0.01;
-const LS_KEY_USERS = "blz_leaderboard_users_v1";
-const LS_KEY_PENDING_REFERRALS = "blz_pending_referrals_v1";
+  const suffixes = ["", "K", "M", "B", "T"];
+  const i = Math.floor(Math.log10(abs) / 3);
+  const scaled = abs / Math.pow(1000, i);
+  let numericDisplay = Math.round(scaled * 10) / 10;
 
-/* -------------------------------------------------------------------------- */
-/* --------------------------- Helper utilities ------------------------------ */
-/* -------------------------------------------------------------------------- */
-function short(addr = "") {
-  if (!addr) return "";
-  if (addr.length <= 12) return addr;
-  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-}
+  const prefix = number < 0 ? "-" : "";
+  return `${prefix}$${numericDisplay.toFixed(1)}${suffixes[i]}`;
+};
 
-function getPendingReferrals() {
-  try {
-    return JSON.parse(localStorage.getItem(LS_KEY_PENDING_REFERRALS) || "{}");
-  } catch {
-    return {};
-  }
-}
-function setPendingReferrals(obj) {
-  localStorage.setItem(LS_KEY_PENDING_REFERRALS, JSON.stringify(obj));
-}
+// --- TokenRow Component (Updated) ---
+const TokenRow = ({ t, idx }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  // Mock data for 24h Change and Volume (as real-time data integration is complex)
+  const changePercent = ((Math.random() - 0.5) * 20).toFixed(2);
+  const isPositive = parseFloat(changePercent) > 0;
+  const mockVolume24h =
+    t.volume_24h || Math.round((Math.random() * t.marketCapUSD) / 10); // Mock volume based on MC
 
-function getStoredUsers() {
-  try {
-    return JSON.parse(localStorage.getItem(LS_KEY_USERS) || "{}");
-  } catch {
-    return {};
-  }
-}
-function setStoredUsers(obj) {
-  localStorage.setItem(LS_KEY_USERS, JSON.stringify(obj));
-}
+  // Use an anchor tag for navigation, pointing to the token info page
+  // Replace <a> with <Link to={`/token/${t.address}`}> if using react-router-dom Link
+  return (
+    <motion.a
+      href={`/token/${t.address}`} // <--- NAVIGATION LINK ADDED HERE
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      transition={{
+        duration: 0.4,
+        delay: 0.05 * idx,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className="group relative block" // Use 'block' to make the whole area clickable
+    >
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isHovered ? 1 : 0 }}
+        className="absolute -inset-[1px] bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 rounded-2xl blur-sm"
+      />
 
-/* -------------------------------------------------------------------------- */
-/* -------------------------- Referral / storage logic ----------------------- */
-/* -------------------------------------------------------------------------- */
-function recordReferralHitFromURL() {
-  try {
-    const url = new URL(window.location.href);
-    const ref = url.searchParams.get("ref");
-    if (!ref) return;
-    const pending = getPendingReferrals();
-    if (!pending[ref]) pending[ref] = { hits: 0, volumeETH: 0 };
-    pending[ref].hits += 1;
-    setPendingReferrals(pending);
-  } catch (e) {
-    // ignore
-  }
-}
+      <div className="relative bg-slate-900/50 backdrop-blur-sm border border-slate-800/70 rounded-2xl p-4 md:p-5 transition-all duration-300 hover:bg-slate-900/70 hover:border-cyan-500/30 cursor-pointer overflow-hidden">
+        <motion.div
+          initial={{ x: "-100%" }}
+          animate={{ x: isHovered ? "100%" : "-100%" }}
+          transition={{ duration: 0.8, ease: "easeInOut" }}
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/5 to-transparent"
+        />
 
-function mergePendingReferralsIntoUser(address) {
-  const normalized = (address || "").toLowerCase();
-  if (!normalized) return null;
-  const pending = getPendingReferrals();
-  const stored = getStoredUsers();
-  const shortId = normalized.replace(/^0x/, "").slice(0, 6);
-  const refsToMerge = [];
-  if (pending[normalized]) refsToMerge.push(normalized);
-  if (pending[shortId]) refsToMerge.push(shortId);
+        {/* UPDATED GRID FOR NEW VOLUME COLUMN */}
+        {/* Old Grid: RANK | TOKEN INFO (5) | PRICE CHANGE (2) | MARKET CAP (3) | CHEVRON (1) = 12 total */}
+        {/* New Grid: RANK | TOKEN INFO (5) | 24H VOLUME (3) | MARKET CAP (3) | CHEVRON (1) = 12 total */}
+        <div className="relative grid grid-cols-12 gap-3 md:gap-4 items-center">
+          {/* RANKING SECTION */}
+          <div className="col-span-2 md:col-span-1">
+            <motion.div
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              className={`font-bold text-lg md:text-xl ${
+                t.rank <= 3
+                  ? "bg-gradient-to-br from-yellow-400 to-orange-500 bg-clip-text text-transparent"
+                  : "text-slate-400"
+              }`}
+            >
+              {t.rank}
+            </motion.div>
 
-  if (!stored[normalized]) {
-    stored[normalized] = {
-      address: normalized,
-      invites: 0,
-      volumeETH: 0,
-      availableRewardUSD: 0,
-    };
-  }
-
-  refsToMerge.forEach((refKey) => {
-    const data = pending[refKey];
-    if (!data) return;
-    const invitesFromHits = data.hits || 0;
-    stored[normalized].invites =
-      (stored[normalized].invites || 0) + invitesFromHits;
-    const vol = data.volumeETH || 0;
-    stored[normalized].volumeETH = (stored[normalized].volumeETH || 0) + vol;
-    const addedUSD = vol * ETH_PRICE_USD * REWARD_RATE;
-    stored[normalized].availableRewardUSD =
-      (stored[normalized].availableRewardUSD || 0) + addedUSD;
-    delete pending[refKey];
-  });
-
-  setStoredUsers(stored);
-  setPendingReferrals(pending);
-
-  return stored[normalized];
-}
-
-/* -------------------------------------------------------------------------- */
-/* ----------------------------- UI Subcomponents --------------------------- */
-/* -------------------------------------------------------------------------- */
-const WalletGlass = ({ onConnectClick }) => (
-  <div className="fixed inset-0 z-40 flex items-center justify-center pointer-events-none">
-    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-    <div className="relative pointer-events-auto max-w-md w-full mx-4 p-6 rounded-2xl  text-center">
-      <h3 className="text-xl font-semibold text-white mb-2">
-        Please connect your Web3 wallet
-      </h3>
-      <p className="text-sm text-slate-300 mb-4">
-        To participate in the referral program and claim rewards you must
-        connect your wallet.
-      </p>
-      <div className="flex items-center justify-center">
-        <div onClick={onConnectClick} className="w-full">
-          <ConnectKitButton.Custom>
-            {({ show }) => (
-              <button
-                onClick={show}
-                className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-600 to-cyan-500 text-white font-semibold rounded-lg shadow-lg"
+            {t.rank <= 3 && (
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className="absolute -top-1 -left-1"
               >
-                Connect Wallet
-              </button>
+                {t.rank === 1 && <Star size={16} className="text-yellow-400" />}
+                {t.rank === 2 && <Star size={14} className="text-slate-300" />}
+                {t.rank === 3 && <Star size={12} className="text-orange-400" />}
+              </motion.div>
             )}
-          </ConnectKitButton.Custom>
-        </div>
-      </div>
-    </div>
-  </div>
-);
+          </div>
 
-function YourReferralCard({ user, onClaim }) {
-  const [copied, setCopied] = useState(false);
-  const referralLink = useMemo(() => {
-    if (!user?.address) return `${window.location.origin}/?ref=guest`;
-    return `${window.location.origin}/?ref=${user.address.toLowerCase()}`;
-  }, [user]);
+          {/* TOKEN INFO SECTION */}
+          <div className="col-span-7 md:col-span-5 flex items-center gap-3">
+            {/* --- LOGO FETCHING IMPLEMENTATION --- */}
+            <motion.div
+              whileHover={{ rotate: 360, scale: 1.1 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="relative w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center font-bold text-white bg-slate-700 flex-shrink-0 shadow-lg overflow-hidden" // Changed placeholder background
+            >
+              {t.logo_url ? (
+                // Use the fetched logo URL
+                <img
+                  src={t.logo_url}
+                  alt={`${t.symbol} logo`}
+                  className="w-full h-full object-cover" // Ensures image fills the container
+                  onError={(e) => {
+                    // Fallback to symbol if image fails to load
+                    e.target.style.display = "none"; // Hide broken image
+                    e.target.parentNode.querySelector(
+                      ".symbol-fallback"
+                    ).style.display = "flex";
+                  }}
+                />
+              ) : null}
 
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(referralLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      const ta = document.createElement("textarea");
-      ta.value = referralLink;
-      ta.style.position = "absolute";
-      ta.style.left = "-9999px";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    }
-  };
+              {/* Fallback to symbol initials (Default if no logo_url) */}
+              <div
+                className={`symbol-fallback absolute inset-0 w-full h-full rounded-xl flex items-center justify-center ${
+                  t.logo_url ? "hidden" : "flex"
+                }`}
+                style={{
+                  backgroundImage:
+                    "linear-gradient(to bottom right, var(--tw-gradient-stops))",
+                  "--tw-gradient-from": "#06B6D4",
+                  "--tw-gradient-to": "#8B5CF6",
+                }} // Cyan to Purple gradient
+              >
+                <span className="text-lg md:text-xl">
+                  {t.symbol?.charAt?.(0) ?? "T"}
+                </span>
+              </div>
 
-  const volumeUSD = (user?.volumeETH || 0) * ETH_PRICE_USD;
-  const availableReward = user?.availableRewardUSD ?? 0;
+              <motion.div
+                animate={{ x: ["-100%", "200%"] }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-xl"
+              />
+            </motion.div>
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
-      className="p-5 rounded-2xl border border-slate-800/40 bg-gradient-to-br from-slate-900/60 to-slate-900/30"
-    >
-      <h2 className="text-lg font-bold text-white mb-3">Your Referral Zone</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-center">
-        <div className="p-3 bg-slate-800/50 rounded-lg">
-          <p className="text-xs text-slate-400">Your Rank</p>
-          <p className="text-2xl font-bold text-cyan-400">
-            {user?.rank ?? "-"}
-          </p>
-        </div>
-        <div className="p-3 bg-slate-800/50 rounded-lg">
-          <p className="text-xs text-slate-400">Referral Volume (USD)</p>
-          <p className="text-2xl font-bold text-white">
-            ${volumeUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-          </p>
-        </div>
-        <div className="p-3 bg-slate-800/50 rounded-lg">
-          <p className="text-xs text-slate-400">Total Invites</p>
-          <p className="text-2xl font-bold text-white">{user?.invites ?? 0}</p>
-        </div>
-      </div>
-      <div className="flex flex-col sm:flex-row gap-3 items-center">
-        <div className="flex-1 w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 overflow-x-auto">
-          {referralLink}
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={copy}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white"
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm md:text-base font-semibold text-white truncate group-hover:text-cyan-400 transition-colors">
+                  {t.name}
+                </h3>
+                {t.rank <= 5 && (
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <Flame size={14} className="text-orange-500" />
+                  </motion.div>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs md:text-sm text-slate-400 font-mono">
+                  ${t.symbol}
+                </span>
+                <span className="hidden md:inline text-xs text-slate-600">
+                  •
+                </span>
+                <span className="hidden md:inline text-xs text-slate-500 font-mono truncate">
+                  {t.address?.slice?.(0, 6)}...{t.address?.slice?.(-4)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* --- NEW: 24h Volume Section (3/12 columns on desktop) --- */}
+          <div className="hidden md:flex md:col-span-3 items-center justify-end">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * idx }}
+              className="text-right"
+            >
+              <p className="font-bold text-white text-sm md:text-lg">
+                {formatNumberCompact(mockVolume24h)}
+              </p>
+              <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-wide">
+                24h Volume
+              </p>
+            </motion.div>
+          </div>
+
+          {/* --- REMOVED: Price Change Section (Was lines 191-217 in original code) --- */}
+          {/* <div className="hidden md:flex md:col-span-2 items-center justify-end">...</div> */}
+
+          {/* MARKET CAP SECTION (Adjusted to col-span-3 on desktop) */}
+          <div className="col-span-3 md:col-span-3 text-right">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 * idx }}
+            >
+              <p className="font-bold text-white text-sm md:text-lg">
+                {formatNumberCompact(t.marketCapUSD)}
+              </p>
+              <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-wide">
+                Market Cap
+              </p>
+            </motion.div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : -10 }}
+            className="hidden md:block md:col-span-1"
           >
-            {copied ? (
-              <>
-                <Check size={16} /> Copied
-              </>
-            ) : (
-              <>
-                <Copy size={16} /> Copy
-              </>
-            )}
-          </button>
-          <button
-            onClick={() => onClaim && onClaim(user)}
-            disabled={availableReward <= 0}
-            className={`px-4 py-2 rounded-lg font-semibold ${
-              availableReward > 0
-                ? "bg-emerald-500 hover:brightness-95 text-black"
-                : "bg-slate-700 text-slate-300 cursor-not-allowed"
-            }`}
-          >
-            Claim $
-            {availableReward.toLocaleString(undefined, {
-              maximumFractionDigits: 2,
-            })}
-          </button>
+            <ChevronRight className="text-cyan-400" size={20} />
+          </motion.div>
         </div>
       </div>
-    </motion.div>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* ----------------------------- Podium + Table UI --------------------------- */
-/* -------------------------------------------------------------------------- */
-const PodiumItem = ({ item, rank }) => {
-  const styleMap = {
-    1: {
-      label: "text-yellow-400",
-      shadow: "shadow-[0_0_20px_rgba(250,204,21,0.25)]",
-    },
-    2: {
-      label: "text-slate-300",
-      shadow: "shadow-[0_0_20px_rgba(156,163,175,0.18)]",
-    },
-    3: {
-      label: "text-orange-400",
-      shadow: "shadow-[0_0_20px_rgba(251,146,60,0.18)]",
-    },
-  };
-  const style = styleMap[rank] || styleMap[3];
-  return (
-    <div
-      className={`relative p-4 rounded-xl border bg-slate-900/70 ${style.shadow}`}
-    >
-      <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-slate-900 p-2 rounded-full">
-        <Trophy size={28} className={style.label} />
-      </div>
-      <div className="mt-4 text-center">
-        <div className={`text-3xl font-bold ${style.label}`}>#{rank}</div>
-        <div className="mt-2 font-mono text-sm text-white truncate">
-          {item.address}
-        </div>
-        <div className="mt-2 font-mono text-cyan-400 text-lg">
-          $
-          {(item.volumeETH * ETH_PRICE_USD).toLocaleString(undefined, {
-            maximumFractionDigits: 2,
-          })}
-        </div>
-      </div>
-    </div>
+    </motion.a>
   );
 };
 
-const LeaderboardRow = ({ u, idx }) => (
-  <motion.div
-    initial={{ opacity: 0, x: -8 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ duration: 0.25, delay: 0.03 * idx }}
-    className={`grid grid-cols-12 gap-3 items-center p-3 rounded-lg ${
-      u.isCurrent
-        ? "bg-purple-500/10 border border-purple-500/40"
-        : "hover:bg-slate-800/50"
-    }`}
-  >
-    <div className="col-span-1 text-lg font-bold text-white">#{u.rank}</div>
-    <div className="col-span-6 font-mono text-sm text-slate-200 truncate">
-      {u.address}
-    </div>
-    <div className="col-span-3 text-right font-semibold text-white">
-      $
-      {(u.volumeETH * ETH_PRICE_USD).toLocaleString(undefined, {
-        maximumFractionDigits: 2,
-      })}
-    </div>
-    <div className="col-span-2 text-right text-slate-400">{u.invites}</div>
-  </motion.div>
-);
-
-/* -------------------------------------------------------------------------- */
-/* --------------------------------- Page ----------------------------------- */
-/* -------------------------------------------------------------------------- */
-export default function Leaderboard() {
-  const { address, isConnected } = useAccount();
-  const [usersMap, setUsersMap] = useState(() => getStoredUsers());
-  const [leaderboard, setLeaderboard] = useState(initialLeaderboard);
-  const [showGlass, setShowGlass] = useState(false);
+// --- TokenList Component (Updated) ---
+export default function TokenList() {
+  const [tokens, setTokens] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    recordReferralHitFromURL();
+    let mounted = true;
+    async function fetchTokens() {
+      try {
+        // --- MODIFICATION 1: Add volume_24h to the select query ---
+        const { data, error } = await supabase
+          .from("tokens")
+          .select("name, symbol, address, marketcap, volume_24h, logo_url") // <--- volume_24h added here
+          .order("marketcap", { ascending: false })
+          .limit(20);
+
+        if (error) throw error;
+        if (!data) throw new Error("No data returned");
+
+        const formatted = data.map((t, idx) => ({
+          ...t,
+          rank: idx + 1,
+          marketCapUSD: t.marketcap ?? 0,
+          // volume_24h is now included from the database
+        }));
+
+        if (mounted) setTokens(formatted);
+      } catch (err) {
+        console.error("Error fetching tokens:", err.message || err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    fetchTokens();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  useEffect(() => {
-    if (!isConnected || !address) {
-      setShowGlass(true);
-      return;
-    }
-    setShowGlass(false);
-    const lower = address.toLowerCase();
-    const merged = mergePendingReferralsIntoUser(lower);
-    const stored = getStoredUsers();
-    if (!stored[lower]) {
-      stored[lower] = {
-        address: lower,
-        invites: 0,
-        volumeETH: 0,
-        availableRewardUSD: 0,
-        rank: "-",
-      };
-    }
-    setStoredUsers(stored);
-    setUsersMap(stored);
-
-    if (merged) {
-      setLeaderboard((prev) => {
-        const idx = prev.findIndex(
-          (p) =>
-            (p.address || "").toLowerCase() === merged.address.toLowerCase()
-        );
-        const entry = {
-          rank: merged.rank || (idx >= 0 ? prev[idx].rank : prev.length + 1),
-          address: merged.address,
-          volumeETH: merged.volumeETH || 0,
-          invites: merged.invites || 0,
-          isCurrent: merged.address === lower,
-        };
-        if (idx >= 0) {
-          const next = [...prev];
-          next[idx] = entry;
-          return next;
-        }
-        return [entry, ...prev];
-      });
-    }
-  }, [isConnected, address]);
-
-  useEffect(() => {
-    const stored = getStoredUsers();
-    setUsersMap(stored);
-  }, []);
-
-  const rows = leaderboard.map((l) => {
-    const low = (address || "").toLowerCase();
-    return { ...l, isCurrent: low && l.address.toLowerCase() === low };
-  });
-
-  const currentUser = useMemo(() => {
-    const low = (address || "").toLowerCase();
-    if (low && usersMap[low]) {
-      return { address: low, ...usersMap[low] };
-    }
-    const found = leaderboard.find((x) => x.address.toLowerCase() === low);
-    if (found) {
-      return {
-        address: found.address,
-        invites: found.invites || 0,
-        volumeETH: found.volumeETH || 0,
-        availableRewardUSD: 0,
-        rank: found.rank,
-      };
-    }
-    return {
-      address: low || null,
-      invites: 0,
-      volumeETH: 0,
-      availableRewardUSD: 0,
-      rank: "-",
-    };
-  }, [address, usersMap, leaderboard]);
-
-  const handleClaim = (user) => {
-    if (!user || !user.address) return;
-    const low = user.address.toLowerCase();
-    const stored = getStoredUsers();
-    const me = stored[low] || {
-      address: low,
-      invites: 0,
-      volumeETH: 0,
-      availableRewardUSD: 0,
-    };
-    if (!me || (me.availableRewardUSD || 0) <= 0) {
-      alert("No rewards available to claim.");
-      return;
-    }
-    me.availableRewardUSD = 0;
-    stored[low] = me;
-    setStoredUsers(stored);
-    setUsersMap(stored);
-    alert(
-      "Claim successful — (simulated). In production this will trigger a server-side payout."
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="w-16 h-16 rounded-full border-4 border-slate-800 border-t-cyan-400"
+        />
+        <motion.p
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className="text-slate-400 mt-4"
+        >
+          Loading tokens...
+        </motion.p>
+      </div>
     );
-  };
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans pb-12">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.45 }}
-          className="text-center mb-8"
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-8 md:mb-12"
         >
-          <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 mb-2">
-            Referral Leaderboard
-          </h1>
-          <p className="text-sm text-slate-400 max-w-2xl mx-auto">
-            Invite others to climb the ranks and earn rewards. Connect your
-            wallet to get your referral link and claim rewards.
-          </p>
-        </motion.div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-2">
-            <YourReferralCard user={currentUser} onClaim={handleClaim} />
-          </div>
-          <div className="space-y-4">
-            <div className="p-4 rounded-2xl border border-slate-800/40 bg-slate-900/50">
-              <h3 className="text-sm text-slate-300 mb-2">Available Reward</h3>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">
-                    $
-                    {(currentUser.availableRewardUSD || 0).toLocaleString(
-                      undefined,
-                      { maximumFractionDigits: 2 }
-                    )}
-                  </div>
-                  <div className="text-xs text-slate-400">
-                    Estimated (simulated)
-                  </div>
-                </div>
-                <div>
-                  <button
-                    onClick={() => handleClaim(currentUser)}
-                    className={`px-3 py-2 rounded-lg font-semibold ${
-                      (currentUser.availableRewardUSD || 0) > 0
-                        ? "bg-emerald-500 text-black"
-                        : "bg-slate-700 text-slate-300 cursor-not-allowed"
-                    }`}
-                    disabled={(currentUser.availableRewardUSD || 0) <= 0}
-                  >
-                    Claim
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="p-4 rounded-2xl border border-slate-800/40 bg-slate-900/50">
-              <h3 className="text-sm text-slate-300 mb-2">Top 3</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {leaderboard.slice(0, 3).map((it, i) => (
-                  <PodiumItem
-                    key={it.address}
-                    item={it}
-                    rank={it.rank || i + 1}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="p-4 sm:p-6 rounded-2xl border border-slate-800/40 bg-gradient-to-br from-slate-900/60 to-slate-900/30">
-          <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-xs font-semibold text-slate-400 uppercase">
-            <div className="col-span-1">Rank</div>
-            <div className="col-span-6">User</div>
-            <div className="col-span-3 text-right">Volume (USD)</div>
-            <div className="col-span-2 text-right">Invites</div>
-          </div>
-          <div className="space-y-3 mt-3">
-            {rows.map((r, i) => (
-              <LeaderboardRow
-                key={`${r.address}-${r.rank}-${i}`}
-                u={r}
-                idx={i}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-      <AnimatePresence>
-        {!isConnected && (
-          <motion.div
+          <motion.h1 className="text-4xl md:text-6xl font-extrabold mb-3">
+            <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              Top Launchpad Tokens
+            </span>
+          </motion.h1>
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ delay: 0.2 }}
+            className="text-sm md:text-base text-slate-400 max-w-2xl mx-auto"
           >
-            <WalletGlass
-              onConnectClick={() => {
-                /* ConnectKit button handles modal via its Custom component */
-              }}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+            Explore the highest market cap projects on the platform. Real-time
+            rankings.
+          </motion.p>
+        </motion.div>
+
+        <AnimatePresence mode="wait">
+          <div className="space-y-2 md:space-y-3">
+            {tokens.length > 0 ? (
+              tokens.map((t, i) => (
+                <TokenRow key={`${t.address}-${t.rank}-${i}`} t={t} idx={i} />
+              ))
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-12 text-slate-400"
+              >
+                No tokens available.
+              </motion.div>
+            )}
+          </div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

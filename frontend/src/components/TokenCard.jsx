@@ -1,65 +1,101 @@
-// File: components/TokenCard.jsx
-import React, { useRef } from "react";
+// src/components/TokenCard.jsx
+import React, { useRef, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useSpring,
+} from "framer-motion";
 import { ArrowUpRight, Globe, Twitter, Send } from "lucide-react";
-import { usd } from "../utils/format";
+import { computeProgressPercentFixed } from "../utils/progress";
 
-// --- Helper function to format large numbers for volume ---
-const formatCompactNumber = (number) => {
+const compactNumberShort = (number) => {
   if (number === null || number === undefined) return "N/A";
-  if (number < 1000) return `$${number}`;
-  const suffixes = ["", "K", "M", "B", "T"];
-  const i = Math.floor(Math.log10(number) / 3);
-  const value = (number / Math.pow(1000, i)).toFixed(1);
+  if (Number.isNaN(Number(number))) return "N/A";
+  const n = Number(number);
+  if (Math.abs(n) < 1000) return `$${Math.round(n)}`;
+  const suffixes = ["", "k", "m", "b", "t"];
+  const i = Math.floor(Math.log10(Math.abs(n)) / 3);
+  let value = (n / Math.pow(1000, i)).toFixed(1);
+  if (value.endsWith(".0")) value = value.slice(0, -2);
   return `$${value}${suffixes[i]}`;
 };
 
-// --- Framer Motion Variants ---
 const cardVariants = {
-  hidden: { opacity: 0, y: 30 },
+  hidden: { opacity: 0, y: 18 },
   visible: (i) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.08, duration: 0.5, ease: [0.25, 0.4, 0.25, 1] },
+    transition: { delay: i * 0.06, duration: 0.45, ease: [0.22, 0.9, 0.28, 1] },
   }),
 };
 
-const glowVariants = {
-  initial: { opacity: 0, scale: 1 },
-  animate: {
-    opacity: [0.3, 0.5, 0.3],
-    scale: [1, 1.2, 1],
-    transition: { duration: 10, repeat: Infinity, ease: "easeInOut" },
-  },
-};
+function SocialLink({ href, icon, label }) {
+  if (!href) return null;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      onClick={(e) => e.stopPropagation()}
+      className="p-1 rounded-full text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors duration-200"
+    >
+      {icon}
+    </a>
+  );
+}
 
-// --- Category Configuration ---
-const validCategories = [
-  "AI",
-  "Meme",
-  "DeFi",
-  "GameFi",
-  "Infra",
-  "Social",
-  "DePin",
-];
-const categoryGradients = {
-  AI: "from-purple-500 to-indigo-500",
-  Meme: "from-pink-500 to-red-500",
-  DeFi: "from-emerald-500 to-cyan-500",
-  GameFi: "from-orange-500 to-yellow-500",
-  Infra: "from-slate-500 to-gray-500",
-  Social: "from-blue-500 to-sky-500",
-  DePin: "from-rose-500 to-fuchsia-500",
-};
-
-export default function TokenCard({ token, index = 0 }) {
+export default function TokenCard({ token, index = 0, isNew = false }) {
   const cardRef = useRef(null);
+  const [progress, setProgress] = useState({ graduated: false, percent: 0 });
 
-  const category = token.category;
-  const isCategoryValid = validCategories.includes(category);
-  const categoryGradient = categoryGradients[category] || "";
+  const [displayMarketcap, setDisplayMarketcap] = useState(
+    token.marketcap || token.marketcap_usd
+  );
+  const [displayVolume, setDisplayVolume] = useState(token.volume_24h);
+
+  // Animate MC
+  const mcMotion = useMotionValue(displayMarketcap);
+  const mcSpring = useSpring(mcMotion, { stiffness: 200, damping: 30 });
+  const [mcDisplay, setMcDisplay] = useState(displayMarketcap);
+
+  useEffect(() => {
+    mcMotion.set(displayMarketcap);
+  }, [displayMarketcap]);
+
+  useEffect(() => {
+    const unsub = mcSpring.on("change", (v) => setMcDisplay(Math.round(v)));
+    return () => unsub();
+  }, [mcSpring]);
+
+  // Animate Volume
+  const volMotion = useMotionValue(displayVolume);
+  const volSpring = useSpring(volMotion, { stiffness: 200, damping: 30 });
+  const [volDisplay, setVolDisplay] = useState(displayVolume);
+
+  useEffect(() => {
+    volMotion.set(displayVolume);
+  }, [displayVolume]);
+
+  useEffect(() => {
+    const unsub = volSpring.on("change", (v) => setVolDisplay(Math.round(v)));
+    return () => unsub();
+  }, [volSpring]);
+
+  // Fetch progress
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchProgress() {
+      const result = await computeProgressPercentFixed(token);
+      if (!cancelled) setProgress(result);
+    }
+    fetchProgress();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   const handleMouseMove = (e) => {
     if (!cardRef.current) return;
@@ -73,118 +109,142 @@ export default function TokenCard({ token, index = 0 }) {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      whileHover="hover"
       custom={index}
       className="w-full h-full"
     >
-      <Link to={`/token/${token.token_address}`} className="block group h-full">
+      <Link to={`/token/${token.address}`} className="block group h-full">
         <motion.div
           ref={cardRef}
           onMouseMove={handleMouseMove}
-          whileTap={{ scale: 0.98 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className="card-shine-effect h-full relative p-4 lg:p-5 rounded-xl bg-slate-900/80
-                     backdrop-blur-2xl border border-slate-800 hover:border-cyan-400/50
-                     shadow-xl hover:shadow-cyan-500/10 transition-all duration-300 overflow-hidden"
+          whileHover={{
+            scale: 1.03,
+            boxShadow: "0 20px 40px rgba(8,145,255,0.15)",
+          }}
+          whileTap={{ scale: 0.995 }}
+          transition={{
+            type: "spring",
+            stiffness: 200,
+            damping: 20,
+            duration: 0.3,
+          }}
+          id={`token-${token.address}`}
+          className={`token-card relative h-full rounded-2xl bg-gradient-to-br from-slate-900/70 via-slate-900/60 to-slate-900/60 shadow-lg px-4 py-3 overflow-hidden transition-all duration-300 ${
+            isNew
+              ? "animate-shake border-2 border-cyan-400"
+              : "border border-slate-800/60"
+          }`}
         >
-          {/* Background liquid glow effect */}
-          <motion.div
-            variants={glowVariants}
-            initial="initial"
-            animate="animate"
-            className="absolute -inset-12 bg-gradient-to-br from-cyan-500/10 via-purple-500/10 to-pink-500/10 pointer-events-none blur-3xl"
-          />
-
-          {/* Main content - Horizontal and responsive */}
-          <div className="relative z-10 flex h-full w-full items-center justify-between gap-4">
-            {/* Left Section: Logo + Info */}
-            <div className="flex flex-1 items-center gap-4 min-w-0">
-              {/* Logo */}
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg bg-slate-800/70 flex items-center justify-center overflow-hidden flex-shrink-0">
-                {token.logo ? (
-                  <img
-                    src={token.logo}
-                    alt={`${token.name} logo`}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-xl md:text-2xl font-bold bg-gradient-to-br from-cyan-300 to-purple-300 bg-clip-text text-transparent">
-                    {token.symbol?.charAt(0) || "T"}
-                  </span>
-                )}
+          <div className="relative z-10 flex items-start justify-between">
+            <div className="flex items-start gap-4 min-w-0 w-full">
+              <div className="flex-shrink-0 w-24 h-24">
+                <div className="w-full h-full rounded-2xl bg-slate-800/50 flex items-center justify-center overflow-hidden ring-1 ring-slate-700/50">
+                  {token.logo_path ? (
+                    <img
+                      src={token.logo_path}
+                      alt={`${token.name} logo`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-4xl md:text-5xl lg:text-6xl font-semibold bg-clip-text text-transparent bg-gradient-to-br from-cyan-300 to-violet-300">
+                      {token.symbol?.charAt(0) || "T"}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {/* Info Column */}
-              <div className="flex-1 min-w-0">
-                <h3 className="text-base sm:text-lg font-bold text-white truncate">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm md:text-base lg:text-lg font-semibold text-white truncate">
                   {token.name}
                 </h3>
+                <p className="text-xs text-slate-400 font-medium truncate">
+                  {token.symbol ?? "—"}
+                </p>
 
-                {/* Sub-info row with wrapping for mobile */}
-                <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1">
-                  <p className="text-sm text-slate-400 font-medium">
-                    ${token.symbol}
-                  </p>
+                <div className="flex items-center gap-1 mt-2">
+                  <SocialLink
+                    href={token.website}
+                    icon={<Globe className="w-4 h-4" />}
+                    label="Website"
+                  />
+                  <SocialLink
+                    href={token.twitter}
+                    icon={<Twitter className="w-4 h-4" />}
+                    label="Twitter"
+                  />
+                  <SocialLink
+                    href={token.telegram}
+                    icon={<Send className="w-4 h-4" />}
+                    label="Telegram"
+                  />
+                </div>
 
-                  {isCategoryValid && (
-                    <div
-                      className={`px-2 py-0.5 rounded-full bg-gradient-to-r ${categoryGradient} text-white text-[10px] font-bold shadow-md`}
-                    >
-                      {category}
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-1.5">
-                    {token.website && (
-                      <SocialIcon href={token.website} icon={Globe} />
-                    )}
-                    {token.twitter && (
-                      <SocialIcon href={token.twitter} icon={Twitter} />
-                    )}
-                    {token.telegram && (
-                      <SocialIcon href={token.telegram} icon={Send} />
-                    )}
-                  </div>
+                <div className="flex items-center gap-1 mt-1">
+                  <MetricBadge label="MC" value={mcDisplay} />
+                  <MetricBadge label="VOL" value={volDisplay} />
                 </div>
               </div>
             </div>
-
-            {/* Right Section: Stats */}
-            <div className="flex-shrink-0 text-right">
-              <p className="text-sm sm:text-base font-semibold text-slate-200">
-                {usd(token.marketcap_usd)} mc
-              </p>
-              <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-                {formatCompactNumber(token.volume_24h)} vol
-              </p>
-            </div>
           </div>
 
-          {/* Hover Arrow */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            variants={{ hover: { opacity: 1, scale: 1 } }}
-            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 flex items-center justify-center"
-          >
-            <ArrowUpRight className="w-4 h-4 text-slate-300" />
-          </motion.div>
+          <div className="relative z-10 mt-1 pt-1">
+            {progress.graduated ? (
+              <p className="text-xs font-semibold text-green-400">
+                Listed on Uniswap
+              </p>
+            ) : (
+              <ProgressBar percent={progress.percent} />
+            )}
+          </div>
         </motion.div>
       </Link>
     </motion.div>
   );
 }
 
-// Reusable Social Icon Component
-const SocialIcon = ({ href, icon: Icon }) => (
-  <motion.a
-    href={href}
-    target="_blank"
-    rel="noopener noreferrer"
-    whileHover={{ scale: 1.1, y: -1, color: "#22d3ee" }} // cyan-400
-    whileTap={{ scale: 0.95 }}
-    className="w-6 h-6 rounded-md text-slate-400 hover:bg-slate-800/60 flex items-center justify-center transition-colors duration-200"
-    onClick={(e) => e.stopPropagation()}
-  >
-    <Icon className="w-4 h-4" />
-  </motion.a>
-);
+function MetricBadge({ label, value }) {
+  return (
+    <div className="flex items-center gap-2 bg-slate-800/50 rounded-md px-3 py-1 text-xs">
+      <span className="text-slate-200 uppercase tracking-wide font-medium">
+        {label}
+      </span>
+      <span className="text-white font-semibold">
+        {compactNumberShort(value)}
+      </span>
+    </div>
+  );
+}
+
+function ProgressBar({ percent }) {
+  const safePercent = Math.max(0, Math.min(100, percent));
+  const displayPercent = Math.round(safePercent);
+
+  return (
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[11px] font-medium text-slate-400">Progress</span>
+        <span className="text-[11px] font-semibold text-cyan-300">
+          {displayPercent}%
+        </span>
+      </div>
+
+      <div className="relative w-full h-3 rounded-full bg-slate-800/60 ring-1 ring-slate-700/50 overflow-hidden">
+        <motion.div
+          className="h-full rounded-full"
+          initial={{ width: 0 }}
+          animate={{ width: `${safePercent}%` }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          style={{ background: "linear-gradient(90deg, #22d3ee, #38f8c2)" }}
+        />
+        <motion.div
+          className="absolute top-0 left-0 h-full w-12 opacity-40"
+          animate={{ x: ["-20%", "120%"] }}
+          transition={{ duration: 1.6, ease: "easeInOut", repeat: Infinity }}
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent)",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
