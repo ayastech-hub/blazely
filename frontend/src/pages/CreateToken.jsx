@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import BlazelyLaunchpad from "../../../contracts/BlazelyLaunchpad.json";
+import BlazelyLaunchpad from "../abi/BlazelyLaunchpad.json";
 import { useWallet } from "../context/WalletContext";
 import { useChainId } from "wagmi";
 import { sepolia } from "wagmi/chains";
