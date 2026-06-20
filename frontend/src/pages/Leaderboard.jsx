@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "../supabaseClient"; 
+import { supabase } from "../lib/supabaseClient"; 
 import { Trophy, BarChart3, Coins, Flame, Star, ChevronRight } from "lucide-react";
 
 // Robust formatting helper for numbers, stringified metrics, and small launch values
