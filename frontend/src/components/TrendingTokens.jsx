@@ -1,9 +1,9 @@
+// src/components/TrendingTokens.jsx
 import React, { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 
-// ---------- Helpers ----------
 const formatNumber = (num) => {
   if (!num) return "$0";
   if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(1)}M`;
@@ -11,25 +11,12 @@ const formatNumber = (num) => {
   return `$${num.toFixed(0)}`;
 };
 
-// ---------- Card ----------
 const TrendingTokenCard = ({ token }) => {
   return (
-    <Link to={`/token/${token.address}`} className="block">
-      <div
-        className="
-          w-56 min-w-[224px] h-20 rounded-xl cursor-pointer
-          bg-slate-900/60 backdrop-blur
-          border border-slate-800/60
-          shadow-sm
-          flex items-center px-3 gap-3
-          hover:scale-[1.02]
-          hover:shadow-lg
-          hover:border-cyan-500/40
-          transition-all
-        "
-      >
-        {/* Logo */}
-        <div className="w-12 h-12 rounded-lg bg-slate-800/50 overflow-hidden flex items-center justify-center ring-1 ring-slate-700/50">
+    <Link to={`/token/${token.address}`} className="block shrink-0">
+      <div className="w-56 h-16 bg-[#0b0f19]/40 border border-slate-900 rounded-none flex items-center px-2.5 gap-2.5 transition-colors hover:bg-[#0b0f19]/80 hover:border-slate-800">
+        
+        <div className="w-10 h-10 rounded-none bg-[#030712] border border-slate-900 overflow-hidden flex items-center justify-center shrink-0">
           {token.logo ? (
             <img
               src={token.logo}
@@ -38,37 +25,35 @@ const TrendingTokenCard = ({ token }) => {
               loading="lazy"
             />
           ) : (
-            <span className="text-white font-semibold">
-              {token.symbol?.[0]}
+            <span className="text-slate-500 font-bold text-xs">
+              {token.symbol?.[0]?.toUpperCase()}
             </span>
           )}
         </div>
 
-        {/* Name */}
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold text-white truncate">
+          <div className="text-xs font-black text-slate-200 uppercase tracking-wider truncate leading-tight">
             {token.name}
           </div>
-          <div className="text-xs text-slate-400 uppercase truncate">
-            {token.symbol}
+          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wide truncate mt-0.5">
+            ${token.symbol}
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="text-right text-[11px] leading-tight">
-          <div className="text-slate-200 font-semibold">
-            MC {formatNumber(token.market_cap)}
+        <div className="text-right text-[9px] font-mono leading-normal font-bold">
+          <div className="text-slate-300">
+            MC:{formatNumber(token.market_cap)}
           </div>
-          <div className="text-slate-400">
-            VOL {formatNumber(token.volume_24h)}
+          <div className="text-slate-500">
+            VOL:{formatNumber(token.volume_24h)}
           </div>
         </div>
+
       </div>
     </Link>
   );
 };
 
-// ---------- Main ----------
 const TrendingTokens = () => {
   const [tokens, setTokens] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,14 +63,12 @@ const TrendingTokens = () => {
     try {
       const { data, error } = await supabase
         .from("token_metrics_latest")
-        .select(
-          `
+        .select(`
           volume_24h,
           market_cap,
           address,
           tokens (name, symbol, logo_url)
-        `
-        )
+        `)
         .order("volume_24h", { ascending: false })
         .limit(10);
 
@@ -103,7 +86,7 @@ const TrendingTokens = () => {
       );
     } catch (err) {
       console.error(err);
-      setError("Failed to load trending tokens.");
+      setError("METADATA_STREAM_EXCEPTION");
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +95,6 @@ const TrendingTokens = () => {
   useEffect(() => {
     fetchTrendingTokens();
 
-    // ---- Realtime subscription ----
     const channel = supabase
       .channel("realtime-trending-tokens")
       .on(
@@ -133,37 +115,48 @@ const TrendingTokens = () => {
   }, []);
 
   if (isLoading) {
-    return <div className="text-white py-6">Loading trending tokens…</div>;
+    return (
+      <div className="font-mono text-[10px] text-slate-500 uppercase tracking-widest py-6 animate-pulse">
+        POLLING_TRENDING_NODES...
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-red-400 py-6">{error}</div>;
+    return (
+      <div className="font-mono text-[10px] font-bold text-rose-500 uppercase tracking-widest py-6">
+        CRITICAL_INDEX_ERROR // {error}
+      </div>
+    );
   }
 
   return (
-    <section className="mt-8 mb-6">
-      {/* Header */}
-      <div className="flex items-center mb-4">
-        <h2 className="text-xl font-bold text-white">Trending Now</h2>
-        <div className="flex-1 h-px bg-slate-800/40 ml-3" />
+    <section className="font-mono mt-6 mb-4">
+      
+      <div className="flex items-center justify-between mb-3 border-b border-slate-900 pb-2">
+        <h2 className="text-xs font-black uppercase text-slate-200 tracking-wider">
+          METRICS_INDEX // TRENDING_VOL
+        </h2>
+        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5">
+          <span className="w-1 h-1 rounded-none bg-[#96d6cd] animate-pulse" />
+          ACTIVE DEPLOYMENTS
+        </span>
       </div>
 
-      {/* Horizontal list */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
+      <div className="flex gap-2 overflow-x-auto scrollbar-none py-0.5">
         {tokens.map((token) => (
           <TrendingTokenCard key={token.address} token={token} />
         ))}
 
-        {/* View all */}
         <Link
           to="/tokens"
-          className="w-16 min-w-[64px] h-20 flex items-center justify-center
-            bg-slate-900/60 border border-slate-800/60 rounded-xl
-            hover:border-cyan-500/40 transition-colors"
+          className="w-12 min-w-[48px] h-16 flex items-center justify-center bg-[#0b0f19]/20 border border-slate-900 text-slate-500 hover:text-slate-300 hover:border-slate-800 transition-colors rounded-none"
+          title="Inspect All Network Assets"
         >
-          <ChevronRight className="w-6 h-6 text-slate-400" />
+          <ChevronRight size={16} />
         </Link>
       </div>
+
     </section>
   );
 };
