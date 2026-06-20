@@ -18,7 +18,7 @@ import { ConnectKitButton } from "connectkit";
 import { supabase } from "../lib/supabaseClient";
 import { useWallet } from "../context/WalletContext";
 
-/* ---------- Helpers (modified) ---------- */
+/* ---------- Helpers (modified layout styling alignment) ---------- */
 const getAvatarUrl = (addr = "") =>
   `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(
     (addr || "").toLowerCase()
@@ -26,21 +26,23 @@ const getAvatarUrl = (addr = "") =>
 
 const formatAddress = (address = "") =>
   address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
+
 const formatMarketCap = (cap = 0) => {
   if (cap >= 1000000) return `$${(cap / 1000000).toFixed(2)}M`;
   if (cap >= 1000) return `$${(cap / 1000).toFixed(2)}K`;
   return `$${Number(cap || 0).toFixed(2)}`;
 };
 
-/* ---------- Small inline DiscordIcon ---------- */
+/* ---------- Vector Discord Icon (Online Standard Reference Link) ---------- */
 const DiscordIcon = (props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
+    viewBox="0 0 127.14 96.36"
+    role="img"
     fill="currentColor"
     {...props}
   >
-    <path d="M20.317,4.485c-0.843-0.512-1.762-0.913-2.738-1.181c-0.08-0.024-0.164-0.038-0.25-0.038c-0.194,0-0.38,0.061-0.528,0.178 c-0.551,0.43-0.988,0.963-1.32,1.59c-1.398-0.293-2.822-0.293-4.22,0C10.932,4.996,10.495,4.463,9.944,4.033 c-0.148-0.117-0.334-0.178-0.528-0.178c-0.086,0-0.17,0.014-0.25,0.038C8.19,3.572,7.27,3.973,6.428,4.485 c-0.143,0.086-0.222,0.24-0.222,0.4c-0.002,0.322,0.043,0.643,0.134,0.959c-1.432,1.611-2.236,3.676-2.236,5.821 c0,4.469,2.83,8.232,6.588,9.261c0.141,0.038,0.283,0.013,0.404-0.065c0.121-0.078,0.203-0.203,0.22-0.341 c0.045-0.34,0.113-0.678,0.201-1.011c-0.574-0.229-1.117-0.528-1.612-0.89c-0.115-0.084-0.25-0.12-0.388-0.101 c-0.138,0.019-0.264,0.084-0.354,0.183c-1.2,1.309-2.793,2.02-4.444,2.02c-0.231,0-0.422-0.191-0.422-0.422 c0-0.211,0.157-0.389,0.363-0.418c0.822-0.114,1.604-0.393,2.321-0.817c0.126-0.074,0.205-0.205,0.215-0.347 c0.01-0.142-0.049-0.28-0.158-0.368C5.253,14.004,5.253,14.004,5.253,14c-0.404-0.34-0.778-0.72-1.112-1.134 c-0.093-0.114-0.24-0.169-0.389-0.15c-0.149,0.02-0.281,0.09-0.37,0.207c-0.297,0.395-0.57,0.81-0.81,1.238 c-0.05,0.088-0.131,0.15-0.226,0.174c-0.095,0.024-0.196,0.007-0.28-0.045c-0.422-0.26-0.81-0.564-1.16-0.906 C1.001,13.1,1,12.712,1,11.684c0-2.247,0.865-4.38,2.396-6.065C3.35,5.49,3.308,5.361,3.254,5.229 c-0.01-0.024-0.02-0.049-0.028-0.073c-0.002-0.005-0.003-0.01-0.005-0.015c-0.012-0.033-0.021-0.067-0.028-0.1 c-0.025-0.118-0.033-0.236-0.026-0.354c0.009-0.142,0.06-0.279,0.147-0.39c0.912-1.134,2.236-1.921,3.708-2.316 C7.458,1.905,7.91,1.83,8.366,1.83c1.47,0,2.916,0.329,4.22,0.939c1.52,0.708,2.784,1.789,3.708,3.172 c0.048,0.074,0.08,0.154,0.093,0.239c0.014,0.09,0.01,0.179-0.009,0.265c-0.067,0.296-0.18,0.581-0.334,0.85 c-0.06,0.104-0.078,0.23-0.047,0.347c0.031,0.117,0.108,0.214,0.215,0.27c0.887,0.465,1.693,1.042,2.396,1.733 c0.116,0.114,0.18,0.27,0.18,0.435c0,0.231-0.191,0.422-0.422,0.422c-1.651,0-3.244-0.711-4.444-2.02 c-0.09-0.099-0.216-0.164-0.354-0.183c-0.138-0.019-0.273,0.017-0.388,0.101c-0.495,0.362-1.038,0.661-1.612,0.89 c0.088,0.333,0.156,0.671,0.201,1.011c0.017,0.138,0.099,0.263,0.22,0.341c0.121,0.078,0.263,0.103,0.404,0.065 C20.17,19.916,23,16.153,23,11.684C23,9.539,22.196,7.474,20.764,5.864C20.855,5.543,20.9,5.222,20.898,4.885 C20.898,4.725,20.819,4.571,20.676,4.485z" />
+    <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c1-.73,2-1.51,2.95-2.31A75.31,75.31,0,0,0,96,78.2c1,.8,2,1.58,3,2.31a68.43,68.43,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31.54-18.83C129.9,49.52,123.75,26.74,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z" />
   </svg>
 );
 
@@ -66,7 +68,7 @@ const Navbar = ({ onSearchChange = () => {} }) => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("tokens");
   const [errorMsg, setErrorMsg] = useState("");
-  const [copiedAddress, setCopiedAddress] = useState(""); // for search-result copy feedback
+  const [copiedAddress, setCopiedAddress] = useState(""); 
   const { connectWallet, isAuthenticated, isAuthenticating } = useWallet();
 
   const searchRef = useRef(null);
@@ -102,10 +104,8 @@ const Navbar = ({ onSearchChange = () => {} }) => {
     }
     debounceRef.current = setTimeout(() => fetchSupabaseData(query), 300);
     return () => clearTimeout(debounceRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
-  // Copy helper (used only inside search results)
   const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -116,7 +116,6 @@ const Navbar = ({ onSearchChange = () => {} }) => {
     }
   };
 
-  // Supabase fetch (price removed from token select)
   const fetchSupabaseData = useCallback(
     async (searchQuery) => {
       if (!searchQuery || !searchQuery.trim()) return;
@@ -159,7 +158,6 @@ const Navbar = ({ onSearchChange = () => {} }) => {
 
       setSearchResults({ tokens: tokenData, users: userData });
 
-      // Only auto-switch to users if no tokens
       if ((tokenData?.length || 0) === 0 && (userData?.length || 0) > 0)
         setActiveTab("users");
 
@@ -175,11 +173,12 @@ const Navbar = ({ onSearchChange = () => {} }) => {
     else setSearchResults({ tokens: [], users: [] });
   };
 
+  // Upgraded to minimal active tab marker styling using #96d6cd
   const getNavLinkClass = ({ isActive }) =>
-    `relative px-3 py-2 rounded-md text-sm font-semibold transition-all duration-200 lg:hover:shadow-inner ${
+    `relative px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
       isActive
-        ? "text-white lg:text-transparent lg:bg-clip-text lg:bg-gradient-to-r lg:from-cyan-400 lg:via-purple-400 lg:to-pink-400"
-        : "text-slate-300 hover:text-white hover:bg-slate-800/40"
+        ? "text-[#96d6cd] bg-[#96d6cd]/5 border border-[#96d6cd]/20"
+        : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
     }`;
 
   const getMobileLinkClass = (path, end) => {
@@ -187,10 +186,10 @@ const Navbar = ({ onSearchChange = () => {} }) => {
       ? location.pathname === path
       : location.pathname.startsWith(path);
     return (
-      `flex items-center justify-start p-3 rounded-lg font-medium transition-colors duration-200 ` +
+      `flex items-center justify-start p-3 rounded font-bold uppercase tracking-wider text-xs transition-colors duration-150 ` +
       (isActive
-        ? "text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-slate-800/60"
-        : "text-white hover:bg-slate-900/50")
+        ? "text-[#96d6cd] bg-[#96d6cd]/10 border-l-2 border-[#96d6cd]"
+        : "text-slate-300 hover:bg-slate-900/50")
     );
   };
 
@@ -202,61 +201,61 @@ const Navbar = ({ onSearchChange = () => {} }) => {
 
     if (loading)
       return (
-        <div className="flex flex-col items-center justify-center flex-1 text-slate-400">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mb-4" />
-          <p>Searching for {query}...</p>
+        <div className="flex flex-col items-center justify-center flex-1 text-slate-400 py-12">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#96d6cd] mb-4" />
+          <p className="text-xs font-mono tracking-widest uppercase">Querying Matrix Database...</p>
         </div>
       );
 
     if (errorMsg)
       return (
-        <div className="flex flex-col items-center justify-center flex-1 text-rose-400">
-          <X size={48} className="mb-4" />
-          <p className="text-lg">Search error</p>
-          <p className="text-sm mt-2 text-slate-400">{errorMsg}</p>
+        <div className="flex flex-col items-center justify-center flex-1 text-rose-400 py-12 font-mono text-xs uppercase tracking-wider">
+          <X size={32} className="mb-3 opacity-60" />
+          <p>Search Context Interrupted</p>
+          <p className="text-slate-500 mt-1 text-[10px]">{errorMsg}</p>
         </div>
       );
 
     if (query.trim() === "")
       return (
-        <div className="flex flex-col items-center justify-center flex-1">
-          <Search size={64} className="text-purple-600/50" />
-          <p className="mt-4 text-slate-500">
-            Type a token symbol, name, or address and press
-            <strong>Enter</strong> to search.
+        <div className="flex flex-col items-center justify-center flex-1 py-12 text-center">
+          <Search size={32} className="text-slate-800 mb-3" />
+          <p className="text-xs text-slate-500 font-mono max-w-sm uppercase tracking-wide leading-relaxed">
+            Input token identifier, address registry, or alias key.
           </p>
         </div>
       );
 
     if (!hasResults)
       return (
-        <div className="flex flex-col items-center justify-center flex-1 text-slate-400">
-          <X size={48} className="text-red-500/50 mb-4" />
-          <p className="text-xl">Token or User not found.</p>
-          <p className="text-sm mt-2 text-slate-500">
-            No results for "{query}". Try another search term.
-          </p>
+        <div className="flex flex-col items-center justify-center flex-1 text-slate-400 py-12 font-mono text-xs uppercase tracking-wider">
+          <X size={32} className="text-rose-500/40 mb-3" />
+          <p>Sequence Terminated.</p>
+          <span className="text-[10px] text-slate-600 mt-1">Zero cross-references located for "{query}"</span>
         </div>
       );
 
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-        <div className="flex border-b border-slate-800/70 p-1">
+        {/* Toggle Grid Headers with #96d6cd indicator */}
+        <div className="flex border-b border-slate-900 p-1 gap-1">
           <button
+            type="button"
             onClick={() => setActiveTab("tokens")}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${activeTab === "tokens" ? "bg-slate-800/60 text-white" : "text-slate-400 hover:text-white"}`}
+            className={`px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition-all ${activeTab === "tokens" ? "bg-[#96d6cd]/10 text-[#96d6cd]" : "text-slate-500 hover:text-slate-300"}`}
           >
             Tokens ({tokens.length})
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab("users")}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${activeTab === "users" ? "bg-slate-800/60 text-white" : "text-slate-400 hover:text-white"}`}
+            className={`px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition-all ${activeTab === "users" ? "bg-[#96d6cd]/10 text-[#96d6cd]" : "text-slate-500 hover:text-slate-300"}`}
           >
             Users ({users.length})
           </button>
         </div>
 
-        <div className="mt-4 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
+        <div className="mt-3 space-y-1 overflow-y-auto pr-1 max-h-[350px] scrollbar-thin scrollbar-thumb-slate-800">
           {activeData.map((item, index) => {
             const address = item.address || item.wallet || "";
             const avatarSrc = item.logo_url || getAvatarUrl(address);
@@ -266,42 +265,41 @@ const Navbar = ({ onSearchChange = () => {} }) => {
             return (
               <div
                 key={index}
-                className="flex items-center p-3 rounded-lg hover:bg-slate-800/40 transition-colors duration-150"
+                className="flex items-center p-2 rounded border border-transparent hover:border-slate-900 hover:bg-[#030712]/50 transition-all duration-150"
               >
                 <Link
-                  to={`/${isToken ? `token/${address}` : `user/${address}`}`} // <- user route fixed
-                  className="flex items-center flex-1 gap-4 min-w-0"
+                  to={`/${isToken ? `token/${address}` : `user/${address}`}`}
+                  className="flex items-center flex-1 gap-3 min-w-0"
                   onClick={() => setSearchOpen(false)}
                   style={{ textDecoration: "none" }}
                 >
                   <img
                     src={avatarSrc}
                     alt="avatar"
-                    className="w-10 h-10 rounded-full bg-slate-700 object-cover"
+                    className="w-8 h-8 rounded bg-slate-900 object-cover border border-slate-800"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold truncate">
+                    <p className="text-slate-200 font-bold text-xs truncate">
                       {isToken ? item.symbol : item.display_name}
                     </p>
-                    <div className="flex items-center gap-1">
-                      <p className="text-xs text-slate-400 truncate">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[10px] text-slate-500 font-mono truncate">
                         {isToken ? `CA: ${formattedCA}` : formattedCA}
                       </p>
 
-                      {/* inline copy button (still present here) */}
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           copyToClipboard(address);
                         }}
-                        title="Copy address"
-                        className="p-1 rounded-md hover:bg-slate-700/50"
+                        className="p-0.5 rounded hover:bg-slate-900"
                       >
                         {copiedAddress === address ? (
-                          <Check size={14} className="text-green-400" />
+                          <Check size={11} className="text-emerald-400" />
                         ) : (
-                          <Copy size={14} className="text-slate-400" />
+                          <Copy size={11} className="text-slate-600 hover:text-slate-400" />
                         )}
                       </button>
                     </div>
@@ -309,8 +307,8 @@ const Navbar = ({ onSearchChange = () => {} }) => {
 
                   {isToken && (
                     <div className="flex flex-col items-end ml-4">
-                      <p className="text-xs text-green-400 whitespace-nowrap">
-                        Market Cap: {formatMarketCap(item.market_cap)}
+                      <p className="text-[10px] font-mono text-emerald-400/90 whitespace-nowrap bg-emerald-950/20 px-2 py-0.5 rounded border border-emerald-900/30">
+                        {formatMarketCap(item.market_cap)}
                       </p>
                     </div>
                   )}
@@ -324,127 +322,135 @@ const Navbar = ({ onSearchChange = () => {} }) => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50">
-      <div className="bg-slate-950/70 backdrop-blur-xl border-b border-slate-800/70">
-        <div className="max-w-7xl mx-auto px-5 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link to="/" className="flex items-center gap-3">
-              <img
-                src={blazelyLogo}
-                alt="Blazely"
-                className="w-10 h-10 rounded-lg shadow-sm transform transition-transform duration-300 hover:rotate-6"
-              />
-              <span className="font-extrabold text-xl bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
-                Blazely
-              </span>
-            </Link>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[#030712]/80 backdrop-blur-xl border-b border-slate-900/60">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        
+        {/* Brand Core Placement */}
+        <div className="flex items-center gap-8">
+          <Link to="/" className="flex items-center gap-2.5">
+            <img
+              src={blazelyLogo}
+              alt="Blazely"
+              className="w-8 h-8 rounded object-cover filter brightness-110"
+            />
+            <span 
+              className="font-black text-sm uppercase tracking-widest"
+              style={{ color: '#96d6cd' }}
+            >
+              Blazely
+            </span>
+          </Link>
 
-            <nav className="hidden lg:flex items-center gap-4">
-              {navLinks.map((link) => (
-                <NavLink
-                  key={link.name}
-                  to={link.path}
-                  end={link.end}
-                  className={getNavLinkClass}
-                >
-                  {link.name}
-                </NavLink>
-              ))}
-            </nav>
+          {/* Desktop Links View */}
+          <nav className="hidden lg:flex items-center gap-2">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.name}
+                to={link.path}
+                end={link.end}
+                className={getNavLinkClass}
+              >
+                {link.name}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+
+        {/* Action Blocks Deck */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="hidden md:inline-flex p-2 rounded hover:bg-slate-900 transition-colors text-slate-400 hover:text-slate-200"
+            aria-label="Open search"
+          >
+            <Search size={15} />
+          </button>
+
+          <Link
+            to="/create"
+            style={{ backgroundColor: '#96d6cd' }}
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-[#030712] font-bold uppercase tracking-wider text-[11px] hover:opacity-90 transition-all"
+            aria-label="Create new token"
+          >
+            <Plus size={12} />
+            <span>Launch Asset</span>
+          </Link>
+
+          <div className="hidden md:block">
+            <ConnectKitButton.Custom>
+              {({ isConnected, show, address, ensName }) => {
+                const displayAddress =
+                  ensName || address
+                    ? `${address.slice(0, 6)}...${address?.slice(-4)}`
+                    : "Initialize Node";
+
+                return (
+                  <button
+                    disabled={isAuthenticating}
+                    onClick={async () => {
+                      if (!isConnected) {
+                        show();
+                        return;
+                      }
+                      if (!isAuthenticated) {
+                        await connectWallet();
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded bg-slate-900/60 border border-slate-800 text-slate-300 hover:text-slate-100 text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all"
+                  >
+                    <Wallet size={13} className="text-slate-500" />
+                    <span className={isAuthenticated ? "font-mono text-[#96d6cd]" : ""}>
+                      {isAuthenticating ? "Signing Core…" : displayAddress}
+                    </span>
+                  </button>
+                );
+              }}
+            </ConnectKitButton.Custom>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Handheld Responsive Command Triggers */}
+          <div className="flex items-center lg:hidden gap-1">
             <button
               onClick={() => setSearchOpen(true)}
-              className="hidden md:inline-flex p-2 rounded-full hover:bg-slate-800/60 transition-colors text-slate-300"
+              className="md:hidden p-2 rounded text-slate-400 hover:text-slate-200"
               aria-label="Open search"
             >
-              <Search size={18} />
+              <Search size={16} />
             </button>
 
-            <Link
-              to="/create"
-              className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-600 to-cyan-500 text-white font-semibold shadow-md hover:scale-[1.01] transition-transform"
-              aria-label="Create new token"
+            <button
+              onClick={() => setMobileOpen((s) => !s)}
+              aria-label="Toggle menu"
+              className="p-2 rounded text-slate-400 hover:text-slate-200"
             >
-              <Plus size={16} />
-              <span className="text-sm">Create</span>
-            </Link>
-
-            <div className="hidden md:block">
-              <ConnectKitButton.Custom>
-                {({ isConnected, show, address, ensName }) => {
-                  const displayAddress =
-                    ensName || address
-                      ? `${address.slice(0, 6)}...${address?.slice(-4)}`
-                      : "Connect Wallet";
-
-                  return (
-                    <button
-                      disabled={isAuthenticating}
-                      onClick={async () => {
-                        if (!isConnected) {
-                          show();
-                          return;
-                        }
-
-                        if (!isAuthenticated) {
-                          await connectWallet();
-                        }
-                      }}
-                      className="px-4 py-2 rounded-full bg-transparent text-white text-sm font-medium hover:bg-slate-800/40 flex items-center gap-2 transition-colors duration-200"
-                    >
-                      <Wallet size={16} />
-                      <span className={isAuthenticated ? "font-mono" : ""}>
-                        {isAuthenticating ? "Signing…" : displayAddress}
-                      </span>
-                    </button>
-                  );
-                }}
-              </ConnectKitButton.Custom>
-            </div>
-
-            <div className="flex items-center lg:hidden gap-2">
-              <button
-                onClick={() => setSearchOpen(true)}
-                className="md:hidden p-2 rounded-full hover:bg-slate-800/60 transition-colors text-slate-300"
-                aria-label="Open search"
-              >
-                <Search size={18} />
-              </button>
-
-              <button
-                onClick={() => setMobileOpen((s) => !s)}
-                aria-label="Toggle menu"
-                className="p-2 rounded-full hover:bg-slate-800/60 transition-colors text-slate-300"
-              >
-                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
-            </div>
+              {mobileOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
           </div>
         </div>
       </div>
 
+      {/* MOBILE FULL INTERFACE SLIDEOUT DRAWER */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-40">
+        <div className="lg:hidden fixed inset-0 z-50 flex justify-end">
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute right-0 top-0 h-full w-[70vw] max-w-[70vw] bg-slate-950/95 backdrop-blur-lg border-r-[3px] border-r-purple-600/60 p-6 flex flex-col">
-            <div className="flex items-center justify-end mb-6">
+          <div className="relative w-[280px] max-w-[80vw] h-full bg-[#0b0f19] border-l border-slate-900 p-5 flex flex-col z-50">
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-900">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Navigation Deck</span>
               <button
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close menu"
-                className="p-2 text-white"
+                className="p-1 text-slate-400 hover:text-white"
               >
-                <X size={20} />
+                <X size={16} />
               </button>
             </div>
 
-            <nav className="flex-1 space-y-2">
-              {[...navLinks, { name: "Create", path: "/create" }].map(
+            <nav className="flex-1 space-y-1.5">
+              {[...navLinks, { name: "Launch Asset", path: "/create" }].map(
                 (link) => (
                   <Link
                     key={link.name}
@@ -458,70 +464,67 @@ const Navbar = ({ onSearchChange = () => {} }) => {
               )}
             </nav>
 
-            <div className="mt-4 flex justify-center">
-              <div className="w-full max-w-xs">
-                <ConnectKitButton.Custom>
-                  {({ isConnected, show, address, ensName }) => {
-                    // MOBILE button now matches the desktop connect style (but full width)
-                    const displayAddress =
-                      ensName || address
-                        ? `${address.slice(0, 6)}...${address?.slice(-4)}`
-                        : "Connect Wallet";
-                    return (
-                      <button
-                        onClick={show}
-                        className="w-full px-4 py-3 rounded-full bg-transparent text-white text-sm font-medium hover:bg-slate-800/40 flex items-center justify-center gap-2"
-                      >
-                        <Wallet size={18} />
-                        <span className={isConnected ? "font-mono" : ""}>
-                          {displayAddress}
-                        </span>
-                      </button>
-                    );
-                  }}
-                </ConnectKitButton.Custom>
-              </div>
+            {/* Mobile Account Accessor Node */}
+            <div className="pt-4 border-t border-slate-900">
+              <ConnectKitButton.Custom>
+                {({ isConnected, show, address, ensName }) => {
+                  const displayAddress =
+                    ensName || address
+                      ? `${address.slice(0, 6)}...${address?.slice(-4)}`
+                      : "Initialize Node";
+                  return (
+                    <button
+                      onClick={show}
+                      className="w-full px-4 py-2.5 rounded bg-[#030712] border border-slate-800 text-slate-300 font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2"
+                    >
+                      <Wallet size={14} className="text-slate-500" />
+                      <span className={isConnected ? "font-mono text-[#96d6cd]" : ""}>
+                        {displayAddress}
+                      </span>
+                    </button>
+                  );
+                }}
+              </ConnectKitButton.Custom>
             </div>
 
-            <div className="mt-6 grid grid-cols-4 gap-3">
+            {/* Micro Social Network Anchors */}
+            <div className="mt-5 grid grid-cols-4 gap-2 pt-4 border-t border-slate-900/60">
               {socialLinks.map((s) => (
                 <a
                   key={s.name}
                   href={s.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center p-2 rounded-lg bg-slate-900/40 hover:bg-slate-800/60"
+                  className="flex items-center justify-center p-2 rounded bg-[#030712] border border-slate-900 text-slate-400 hover:text-[#96d6cd] transition-all"
                 >
-                  <s.icon className="w-4 h-4 text-slate-300" />
+                  <s.icon className="w-3.5 h-3.5" />
                 </a>
               ))}
             </div>
           </div>
         </div>
       )}
+
+      {/* MATRIX SEARCH DROPDOWN OVERLAY SYSTEM */}
       {searchOpen && (
-        <div className="fixed inset-0 z-40 flex justify-center p-4">
+        <div className="fixed inset-0 z-50 flex justify-center p-3 sm:p-4 md:p-6 lg:p-12">
           <div
-            className="absolute inset-0 bg-black/60"
+            className="absolute inset-0 bg-[#030712]/80 backdrop-blur-md"
             onClick={() => setSearchOpen(false)}
             aria-hidden="true"
           />
           <form
             onSubmit={handleSubmitSearch}
-            className="relative z-50 w-full max-w-4xl
-             max-h-[60vh] min-h-[25vh]
-             bg-slate-900/95 border border-slate-800/70
-             rounded-xl p-5 backdrop-blur-sm
-             flex flex-col"
+            className="relative w-full max-w-3xl max-h-[80vh] bg-[#0b0f19]/95 border border-slate-900 rounded-lg p-4 shadow-2xl flex flex-col overflow-hidden"
           >
-            <div className="flex items-center gap-2 w-full border-b border-slate-700 pb-2">
-              <Search className="text-slate-400 w-6 h-6" />
+            <div className="flex items-center gap-3 w-full border-b border-slate-900 pb-3 mb-2">
+              <Search className="text-slate-500 w-5 h-5" />
               <input
                 ref={searchRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by token symbol, name, or address..."
-                className="flex-1 bg-transparent outline-none text-white text-lg placeholder:text-slate-500"
+                placeholder="Query asset metrics, network key, creator block..."
+                className="flex-1 bg-transparent outline-none text-slate-100 text-sm font-medium placeholder:text-slate-700"
               />
               <button
                 type="button"
@@ -530,10 +533,9 @@ const Navbar = ({ onSearchChange = () => {} }) => {
                   setSearchResults({ tokens: [], users: [] });
                   if (query.trim() === "") setSearchOpen(false);
                 }}
-                aria-label="Clear search"
-                className="p-2"
+                className="p-1 text-slate-500 hover:text-slate-300"
               >
-                <X size={20} className="text-slate-400" />
+                <X size={16} />
               </button>
             </div>
 
