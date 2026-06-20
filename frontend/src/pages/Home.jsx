@@ -291,7 +291,7 @@ export default function Home() {
       console.error("Error loading tokens:", err);
       setTokens([]);
       setTotalCount(0);
-    } finaly {
+    } finally {
       setLoading(false);
     }
   };
