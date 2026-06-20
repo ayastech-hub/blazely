@@ -1,5 +1,5 @@
 // src/App.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, useParams } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
@@ -10,6 +10,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Profile from "./pages/Profile";
 import Locking from "./pages/Locking"; // Added the new locking page register
 import PublicProfile from "./components/PublicProfile";
+import Welcome from "./pages/Welcome"; // Premium Welcome Onboarding Screen
 import { useWallet } from "./context/WalletContext";
 
 import { WagmiConfig, createConfig } from "wagmi";
@@ -99,6 +100,36 @@ function WalletLoader() {
 }
 
 export default function App() {
+  const [showWelcome, setShowWelcome] = useState(null);
+
+  // Synchronize state immediately upon layout lifecycle activation
+  useEffect(() => {
+    const skipScreen = localStorage.getItem("hideWelcomeScreen");
+    if (skipScreen === "true") {
+      setShowWelcome(false);
+    } else {
+      setShowWelcome(true);
+    }
+  }, []);
+
+  // Prevent flash layout layout jumps during initialization sync loops
+  if (showWelcome === null) {
+    return <div className="min-h-screen bg-[#030712]" />;
+  }
+
+  // Render the dedicated gate screen without structural app templates wrapped around it
+  if (showWelcome) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <WagmiConfig config={config}>
+          <ConnectKitProvider customTheme={ckTheme} mode="dark">
+            <Welcome onDismiss={() => setShowWelcome(false)} />
+          </ConnectKitProvider>
+        </WagmiConfig>
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <WagmiConfig config={config}>
