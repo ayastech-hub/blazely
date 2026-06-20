@@ -12,6 +12,7 @@ import {
   Wallet,
   Copy,
   Check,
+  Lock,
 } from "lucide-react";
 import blazelyLogo from "../assets/blazely-logo.png";
 import { ConnectKitButton } from "connectkit";
@@ -51,6 +52,7 @@ const navLinks = [
   { name: "Home", path: "/", end: true },
   { name: "Leaderboard", path: "/leaderboard" },
   { name: "Bridge", path: "/bridge" },
+  { name: "Locking", path: "/locking" }, // Added the Locking Token feature route link
   { name: "Profile", path: "/profile" },
 ];
 const socialLinks = [
@@ -173,7 +175,6 @@ const Navbar = ({ onSearchChange = () => {} }) => {
     else setSearchResults({ tokens: [], users: [] });
   };
 
-  // Upgraded to minimal active tab marker styling using #96d6cd
   const getNavLinkClass = ({ isActive }) =>
     `relative px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
       isActive
@@ -237,7 +238,6 @@ const Navbar = ({ onSearchChange = () => {} }) => {
 
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Toggle Grid Headers with #96d6cd indicator */}
         <div className="flex border-b border-slate-900 p-1 gap-1">
           <button
             type="button"
@@ -322,7 +322,7 @@ const Navbar = ({ onSearchChange = () => {} }) => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[#030712]/80 backdrop-blur-xl border-b border-slate-900/60">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[#030712] border-b border-slate-900/60 shadow-lg">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
         {/* Brand Core Placement */}
@@ -429,15 +429,15 @@ const Navbar = ({ onSearchChange = () => {} }) => {
         </div>
       </div>
 
-      {/* MOBILE FULL INTERFACE SLIDEOUT DRAWER */}
+      {/* MOBILE FULL SOLID INTERFACE SLIDEOUT DRAWER */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex justify-end">
           <div
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#030712]/95 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />
-          <div className="relative w-[280px] max-w-[80vw] h-full bg-[#0b0f19] border-l border-slate-900 p-5 flex flex-col z-50">
+          <div className="relative w-[280px] max-w-[80vw] h-full bg-[#0b0f19] border-l border-slate-900 p-5 flex flex-col z-50 shadow-2xl">
             <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-900">
               <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">Navigation Deck</span>
               <button
@@ -505,17 +505,17 @@ const Navbar = ({ onSearchChange = () => {} }) => {
         </div>
       )}
 
-      {/* MATRIX SEARCH DROPDOWN OVERLAY SYSTEM */}
+      {/* MATRIX SEARCH OPAQUE OVERLAY SYSTEM */}
       {searchOpen && (
         <div className="fixed inset-0 z-50 flex justify-center p-3 sm:p-4 md:p-6 lg:p-12">
           <div
-            className="absolute inset-0 bg-[#030712]/80 backdrop-blur-md"
+            className="absolute inset-0 bg-[#030712]"
             onClick={() => setSearchOpen(false)}
             aria-hidden="true"
           />
           <form
             onSubmit={handleSubmitSearch}
-            className="relative w-full max-w-3xl max-h-[80vh] bg-[#0b0f19]/95 border border-slate-900 rounded-lg p-4 shadow-2xl flex flex-col overflow-hidden"
+            className="relative w-full max-w-3xl max-h-[80vh] bg-[#0b0f19] border border-slate-900 rounded-lg p-4 shadow-2xl flex flex-col overflow-hidden"
           >
             <div className="flex items-center gap-3 w-full border-b border-slate-900 pb-3 mb-2">
               <Search className="text-slate-500 w-5 h-5" />
