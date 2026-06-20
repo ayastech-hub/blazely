@@ -55,24 +55,22 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
           aria-label="Previous page"
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className="px-3 py-1 rounded-md text-sm font-medium bg-slate-800/60 hover:bg-slate-800 transition-colors disabled:opacity-40"
+          className="px-3 py-1 rounded bg-slate-900 border border-slate-800 text-slate-400 text-xs font-bold uppercase disabled:opacity-30"
         >
-          <ChevronLeft className="w-4 h-4 inline-block" />
+          <ChevronLeft className="w-3.5 h-3.5 inline-block" />
         </button>
 
-        <div className="text-sm text-slate-300 px-2 py-1 rounded-md bg-slate-800/40">
-          Page
-          <span className="font-semibold text-white px-1">{currentPage}</span> /
-          {totalPages}
+        <div className="text-[11px] font-mono text-slate-400 px-2.5 py-1 rounded bg-[#0b0f19]/40 border border-slate-900">
+          PAGE <span className="font-bold text-[#96d6cd] px-0.5">{currentPage}</span> / {totalPages}
         </div>
 
         <button
           aria-label="Next page"
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className="px-3 py-1 rounded-md text-sm font-medium bg-slate-800/60 hover:bg-slate-800 transition-colors disabled:opacity-40"
+          className="px-3 py-1 rounded bg-slate-900 border border-slate-800 text-slate-400 text-xs font-bold uppercase disabled:opacity-30"
         >
-          <ChevronRight className="w-4 h-4 inline-block" />
+          <ChevronRight className="w-3.5 h-3.5 inline-block" />
         </button>
       </nav>
     );
@@ -80,14 +78,14 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
 
   const pages = buildPageList(currentPage, totalPages, 5);
   return (
-    <nav className="mt-8 flex items-center justify-center gap-2 flex-wrap">
+    <nav className="mt-8 flex items-center justify-center gap-1.5 flex-wrap">
       <button
         aria-label="Previous page"
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium bg-slate-800/60 hover:bg-slate-800 transition-colors disabled:opacity-40"
+        className="flex items-center justify-center w-7 h-7 rounded bg-slate-900 border border-slate-800 text-slate-400 disabled:opacity-30 transition-all hover:text-slate-200"
       >
-        <ChevronLeft className="w-4 h-4" />
+        <ChevronLeft className="w-3.5 h-3.5" />
       </button>
 
       {pages.map((p, idx) =>
@@ -96,20 +94,24 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
             key={p}
             aria-current={p === currentPage ? "page" : undefined}
             onClick={() => onPageChange(p)}
-            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+            style={{
+              backgroundColor: p === currentPage ? '#96d6cd' : '',
+              borderColor: p === currentPage ? '#96d6cd' : ''
+            }}
+            className={`w-7 h-7 rounded text-[11px] font-mono font-bold transition-all border ${
               p === currentPage
-                ? "bg-gradient-to-r from-purple-600 to-cyan-500 text-white shadow-md"
-                : "bg-slate-800/40 text-slate-300 hover:bg-slate-800/70"
+                ? "text-[#030712] shadow-sm"
+                : "bg-slate-900/40 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900"
             }`}
           >
-            {p}
+            {String(p).padStart(2, '0')}
           </button>
         ) : (
           <span
             key={`${p}-${idx}`}
-            className="px-3 py-1 text-sm text-slate-500"
+            className="w-5 text-center font-mono text-slate-600 text-xs"
           >
-            …
+            ...
           </span>
         )
       )}
@@ -118,9 +120,9 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
         aria-label="Next page"
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className="flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium bg-slate-800/60 hover:bg-slate-800 transition-colors disabled:opacity-40"
+        className="flex items-center justify-center w-7 h-7 rounded bg-slate-900 border border-slate-800 text-slate-400 disabled:opacity-30 transition-all hover:text-slate-200"
       >
-        <ChevronRight className="w-4 h-4" />
+        <ChevronRight className="w-3.5 h-3.5" />
       </button>
     </nav>
   );
@@ -128,47 +130,50 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
 
 // --- Footer ---
 const Footer = () => (
-  <footer className="mt-12 border-t border-gray-800/50 bg-gray-900/40">
-    <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+  <footer className="mt-16 border-t border-slate-900 bg-[#0b0f19]/30 backdrop-blur-sm">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
       <div className="flex items-center gap-3">
-        <div className="text-sm font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400">
+        <div 
+          className="text-xs font-black uppercase tracking-widest"
+          style={{ color: '#96d6cd' }}
+        >
           Blazely
         </div>
-        <p className="text-xs text-slate-400">
-          &copy; {new Date().getFullYear()}
+        <p className="text-[10px] font-mono text-slate-600">
+          &copy; {new Date().getFullYear()} CORE
         </p>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <a
           href="#"
           aria-label="Twitter"
-          className="p-2 rounded-md text-slate-300 hover:text-cyan-400 hover:bg-white/5 transition-colors text-sm"
+          className="p-2 rounded text-slate-500 hover:text-[#96d6cd] hover:bg-slate-900/60 transition-colors"
         >
-          <Twitter size={16} />
+          <Twitter size={14} />
         </a>
 
         <a
           href="#"
           aria-label="Telegram"
-          className="p-2 rounded-md text-slate-300 hover:text-cyan-400 hover:bg-white/5 transition-colors text-sm"
+          className="p-2 rounded text-slate-500 hover:text-[#96d6cd] hover:bg-slate-900/60 transition-colors"
         >
-          <Send size={16} />
+          <Send size={14} />
         </a>
 
         <a
           href="#"
           aria-label="Docs"
-          className="p-2 rounded-md text-slate-300 hover:text-slate-100 hover:bg-white/5 transition-colors text-sm"
+          className="p-2 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-900/60 transition-colors"
         >
-          <BookOpen size={16} />
+          <BookOpen size={14} />
         </a>
       </div>
     </div>
 
-    <div className="max-w-7xl mx-auto px-6 pb-3">
-      <p className="text-[10px] text-slate-500 text-center">
-        Disclaimer: Trading is highly speculative. Use at your own risk.
+    <div className="max-w-[1600px] mx-auto px-4 pb-4">
+      <p className="text-[9px] font-mono uppercase tracking-wider text-slate-600 text-center">
+        RISK NOTE: SPECULATIVE PROTOCOL ASSETS INDUCE CAPITAL EXPOSURE. OPERATE WITH AUTONOMY.
       </p>
     </div>
   </footer>
@@ -192,17 +197,12 @@ export default function Home() {
 
   const navigate = useNavigate();
 
-  // --- Load tokens from Supabase ---
-  // NOTE: this is intentionally NOT memoized — we call it directly from filter handlers
-  // and from the page effect. When called from effects that depend on currentPage we
-  // disable exhaustive-deps to avoid stale/multiple fetch races.
   const loadTokens = async (page = 1, overrides = {}) => {
     setLoading(true);
     try {
       const from = (page - 1) * TOKENS_PER_PAGE;
       const to = from + TOKENS_PER_PAGE - 1;
 
-      // allow immediate overrides so filter handlers can call loadTokens(1, { ... })
       const effectiveSearch = overrides.searchTerm ?? searchTerm;
       const effectiveSort = overrides.sort ?? sort;
       const effectiveListed = overrides.listedOnly ?? listedOnly;
@@ -236,7 +236,6 @@ export default function Home() {
 
       if (effectiveListed) query = query.eq("graduated", true);
 
-      // SEARCH: match name OR symbol for more intuitive results
       if (effectiveSearch) {
         const escaped = String(effectiveSearch)
           .replace(/%/g, "\\%")
@@ -281,7 +280,6 @@ export default function Home() {
         const volumeValue = latestMetrics?.volume_24h ?? t.volume_24h ?? 0;
         const priceValue = latestMetrics?.price ?? t.price ?? 0;
 
-        // --- Get the public URL for the logo ---
         const logoUrl = t.logo_path
           ? supabase.storage.from("logos").getPublicUrl(t.logo_path).data
               .publicUrl
@@ -289,7 +287,7 @@ export default function Home() {
 
         return {
           ...t,
-          logoUrl, // <-- add this
+          logoUrl,
           marketcap: marketcapValue,
           volume_24h: volumeValue,
           price: priceValue,
@@ -311,7 +309,6 @@ export default function Home() {
     }
   };
 
-  // --- Detect mobile ---
   useEffect(() => {
     const onResize = () =>
       setIsMobile(window.matchMedia("(max-width: 640px)").matches);
@@ -320,23 +317,16 @@ export default function Home() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // --- Page Change Effect ---
   useEffect(() => {
-    // loadTokens is intentionally not in deps (we control calls explicitly).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     loadTokens(currentPage);
   }, [currentPage]);
-  // 1. Move the ref to the top level of your Home component (above the effects)
+
   const tokensRef = useRef([]);
 
-  // 2. Add this effect to keep the ref updated whenever the tokens change
   useEffect(() => {
     tokensRef.current = tokens;
   }, [tokens]);
 
-  // 3. Inside your WebSocket useEffect, REMOVE "const tokensRef = { current: tokens };"
-  // Simply use "tokensRef.current" directly in your flushBuffer function.
-  // --- WebSocket for live trades (batched) ---
   useEffect(() => {
     const BATCH_WINDOW_MS = 150;
     const HEARTBEAT_INTERVAL_MS = 20_000;
@@ -378,7 +368,7 @@ export default function Home() {
           current.map((t) => [String(t.address).toLowerCase(), t])
         );
         const newArr = [...current];
-        const toFront = []; // Will store { addr, token: patched }
+        const toFront = [];
 
         for (const p of updates) {
           const addr = (p.token || p.address || "").toLowerCase();
@@ -386,7 +376,6 @@ export default function Home() {
           const existing = idxMap.get(addr);
           if (!existing) continue;
 
-          // Find the current index to patch, since the list might have been moved.
           const currentIdx = newArr.findIndex(
             (t) => String(t.address).toLowerCase() === addr
           );
@@ -401,25 +390,19 @@ export default function Home() {
             token_amount: p.token_amount,
           };
 
-          // Update the array with patched data
           newArr[currentIdx] = patched;
 
-          // Mark for movement if it's a new buy
           if (p.type === "buy" || p.isBuy) {
             toFront.push({ addr, token: patched });
           }
         }
 
-        // If paused, only patch values
         if (pausedAllRef.current) {
           setTokensOnce(newArr);
           return;
         }
 
-        // --- FIX: Conditional Movement and Shake Emission ---
         if (sort === "Last Trade") {
-          // <-- Only move tokens if sorting by Last Trade
-          // Move bought tokens to front
           for (let i = toFront.length - 1; i >= 0; i--) {
             const { addr } = toFront[i];
             const pos = newArr.findIndex(
@@ -429,13 +412,10 @@ export default function Home() {
             if (pos > -1) {
               const [tok] = newArr.splice(pos, 1);
               newArr.unshift(tok);
-              // Emit shake event after successful move
               buyEmitter.emit("buy", addr);
             }
           }
         } else {
-          // If not sorting by Last Trade, DO NOT move the token,
-          // but still emit the shake event so it shakes in its current sorted position.
           for (const { addr } of toFront) {
             buyEmitter.emit("buy", addr);
           }
@@ -500,7 +480,6 @@ export default function Home() {
           const addr = (inner.token || inner.address || "").toLowerCase();
           if (!addr) return;
 
-          // Add data to buffer, marking it as a buy if needed
           const bufferedData = buffer.get(addr) || { address: addr };
           const newTradeData = { ...bufferedData, ...inner };
           if (inner.type === "buy" || inner.isBuy) {
@@ -536,7 +515,7 @@ export default function Home() {
       stopHeartbeat();
       buffer.clear();
     };
-  }, [sort]); // only re-create socket when `sort` changes
+  }, [sort]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / TOKENS_PER_PAGE));
   const handlePageChange = (page) => {
@@ -545,13 +524,14 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen relative flex flex-col bg-slate-950 text-white">
+    <div className="min-h-screen relative flex flex-col bg-[#030712] text-slate-100">
       <div className="pt-0">
         <TradeAlertsMarquee />
       </div>
 
-      <div className="pt-20 px-6 max-w-7xl mx-auto w-full">
+      <div className="pt-10 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full flex-1">
         <TrendingTokens />
+        
         <FilterBar
           onSortChange={(s) => {
             setSort(s);
@@ -574,22 +554,27 @@ export default function Home() {
           initialSort={sort}
         />
 
-        <div className="flex items-center gap-4 mb-2 mt-6">
-          <div className="w-2 h-2 rounded-full bg-gradient-to-r from-purple-500 to-cyan-400" />
-          <h2 className="text-2xl font-bold">Token Explorer</h2>
-          <div className="flex-1 h-px bg-slate-800/40 ml-2" />
-          <div className="text-sm text-slate-400">
-            {totalCount} token{totalCount !== 1 ? "s" : ""}
+        {/* Section Heading Row with #96d6cd Accents */}
+        <div className="flex items-center gap-3 mb-4 mt-8 pb-2 border-b border-slate-900">
+          <div 
+            className="w-1.5 h-3.5 rounded-sm"
+            style={{ backgroundColor: '#96d6cd' }}
+          />
+          <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">
+            Token Registry Feed
+          </h2>
+          <div className="flex-1" />
+          <div className="text-[10px] font-mono text-slate-500 bg-[#0b0f19]/60 border border-slate-900 px-2 py-0.5 rounded">
+            COUNT: {totalCount} ACTIVE
           </div>
         </div>
 
-        {/* FIX 4: Ensure TokenList is used (it is) */}
         {loading ? (
-          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {Array.from({ length: TOKENS_PER_PAGE }).map((_, i) => (
               <div
                 key={`ph-${i}`}
-                className="p-3 rounded-xl bg-white/5 border border-transparent animate-pulse h-40"
+                className="p-3 rounded bg-[#0b0f19]/30 border border-slate-900/40 animate-pulse h-40"
               />
             ))}
           </div>
@@ -603,6 +588,7 @@ export default function Home() {
           onPageChange={handlePageChange}
           isMobile={isMobile}
         />
+        
         <AIChatSupport />
       </div>
       <Footer />
