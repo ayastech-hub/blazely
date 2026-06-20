@@ -1,16 +1,15 @@
 // src/pages/TokenList.jsx
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  TrendingUp,
-  TrendingDown,
   Flame,
   Star,
   ChevronRight,
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 
-// Helper function for compact number formatting (assuming this exists or is needed)
+// Helper function for compact number formatting
 const formatNumberCompact = (num) => {
   if (num === null || num === undefined) return "—";
   const number = Number(num);
@@ -26,210 +25,124 @@ const formatNumberCompact = (num) => {
   return `${prefix}$${numericDisplay.toFixed(1)}${suffixes[i]}`;
 };
 
-// --- TokenRow Component (Updated) ---
+// --- TokenRow Component (Updated Layout & Premium Accents) ---
 const TokenRow = ({ t, idx }) => {
   const [isHovered, setIsHovered] = useState(false);
-  // Mock data for 24h Change and Volume (as real-time data integration is complex)
-  const changePercent = ((Math.random() - 0.5) * 20).toFixed(2);
-  const isPositive = parseFloat(changePercent) > 0;
-  const mockVolume24h =
-    t.volume_24h || Math.round((Math.random() * t.marketCapUSD) / 10); // Mock volume based on MC
+  const mockVolume24h = t.volume_24h || Math.round((Math.random() * t.marketCapUSD) / 10);
 
-  // Use an anchor tag for navigation, pointing to the token info page
-  // Replace <a> with <Link to={`/token/${t.address}`}> if using react-router-dom Link
   return (
-    <motion.a
-      href={`/token/${t.address}`} // <--- NAVIGATION LINK ADDED HERE
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
       transition={{
-        duration: 0.4,
-        delay: 0.05 * idx,
-        ease: [0.22, 1, 0.36, 1],
+        duration: 0.3,
+        delay: 0.03 * idx,
+        ease: [0.16, 1, 0.3, 1],
       }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className="group relative block" // Use 'block' to make the whole area clickable
+      className="relative block"
     >
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isHovered ? 1 : 0 }}
-        className="absolute -inset-[1px] bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 rounded-2xl blur-sm"
-      />
-
-      <div className="relative bg-slate-900/50 backdrop-blur-sm border border-slate-800/70 rounded-2xl p-4 md:p-5 transition-all duration-300 hover:bg-slate-900/70 hover:border-cyan-500/30 cursor-pointer overflow-hidden">
-        <motion.div
-          initial={{ x: "-100%" }}
-          animate={{ x: isHovered ? "100%" : "-100%" }}
-          transition={{ duration: 0.8, ease: "easeInOut" }}
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/5 to-transparent"
+      <Link
+        to={`/token/${t.address}`}
+        style={{ borderColor: isHovered ? '#96d6cd30' : '' }}
+        className="relative flex items-center bg-[#0b0f19]/40 backdrop-blur-md border border-slate-900/60 rounded p-3 md:p-4 transition-all duration-150 hover:bg-[#0b0f19]/80 cursor-pointer overflow-hidden group"
+      >
+        {/* Left-edge brand highlight active block */}
+        <div 
+          style={{ backgroundColor: '#96d6cd', opacity: isHovered ? 1 : 0 }}
+          className="absolute left-0 top-0 bottom-0 w-[2px] transition-all duration-150"
         />
 
-        {/* UPDATED GRID FOR NEW VOLUME COLUMN */}
-        {/* Old Grid: RANK | TOKEN INFO (5) | PRICE CHANGE (2) | MARKET CAP (3) | CHEVRON (1) = 12 total */}
-        {/* New Grid: RANK | TOKEN INFO (5) | 24H VOLUME (3) | MARKET CAP (3) | CHEVRON (1) = 12 total */}
-        <div className="relative grid grid-cols-12 gap-3 md:gap-4 items-center">
-          {/* RANKING SECTION */}
-          <div className="col-span-2 md:col-span-1">
-            <motion.div
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              className={`font-bold text-lg md:text-xl ${
-                t.rank <= 3
-                  ? "bg-gradient-to-br from-yellow-400 to-orange-500 bg-clip-text text-transparent"
-                  : "text-slate-400"
-              }`}
-            >
-              {t.rank}
-            </motion.div>
-
+        {/* Unified Flex/Grid Segment Structure */}
+        <div className="w-full grid grid-cols-12 gap-3 items-center">
+          
+          {/* INDEX COLUMN */}
+          <div className="col-span-1 flex items-center pl-1 relative">
+            <span className={`font-mono text-xs font-bold ${t.rank <= 3 ? "text-[#96d6cd]" : "text-slate-600"}`}>
+              {String(t.rank).padStart(2, '0')}
+            </span>
             {t.rank <= 3 && (
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className="absolute -top-1 -left-1"
-              >
-                {t.rank === 1 && <Star size={16} className="text-yellow-400" />}
-                {t.rank === 2 && <Star size={14} className="text-slate-300" />}
-                {t.rank === 3 && <Star size={12} className="text-orange-400" />}
-              </motion.div>
+              <span className="absolute -top-1 left-4">
+                <Star size={8} style={{ color: '#96d6cd' }} className="fill-current opacity-40" />
+              </span>
             )}
           </div>
 
-          {/* TOKEN INFO SECTION */}
-          <div className="col-span-7 md:col-span-5 flex items-center gap-3">
-            {/* --- LOGO FETCHING IMPLEMENTATION --- */}
-            <motion.div
-              whileHover={{ rotate: 360, scale: 1.1 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="relative w-12 h-12 md:w-14 md:h-14 rounded-xl flex items-center justify-center font-bold text-white bg-slate-700 flex-shrink-0 shadow-lg overflow-hidden" // Changed placeholder background
-            >
+          {/* ASSET CORE PROFILE IDENTIFIER */}
+          <div className="col-span-8 md:col-span-5 flex items-center gap-3 min-w-0">
+            <div className="relative w-8 h-8 rounded bg-[#030712] border border-slate-800 flex-shrink-0 flex items-center justify-center font-mono font-black overflow-hidden">
               {t.logo_url ? (
-                // Use the fetched logo URL
                 <img
                   src={t.logo_url}
-                  alt={`${t.symbol} logo`}
-                  className="w-full h-full object-cover" // Ensures image fills the container
+                  alt={`${t.symbol} identifier`}
+                  className="w-full h-full object-cover"
                   onError={(e) => {
-                    // Fallback to symbol if image fails to load
-                    e.target.style.display = "none"; // Hide broken image
-                    e.target.parentNode.querySelector(
-                      ".symbol-fallback"
-                    ).style.display = "flex";
+                    e.target.style.display = "none";
+                    e.target.parentNode.querySelector(".symbol-fallback").style.display = "flex";
                   }}
                 />
               ) : null}
 
-              {/* Fallback to symbol initials (Default if no logo_url) */}
-              <div
-                className={`symbol-fallback absolute inset-0 w-full h-full rounded-xl flex items-center justify-center ${
-                  t.logo_url ? "hidden" : "flex"
-                }`}
-                style={{
-                  backgroundImage:
-                    "linear-gradient(to bottom right, var(--tw-gradient-stops))",
-                  "--tw-gradient-from": "#06B6D4",
-                  "--tw-gradient-to": "#8B5CF6",
-                }} // Cyan to Purple gradient
-              >
-                <span className="text-lg md:text-xl">
-                  {t.symbol?.charAt?.(0) ?? "T"}
-                </span>
+              <div className={`symbol-fallback absolute inset-0 w-full h-full flex items-center justify-center text-[10px] text-slate-400 ${t.logo_url ? "hidden" : "flex"}`}>
+                {t.symbol?.charAt?.(0) ?? "T"}
               </div>
-
-              <motion.div
-                animate={{ x: ["-100%", "200%"] }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-xl"
-              />
-            </motion.div>
+            </div>
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm md:text-base font-semibold text-white truncate group-hover:text-cyan-400 transition-colors">
+                <h3 className="text-xs font-bold text-slate-200 truncate group-hover:text-slate-100 transition-colors uppercase tracking-wide">
                   {t.name}
                 </h3>
-                {t.rank <= 5 && (
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  >
-                    <Flame size={14} className="text-orange-500" />
-                  </motion.div>
-                )}
+                {t.rank <= 5 && <Flame size={11} className="text-amber-500/80" />}
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs md:text-sm text-slate-400 font-mono">
-                  ${t.symbol}
-                </span>
-                <span className="hidden md:inline text-xs text-slate-600">
-                  •
-                </span>
-                <span className="hidden md:inline text-xs text-slate-500 font-mono truncate">
+              <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                <span style={{ color: '#96d6cd' }} className="opacity-80">${t.symbol}</span>
+                <span className="text-slate-700">•</span>
+                <span className="text-slate-500 truncate hidden sm:inline">
                   {t.address?.slice?.(0, 6)}...{t.address?.slice?.(-4)}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* --- NEW: 24h Volume Section (3/12 columns on desktop) --- */}
-          <div className="hidden md:flex md:col-span-3 items-center justify-end">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * idx }}
-              className="text-right"
-            >
-              <p className="font-bold text-white text-sm md:text-lg">
-                {formatNumberCompact(mockVolume24h)}
-              </p>
-              <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-wide">
-                24h Volume
-              </p>
-            </motion.div>
+          {/* NETWORK METRIC: 24H LIQUIDITY VOLUME */}
+          <div className="hidden md:flex md:col-span-3 flex-col items-end justify-center text-right font-mono">
+            <span className="text-xs font-bold text-slate-300">
+              {formatNumberCompact(mockVolume24h)}
+            </span>
+            <span className="text-[9px] uppercase tracking-wider text-slate-600 font-sans mt-0.5">
+              VOLUME 24H
+            </span>
           </div>
 
-          {/* --- REMOVED: Price Change Section (Was lines 191-217 in original code) --- */}
-          {/* <div className="hidden md:flex md:col-span-2 items-center justify-end">...</div> */}
-
-          {/* MARKET CAP SECTION (Adjusted to col-span-3 on desktop) */}
-          <div className="col-span-3 md:col-span-3 text-right">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 * idx }}
-            >
-              <p className="font-bold text-white text-sm md:text-lg">
-                {formatNumberCompact(t.marketCapUSD)}
-              </p>
-              <p className="text-[10px] md:text-xs text-slate-500 uppercase tracking-wide">
-                Market Cap
-              </p>
-            </motion.div>
+          {/* NET WORTH MARKET EVALUATION METRIC */}
+          <div className="col-span-3 md:col-span-2 flex flex-col items-end justify-center text-right font-mono">
+            <span className="text-xs font-bold text-slate-200">
+              {formatNumberCompact(t.marketCapUSD)}
+            </span>
+            <span className="text-[9px] uppercase tracking-wider text-slate-600 font-sans mt-0.5">
+              MARKET CAP
+            </span>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : -10 }}
-            className="hidden md:block md:col-span-1"
-          >
-            <ChevronRight className="text-cyan-400" size={20} />
-          </motion.div>
+          {/* DIRECTIONAL INDICATOR CONNECTOR */}
+          <div className="col-span-1 hidden md:flex items-center justify-end pr-1">
+            <ChevronRight 
+              size={14} 
+              style={{ color: '#96d6cd' }} 
+              className="opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-0.5" 
+            />
+          </div>
+
         </div>
-      </div>
-    </motion.a>
+      </Link>
+    </motion.div>
   );
 };
 
-// --- TokenList Component (Updated) ---
+// --- TokenList Core Container Component ---
 export default function TokenList() {
   const [tokens, setTokens] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -238,26 +151,24 @@ export default function TokenList() {
     let mounted = true;
     async function fetchTokens() {
       try {
-        // --- MODIFICATION 1: Add volume_24h to the select query ---
         const { data, error } = await supabase
           .from("tokens")
-          .select("name, symbol, address, marketcap, volume_24h, logo_url") // <--- volume_24h added here
+          .select("name, symbol, address, marketcap, volume_24h, logo_url")
           .order("marketcap", { ascending: false })
           .limit(20);
 
         if (error) throw error;
-        if (!data) throw new Error("No data returned");
+        if (!data) throw new Error("No registry feedback");
 
         const formatted = data.map((t, idx) => ({
           ...t,
           rank: idx + 1,
           marketCapUSD: t.marketcap ?? 0,
-          // volume_24h is now included from the database
         }));
 
         if (mounted) setTokens(formatted);
       } catch (err) {
-        console.error("Error fetching tokens:", err.message || err);
+        console.error("Registry sequence failed:", err.message || err);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -271,50 +182,43 @@ export default function TokenList() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-16 h-16 rounded-full border-4 border-slate-800 border-t-cyan-400"
+      <div className="min-h-[400px] flex flex-col items-center justify-center bg-[#030712]">
+        <div 
+          style={{ borderTopColor: '#96d6cd' }}
+          className="w-6 h-6 rounded-full border border-slate-800 animate-spin" 
         />
-        <motion.p
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-          className="text-slate-400 mt-4"
-        >
-          Loading tokens...
-        </motion.p>
+        <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mt-4">
+          Syncing Protocol Registers...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans pb-12">
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+    <div className="bg-[#030712] text-slate-100 font-sans py-4">
+      <div className="max-w-[1600px] mx-auto">
+        
+        {/* Modern Flat Enterprise Modular Header */}
         <motion.div
-          initial={{ opacity: 0, y: -30 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-8 md:mb-12"
+          transition={{ duration: 0.4 }}
+          className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-4 border-b border-slate-900"
         >
-          <motion.h1 className="text-4xl md:text-6xl font-extrabold mb-3">
-            <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Top Launchpad Tokens
-            </span>
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="text-sm md:text-base text-slate-400 max-w-2xl mx-auto"
-          >
-            Explore the highest market cap projects on the platform. Real-time
-            rankings.
-          </motion.p>
+          <div>
+            <h1 className="text-sm font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+              <span className="w-1 h-3 rounded-sm" style={{ backgroundColor: '#96d6cd' }} />
+              Top Cap Index Feed
+            </h1>
+            <p className="text-[10px] font-mono text-slate-500 uppercase mt-1 tracking-wide">
+              Real-time capital verification parameters active.
+            </p>
+          </div>
         </motion.div>
 
+        {/* Sequential Index Canvas */}
         <AnimatePresence mode="wait">
-          <div className="space-y-2 md:space-y-3">
+          <div className="space-y-1.5">
             {tokens.length > 0 ? (
               tokens.map((t, i) => (
                 <TokenRow key={`${t.address}-${t.rank}-${i}`} t={t} idx={i} />
@@ -323,13 +227,14 @@ export default function TokenList() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center py-12 text-slate-400"
+                className="text-center py-16 font-mono text-xs uppercase tracking-wider text-slate-600 border border-dashed border-slate-900 rounded"
               >
-                No tokens available.
+                No matching cataloged records located.
               </motion.div>
             )}
           </div>
         </AnimatePresence>
+        
       </div>
     </div>
   );
