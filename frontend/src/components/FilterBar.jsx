@@ -201,20 +201,27 @@ export default function FilterBar({
           <span className="uppercase text-[10px]">{isPaused ? "LIVE PAUSED" : "PAUSE STREAM"}</span>
         </button>
 
-        {/* Graduation Metric Filter */}
+        {/* Explicit Checkbox Style Graduation Filter */}
         <button
+          type="button"
           onClick={() => onListedToggle(!listedOnly)}
-          style={{ borderColor: listedOnly ? '#96d6cd30' : '' }}
-          className={`h-9 flex items-center gap-2 px-3 rounded text-xs font-mono tracking-wide border transition-all ${
+          style={{ borderColor: listedOnly ? '#96d6cd50' : '' }}
+          className={`h-9 flex items-center gap-2.5 px-3 rounded text-xs font-mono tracking-wide border select-none transition-all ${
             listedOnly 
               ? "bg-[#96d6cd]/5 text-[#96d6cd] font-bold" 
-              : "bg-[#0b0f19]/60 border-slate-900 text-slate-400 hover:text-slate-200"
+              : "bg-[#0b0f19]/60 border-slate-900 text-slate-400 hover:text-slate-200 hover:bg-[#0b0f19]/90"
           }`}
         >
-          <Check
-            className={`w-3.5 h-3.5 ${listedOnly ? "text-[#96d6cd]" : "text-slate-600"}`}
-          />
-          <span className="uppercase text-[10px]">GRADUATED ONLY</span>
+          <div 
+            className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center transition-all ${
+              listedOnly 
+                ? "border-[#96d6cd] bg-[#96d6cd]/10" 
+                : "border-slate-700 bg-[#030712]"
+            }`}
+          >
+            {listedOnly && <Check className="w-2.5 h-2.5 text-[#96d6cd] stroke-[3]" />}
+          </div>
+          <span className="uppercase text-[10px] tracking-wider">GRADUATED ONLY</span>
         </button>
 
         <div className="flex-1 hidden lg:block" />
