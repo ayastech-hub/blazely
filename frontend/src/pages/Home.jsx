@@ -13,9 +13,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-// FIX 1: Import the correct emitter that TokenList.jsx is listening to
 import { buyEmitter } from "../utils/buyEmitter";
-// FIX 2: Import the TokenList component
 import TokenList from "../components/TokenList";
 
 const TOKENS_PER_PAGE = 12;
@@ -128,7 +126,6 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
   );
 };
 
-// --- Footer ---
 const Footer = () => (
   <footer className="mt-16 border-t border-slate-900 bg-[#0b0f19]/30 backdrop-blur-sm">
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -145,32 +142,17 @@ const Footer = () => (
       </div>
 
       <div className="flex items-center gap-1">
-        <a
-          href="#"
-          aria-label="Twitter"
-          className="p-2 rounded text-slate-500 hover:text-[#96d6cd] hover:bg-slate-900/60 transition-colors"
-        >
+        <a href="#" aria-label="Twitter" className="p-2 rounded text-slate-500 hover:text-[#96d6cd] hover:bg-slate-900/60 transition-colors">
           <Twitter size={14} />
         </a>
-
-        <a
-          href="#"
-          aria-label="Telegram"
-          className="p-2 rounded text-slate-500 hover:text-[#96d6cd] hover:bg-slate-900/60 transition-colors"
-        >
+        <a href="#" aria-label="Telegram" className="p-2 rounded text-slate-500 hover:text-[#96d6cd] hover:bg-slate-900/60 transition-colors">
           <Send size={14} />
         </a>
-
-        <a
-          href="#"
-          aria-label="Docs"
-          className="p-2 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-900/60 transition-colors"
-        >
+        <a href="#" aria-label="Docs" className="p-2 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-900/60 transition-colors">
           <BookOpen size={14} />
         </a>
       </div>
     </div>
-
     <div className="max-w-[1600px] mx-auto px-4 pb-4">
       <p className="text-[9px] font-mono uppercase tracking-wider text-slate-600 text-center">
         RISK NOTE: SPECULATIVE PROTOCOL ASSETS INDUCE CAPITAL EXPOSURE. OPERATE WITH AUTONOMY.
@@ -223,7 +205,7 @@ export default function Home() {
           volume_24h,
           price,
           last_trade_at,
-          token_metrics_latest:token_metrics_latest (
+          token_metrics_latest (
             market_cap,
             volume_24h,
             price,
@@ -234,13 +216,13 @@ export default function Home() {
         { count: "exact" }
       );
 
-      if (effectiveListed) query = query.eq("graduated", true);
+      if (effectiveListed) {
+        query = query.eq("graduated", true);
+      }
 
       if (effectiveSearch) {
-        const escaped = String(effectiveSearch)
-          .replace(/%/g, "\\%")
-          .replace(/_/g, "\\_");
-        query = query.or(`name.ilike.%${escaped}%,symbol.ilike.%${escaped}%`);
+        const escaped = String(effectiveSearch).replace(/%/g, "\\%").replace(/_/g, "\\_");
+        query = query.or(`name.ilike.%${escaped}%,symbol.ilike.%${escaped}%,address.ilike.%${escaped}%`);
       }
 
       let orderByColumn = "created_at";
@@ -265,24 +247,29 @@ export default function Home() {
           break;
       }
 
-      query = query.order(orderByColumn, { ascending });
+      // FIX: Clean up the dual sorting hierarchy parameters to prevent RPC parser generation errors
+      query = query.order(orderByColumn, { ascending, nullsFirst: false });
       if (orderByColumn !== "created_at") {
         query = query.order("created_at", { ascending: false });
       }
+      
       query = query.range(from, to);
 
       const { data, count, error } = await query;
       if (error) throw error;
 
       const normalized = (data || []).map((t) => {
-        const latestMetrics = t.token_metrics_latest?.[0];
-        const marketcapValue = latestMetrics?.market_cap ?? t.market_cap ?? 0;
-        const volumeValue = latestMetrics?.volume_24h ?? t.volume_24h ?? 0;
-        const priceValue = latestMetrics?.price ?? t.price ?? 0;
+        // Safe handle if relation arrives as single element object or index array
+        const latestMetrics = Array.isArray(t.token_metrics_latest)
+          ? t.token_metrics_latest[0]
+          : t.token_metrics_latest;
+
+        const marketcapValue = parseFloat(latestMetrics?.market_cap ?? t.market_cap ?? 0);
+        const volumeValue = parseFloat(latestMetrics?.volume_24h ?? t.volume_24h ?? 0);
+        const priceValue = parseFloat(latestMetrics?.price ?? t.price ?? 0);
 
         const logoUrl = t.logo_path
-          ? supabase.storage.from("logos").getPublicUrl(t.logo_path).data
-              .publicUrl
+          ? supabase.storage.from("logos").getPublicUrl(t.logo_path).data.publicUrl
           : null;
 
         return {
@@ -292,8 +279,8 @@ export default function Home() {
           volume_24h: volumeValue,
           price: priceValue,
           initialMetrics: {
-            market_cap_text: latestMetrics?.market_cap_text || "",
-            volume_24h_text: latestMetrics?.volume_24h_text || "",
+            market_cap_text: latestMetrics?.market_cap_text || (marketcapValue ? `$${marketcapValue.toLocaleString()}` : "0.00"),
+            volume_24h_text: latestMetrics?.volume_24h_text || (volumeValue ? `$${volumeValue.toLocaleString()}` : "0.00"),
           },
         };
       });
@@ -304,14 +291,13 @@ export default function Home() {
       console.error("Error loading tokens:", err);
       setTokens([]);
       setTotalCount(0);
-    } finally {
+    } finaly {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    const onResize = () =>
-      setIsMobile(window.matchMedia("(max-width: 640px)").matches);
+    const onResize = () => setIsMobile(window.matchMedia("(max-width: 640px)").matches);
     onResize();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -322,7 +308,6 @@ export default function Home() {
   }, [currentPage]);
 
   const tokensRef = useRef([]);
-
   useEffect(() => {
     tokensRef.current = tokens;
   }, [tokens]);
@@ -333,7 +318,11 @@ export default function Home() {
     let reconnectBackoff = 1000;
     const MAX_BACKOFF = 30_000;
 
-    const WS_URL = import.meta.env.VITE_TRADES_WS || "ws://localhost:8080";
+    // FIX: Detect browser security context. Fallback to production Secure WebSockets (wss://) when loaded via HTTPS
+    let WS_URL = import.meta.env.VITE_TRADES_WS || "ws://localhost:8080";
+    if (window.location.protocol === "https:" && WS_URL.startsWith("ws://")) {
+      WS_URL = WS_URL.replace("ws://", "wss://");
+    }
 
     let ws = null;
     let shouldStop = false;
@@ -364,9 +353,7 @@ export default function Home() {
         const current = tokensRef.current || [];
         if (!current.length) return;
 
-        const idxMap = new Map(
-          current.map((t) => [String(t.address).toLowerCase(), t])
-        );
+        const idxMap = new Map(current.map((t) => [String(t.address).toLowerCase(), t]));
         const newArr = [...current];
         const toFront = [];
 
@@ -376,9 +363,7 @@ export default function Home() {
           const existing = idxMap.get(addr);
           if (!existing) continue;
 
-          const currentIdx = newArr.findIndex(
-            (t) => String(t.address).toLowerCase() === addr
-          );
+          const currentIdx = newArr.findIndex((t) => String(t.address).toLowerCase() === addr);
           if (currentIdx === -1) continue;
 
           const patched = { ...newArr[currentIdx] };
@@ -405,9 +390,7 @@ export default function Home() {
         if (sort === "Last Trade") {
           for (let i = toFront.length - 1; i >= 0; i--) {
             const { addr } = toFront[i];
-            const pos = newArr.findIndex(
-              (t) => (t.address || "").toLowerCase() === addr
-            );
+            const pos = newArr.findIndex((t) => (t.address || "").toLowerCase() === addr);
 
             if (pos > -1) {
               const [tok] = newArr.splice(pos, 1);
@@ -454,6 +437,12 @@ export default function Home() {
     };
 
     const connect = () => {
+      // Don't connect to raw localhost if running on public secure domains
+      if (window.location.hostname !== "localhost" && WS_URL.includes("localhost")) {
+        console.warn("Skipping loopback socket stream engine connection on public production domains.");
+        return;
+      }
+
       try {
         ws = new WebSocket(WS_URL);
       } catch (err) {
@@ -473,9 +462,7 @@ export default function Home() {
             lastPong = Date.now();
             return;
           }
-          const { type, payload: inner } = payload.type
-            ? payload
-            : { type: "trade", payload };
+          const { type, payload: inner } = payload.type ? payload : { type: "trade", payload };
           if (type !== "trade" || !inner) return;
           const addr = (inner.token || inner.address || "").toLowerCase();
           if (!addr) return;
@@ -498,9 +485,7 @@ export default function Home() {
       });
 
       ws.addEventListener("error", () => {
-        try {
-          ws.close();
-        } catch {}
+        try { ws.close(); } catch {}
       });
     };
 
@@ -508,9 +493,7 @@ export default function Home() {
 
     return () => {
       shouldStop = true;
-      try {
-        ws.close();
-      } catch {}
+      try { ws.close(); } catch {}
       if (flushTimer) clearTimeout(flushTimer);
       stopHeartbeat();
       buffer.clear();
@@ -525,7 +508,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen relative flex flex-col bg-[#030712] text-slate-100">
-      <div className="pt-0">
+      <div>
         <TradeAlertsMarquee />
       </div>
 
@@ -552,14 +535,13 @@ export default function Home() {
           }}
           onPauseToggle={(v) => setPausedAll(v)}
           initialSort={sort}
+          searchTerm={searchTerm}
+          listedOnly={listedOnly}
+          isPaused={pausedAll}
         />
 
-        {/* Section Heading Row with #96d6cd Accents */}
         <div className="flex items-center gap-3 mb-4 mt-8 pb-2 border-b border-slate-900">
-          <div 
-            className="w-1.5 h-3.5 rounded-sm"
-            style={{ backgroundColor: '#96d6cd' }}
-          />
+          <div className="w-1.5 h-3.5 rounded-sm" style={{ backgroundColor: '#96d6cd' }} />
           <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">
             Token Registry Feed
           </h2>
@@ -572,23 +554,14 @@ export default function Home() {
         {loading ? (
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {Array.from({ length: TOKENS_PER_PAGE }).map((_, i) => (
-              <div
-                key={`ph-${i}`}
-                className="p-3 rounded bg-[#0b0f19]/30 border border-slate-900/40 animate-pulse h-40"
-              />
+              <div key={`ph-${i}`} className="p-3 bg-[#0b0f19]/30 border border-slate-900/40 animate-pulse h-40" />
             ))}
           </div>
         ) : (
           <TokenList data={tokens} isPaused={pausedAll} />
         )}
 
-        <Pagination
-          totalPages={totalPages}
-          currentPage={currentPage}
-          onPageChange={handlePageChange}
-          isMobile={isMobile}
-        />
-        
+        <Pagination totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} isMobile={isMobile} />
         <AIChatSupport />
       </div>
       <Footer />
