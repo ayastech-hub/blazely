@@ -1,21 +1,17 @@
 // src/components/TokenCard.jsx
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import {
-  motion,
-  AnimatePresence,
-  useMotionValue,
-  useSpring,
-} from "framer-motion";
-import { ArrowUpRight, Globe, Twitter, Send } from "lucide-react";
+import { motion } from "framer-motion";
+import { Globe, Twitter, Send } from "lucide-react";
 import { computeProgressPercentFixed } from "../utils/progress";
 
+/* -------------------- Telemetry Formatters -------------------- */
 const compactNumberShort = (number) => {
   if (number === null || number === undefined) return "N/A";
   if (Number.isNaN(Number(number))) return "N/A";
   const n = Number(number);
   if (Math.abs(n) < 1000) return `$${Math.round(n)}`;
-  const suffixes = ["", "k", "m", "b", "t"];
+  const suffixes = ["", "K", "M", "B", "T"];
   const i = Math.floor(Math.log10(Math.abs(n)) / 3);
   let value = (n / Math.pow(1000, i)).toFixed(1);
   if (value.endsWith(".0")) value = value.slice(0, -2);
@@ -23,14 +19,15 @@ const compactNumberShort = (number) => {
 };
 
 const cardVariants = {
-  hidden: { opacity: 0, y: 18 },
+  hidden: { opacity: 0, y: 4 },
   visible: (i) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.06, duration: 0.45, ease: [0.22, 0.9, 0.28, 1] },
+    transition: { delay: i * 0.02, duration: 0.2, ease: "easeOut" },
   }),
 };
 
+/* -------------------- Sub-Elements -------------------- */
 function SocialLink({ href, icon, label }) {
   if (!href) return null;
   return (
@@ -40,56 +37,34 @@ function SocialLink({ href, icon, label }) {
       rel="noopener noreferrer"
       aria-label={label}
       onClick={(e) => e.stopPropagation()}
-      className="p-1 rounded-full text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors duration-200"
+      className="p-1 border border-slate-900 bg-[#030712] text-slate-500 hover:text-slate-200 hover:border-slate-800 transition-all rounded-none"
     >
       {icon}
     </a>
   );
 }
 
+function MetricGroup({ label, value }) {
+  return (
+    <div className="flex items-center gap-1.5 bg-[#030712]/60 border border-slate-900/80 px-2 py-1 rounded-none text-[10px]">
+      <span className="text-slate-500 uppercase font-bold tracking-wider">{label}:</span>
+      <span className="text-slate-200 font-bold font-mono">{compactNumberShort(value)}</span>
+    </div>
+  );
+}
+
+/* -------------------- Core Component Module -------------------- */
 export default function TokenCard({ token, index = 0, isNew = false }) {
-  const cardRef = useRef(null);
   const [progress, setProgress] = useState({ graduated: false, percent: 0 });
 
-  const [displayMarketcap, setDisplayMarketcap] = useState(
-    token.marketcap || token.marketcap_usd
-  );
-  const [displayVolume, setDisplayVolume] = useState(token.volume_24h);
+  const displayMarketcap = token.marketcap || token.marketcap_usd || 0;
+  const displayVolume = token.volume_24h || 0;
 
-  // Animate MC
-  const mcMotion = useMotionValue(displayMarketcap);
-  const mcSpring = useSpring(mcMotion, { stiffness: 200, damping: 30 });
-  const [mcDisplay, setMcDisplay] = useState(displayMarketcap);
-
-  useEffect(() => {
-    mcMotion.set(displayMarketcap);
-  }, [displayMarketcap]);
-
-  useEffect(() => {
-    const unsub = mcSpring.on("change", (v) => setMcDisplay(Math.round(v)));
-    return () => unsub();
-  }, [mcSpring]);
-
-  // Animate Volume
-  const volMotion = useMotionValue(displayVolume);
-  const volSpring = useSpring(volMotion, { stiffness: 200, damping: 30 });
-  const [volDisplay, setVolDisplay] = useState(displayVolume);
-
-  useEffect(() => {
-    volMotion.set(displayVolume);
-  }, [displayVolume]);
-
-  useEffect(() => {
-    const unsub = volSpring.on("change", (v) => setVolDisplay(Math.round(v)));
-    return () => unsub();
-  }, [volSpring]);
-
-  // Fetch progress
   useEffect(() => {
     let cancelled = false;
     async function fetchProgress() {
       const result = await computeProgressPercentFixed(token);
-      if (!cancelled) setProgress(result);
+      if (!cancelled) setProgress(result || { graduated: false, percent: 0 });
     }
     fetchProgress();
     return () => {
@@ -97,12 +72,7 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
     };
   }, [token]);
 
-  const handleMouseMove = (e) => {
-    if (!cardRef.current) return;
-    const { left, top } = cardRef.current.getBoundingClientRect();
-    cardRef.current.style.setProperty("--mouse-x", `${e.clientX - left}px`);
-    cardRef.current.style.setProperty("--mouse-y", `${e.clientY - top}px`);
-  };
+  const safePercent = Math.max(0, Math.min(100, progress.percent || 0));
 
   return (
     <motion.div
@@ -110,141 +80,109 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
       initial="hidden"
       animate="visible"
       custom={index}
-      className="w-full h-full"
+      className="w-full h-full font-mono"
     >
       <Link to={`/token/${token.address}`} className="block group h-full">
-        <motion.div
-          ref={cardRef}
-          onMouseMove={handleMouseMove}
-          whileHover={{
-            scale: 1.03,
-            boxShadow: "0 20px 40px rgba(8,145,255,0.15)",
+        <div
+          style={{
+            borderColor: isNew ? '#96d6cd' : '',
+            boxShadow: isNew ? '0 0 12px rgba(150,214,205,0.1)' : ''
           }}
-          whileTap={{ scale: 0.995 }}
-          transition={{
-            type: "spring",
-            stiffness: 200,
-            damping: 20,
-            duration: 0.3,
-          }}
-          id={`token-${token.address}`}
-          className={`token-card relative h-full rounded-2xl bg-gradient-to-br from-slate-900/70 via-slate-900/60 to-slate-900/60 shadow-lg px-4 py-3 overflow-hidden transition-all duration-300 ${
-            isNew
-              ? "animate-shake border-2 border-cyan-400"
-              : "border border-slate-800/60"
-          }`}
+          className={`relative h-full rounded-sm bg-[#0b0f19]/40 border border-slate-900 p-3 flex flex-col justify-between transition-colors hover:bg-[#0b0f19]/80 group-hover:border-slate-800`}
         >
-          <div className="relative z-10 flex items-start justify-between">
-            <div className="flex items-start gap-4 min-w-0 w-full">
-              <div className="flex-shrink-0 w-24 h-24">
-                <div className="w-full h-full rounded-2xl bg-slate-800/50 flex items-center justify-center overflow-hidden ring-1 ring-slate-700/50">
-                  {token.logo_path ? (
-                    <img
-                      src={token.logo_path}
-                      alt={`${token.name} logo`}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-4xl md:text-5xl lg:text-6xl font-semibold bg-clip-text text-transparent bg-gradient-to-br from-cyan-300 to-violet-300">
-                      {token.symbol?.charAt(0) || "T"}
-                    </span>
-                  )}
-                </div>
-              </div>
+          {/* Main Context Grid Block */}
+          <div className="flex gap-3 items-start min-w-0 w-full mb-3">
+            
+            {/* Rigid Identity Square Image Frame */}
+            <div className="w-14 h-14 bg-[#030712] border border-slate-900 rounded-none flex items-center justify-center overflow-hidden shrink-0">
+              {token.logo_path ? (
+                <img
+                  src={token.logo_path}
+                  alt={`${token.name} logo`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-lg font-black text-slate-500">
+                  {token.symbol?.charAt(0).toUpperCase() || "T"}
+                </span>
+              )}
+            </div>
 
-              <div className="min-w-0 flex-1">
-                <h3 className="text-sm md:text-base lg:text-lg font-semibold text-white truncate">
-                  {token.name}
-                </h3>
-                <p className="text-xs text-slate-400 font-medium truncate">
-                  {token.symbol ?? "—"}
-                </p>
+            {/* Core Identification Text Segment */}
+            <div className="min-w-0 flex-1">
+              <h3 className="text-xs font-black text-slate-200 uppercase tracking-wider truncate leading-tight">
+                {token.name}
+              </h3>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide truncate mt-0.5">
+                ${token.symbol ?? "—"}
+              </p>
 
-                <div className="flex items-center gap-1 mt-2">
-                  <SocialLink
-                    href={token.website}
-                    icon={<Globe className="w-4 h-4" />}
-                    label="Website"
-                  />
-                  <SocialLink
-                    href={token.twitter}
-                    icon={<Twitter className="w-4 h-4" />}
-                    label="Twitter"
-                  />
-                  <SocialLink
-                    href={token.telegram}
-                    icon={<Send className="w-4 h-4" />}
-                    label="Telegram"
-                  />
-                </div>
-
-                <div className="flex items-center gap-1 mt-1">
-                  <MetricBadge label="MC" value={mcDisplay} />
-                  <MetricBadge label="VOL" value={volDisplay} />
-                </div>
+              {/* Functional Social Anchors Network */}
+              <div className="flex items-center gap-1 mt-2">
+                <SocialLink
+                  href={token.website}
+                  icon={<Globe size={11} />}
+                  label="Website"
+                />
+                <SocialLink
+                  href={token.twitter}
+                  icon={<Twitter size={11} />}
+                  label="Twitter"
+                />
+                <SocialLink
+                  href={token.telegram}
+                  icon={<Send size={11} />}
+                  label="Telegram"
+                />
               </div>
             </div>
           </div>
 
-          <div className="relative z-10 mt-1 pt-1">
+          {/* Quant Index Metrics Row */}
+          <div className="flex flex-wrap items-center gap-1.5 mb-3">
+            <MetricGroup label="MCAP" value={displayMarketcap} />
+            <MetricGroup label="VOL_24H" value={displayVolume} />
+          </div>
+
+          {/* Infrastructure Curve Telemetry Progress Section */}
+          <div className="w-full border-t border-slate-900/60 pt-2 text-[10px]">
             {progress.graduated ? (
-              <p className="text-xs font-semibold text-green-400">
-                Listed on Uniswap
-              </p>
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest bg-[#030712]/40 border border-slate-900 px-1.5 py-0.5 inline-block rounded-none">
+                [ STATUS: GRADUATED ]
+              </div>
             ) : (
-              <ProgressBar percent={progress.percent} />
+              <div className="w-full">
+                <div className="flex items-center justify-between font-bold text-[9px] text-slate-500 uppercase tracking-wider mb-1">
+                  <span>CURVE_FILL</span>
+                  <span className="text-slate-300 font-mono">{Math.round(safePercent)}%</span>
+                </div>
+
+                {/* Flat Engineering Gauge Track */}
+                <div className="w-full h-1 bg-[#030712] border border-slate-900/40 overflow-hidden rounded-none relative">
+                  <motion.div
+                    className="h-full opacity-90"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${safePercent}%` }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    style={{ backgroundColor: '#96d6cd' }}
+                  />
+                </div>
+              </div>
             )}
           </div>
-        </motion.div>
+
+          {/* Top-Right Absolute New Signal Badging */}
+          {isNew && (
+            <div 
+              style={{ backgroundColor: '#96d6cd', color: '#030712' }}
+              className="absolute top-0 right-0 text-[8px] font-black uppercase tracking-widest px-1 py-0.5 rounded-none"
+            >
+              NEW_NODE
+            </div>
+          )}
+
+        </div>
       </Link>
     </motion.div>
-  );
-}
-
-function MetricBadge({ label, value }) {
-  return (
-    <div className="flex items-center gap-2 bg-slate-800/50 rounded-md px-3 py-1 text-xs">
-      <span className="text-slate-200 uppercase tracking-wide font-medium">
-        {label}
-      </span>
-      <span className="text-white font-semibold">
-        {compactNumberShort(value)}
-      </span>
-    </div>
-  );
-}
-
-function ProgressBar({ percent }) {
-  const safePercent = Math.max(0, Math.min(100, percent));
-  const displayPercent = Math.round(safePercent);
-
-  return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[11px] font-medium text-slate-400">Progress</span>
-        <span className="text-[11px] font-semibold text-cyan-300">
-          {displayPercent}%
-        </span>
-      </div>
-
-      <div className="relative w-full h-3 rounded-full bg-slate-800/60 ring-1 ring-slate-700/50 overflow-hidden">
-        <motion.div
-          className="h-full rounded-full"
-          initial={{ width: 0 }}
-          animate={{ width: `${safePercent}%` }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          style={{ background: "linear-gradient(90deg, #22d3ee, #38f8c2)" }}
-        />
-        <motion.div
-          className="absolute top-0 left-0 h-full w-12 opacity-40"
-          animate={{ x: ["-20%", "120%"] }}
-          transition={{ duration: 1.6, ease: "easeInOut", repeat: Infinity }}
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent)",
-          }}
-        />
-      </div>
-    </div>
   );
 }
