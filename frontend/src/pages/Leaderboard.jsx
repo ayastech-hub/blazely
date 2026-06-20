@@ -4,14 +4,18 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flame, Star, ChevronRight } from "lucide-react";
 
-// Robust formatting helper equipped to handle numbers, string numbers ("3120.43"), and null values safely
+// Robust formatting helper equipped to handle numbers, string numbers, and small precision values safely
 const formatNumberCompact = (num) => {
   if (num === null || num === undefined) return "$0.00";
   const number = Number(num);
   if (isNaN(number) || number === 0) return "$0.00";
   
   const abs = Math.abs(number);
-  if (abs < 1000) return `$${Math.round(abs).toLocaleString()}`;
+  
+  // High-precision formatting for values under $1,000 (e.g., initial token launch pools)
+  if (abs < 1000) {
+    return `$${abs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
 
   const suffixes = ["", "K", "M", "B", "T"];
   const i = Math.floor(Math.log10(abs) / 3);
@@ -26,11 +30,12 @@ const formatNumberCompact = (num) => {
 const TokenRow = ({ t, idx }) => {
   const [isHovered, setIsHovered] = useState(false);
 
-  // Fallback checks to catch both camelCase, underscored, or merged database naming systems
+  // Directly mapping to your optimized INNER JOIN SQL output parameters
   const parsedVolume = t.volume_24h ?? t.volume24h ?? 0;
   const parsedMarketCap = t.market_cap ?? t.marketcap ?? 0;
   const tokenLogo = t.logo_url ?? t.logoUrl ?? t.logo_path ?? null;
   
+  // Use the rank directly calculated on-chain/in-DB, fallback to map index
   const rank = t.rank || idx + 1;
 
   return (
@@ -72,7 +77,7 @@ const TokenRow = ({ t, idx }) => {
             )}
           </div>
 
-          {/* ASSET PROFILE IDENTIFIER (Tokens Table Data) */}
+          {/* ASSET PROFILE IDENTIFIER */}
           <div className="col-span-8 md:col-span-5 flex items-center gap-3 min-w-0">
             <div className="relative w-8 h-8 rounded bg-[#030712] border border-slate-800 flex-shrink-0 flex items-center justify-center font-mono font-black overflow-hidden">
               {tokenLogo ? (
@@ -110,7 +115,7 @@ const TokenRow = ({ t, idx }) => {
             </div>
           </div>
 
-          {/* VOLUME COLUMN (Joined Metrics Table Data) */}
+          {/* VOLUME COLUMN */}
           <div className="hidden md:flex md:col-span-3 flex-col items-end justify-center text-right font-mono">
             <span className="text-xs font-bold text-slate-300">
               {formatNumberCompact(parsedVolume)}
@@ -120,7 +125,7 @@ const TokenRow = ({ t, idx }) => {
             </span>
           </div>
 
-          {/* MARKET CAP COLUMN (Joined Metrics Table Data) */}
+          {/* MARKET CAP COLUMN */}
           <div className="col-span-3 md:col-span-2 flex flex-col items-end justify-center text-right font-mono">
             <span className="text-xs font-bold text-slate-200">
               {formatNumberCompact(parsedMarketCap)}
