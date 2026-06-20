@@ -14,7 +14,7 @@ import {
   Check,
   Lock,
 } from "lucide-react";
-import blazelyLogo from "../assets/blazely-logo.png";
+import Logo from "./Logo";
 import { ConnectKitButton } from "connectkit";
 import { supabase } from "../lib/supabaseClient";
 import { useWallet } from "../context/WalletContext";
@@ -321,20 +321,24 @@ const Navbar = ({ onSearchChange = () => {} }) => {
     );
   };
 
-  return (
+  
+              
+          return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#030712] border-b border-slate-900/60 shadow-lg">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
         {/* Brand Core Placement */}
         <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2.5">
-            <img
-              src={blazelyLogo}
-              alt="Blazely"
-              className="w-8 h-8 rounded object-cover filter brightness-110"
+          <Link to="/" className="flex items-center gap-2.5 group">
+            
+            {/* 3. REPLACE THE OLD <img /> ACCENT WITH YOUR COMPONENT: */}
+            <Logo 
+              size={28} 
+              className="transform group-hover:rotate-6 transition-transform duration-200" 
             />
+            
             <span 
-              className="font-black text-sm uppercase tracking-widest"
+              className="font-black text-sm uppercase tracking-widest transition-colors duration-200"
               style={{ color: '#96d6cd' }}
             >
               Blazely
