@@ -26,9 +26,9 @@ const formatNumberCompact = (num) => {
 const TokenRow = ({ t, idx }) => {
   const [isHovered, setIsHovered] = useState(false);
 
-  // Safely parse values coming down from the parent pipeline context
+  // Directly parse normalized fields built from the split-table inner join in Home.jsx
   const parsedVolume = t.volume_24h ? Number(t.volume_24h) : 0;
-  const parsedMarketCap = t.marketcap ? Number(t.marketcap) : (t.market_cap ? Number(t.market_cap) : 0);
+  const parsedMarketCap = t.marketcap ? Number(t.marketcap) : 0;
   const rank = t.rank || idx + 1;
 
   return (
@@ -50,6 +50,7 @@ const TokenRow = ({ t, idx }) => {
         style={{ borderColor: isHovered ? '#96d6cd30' : '' }}
         className="relative flex items-center bg-[#0b0f19]/40 backdrop-blur-md border border-slate-900/60 rounded p-3 md:p-4 transition-all duration-150 hover:bg-[#0b0f19]/80 cursor-pointer overflow-hidden group"
       >
+        {/* Hover Highlight Border Edge Anchor */}
         <div 
           style={{ backgroundColor: '#96d6cd', opacity: isHovered ? 1 : 0 }}
           className="absolute left-0 top-0 bottom-0 w-[2px] transition-all duration-150"
@@ -69,12 +70,12 @@ const TokenRow = ({ t, idx }) => {
             )}
           </div>
 
-          {/* ASSET PROFILE IDENTIFIER */}
+          {/* ASSET PROFILE IDENTIFIER (Tokens Table Data) */}
           <div className="col-span-8 md:col-span-5 flex items-center gap-3 min-w-0">
             <div className="relative w-8 h-8 rounded bg-[#030712] border border-slate-800 flex-shrink-0 flex items-center justify-center font-mono font-black overflow-hidden">
-              {t.logoUrl || t.logo_url ? (
+              {t.logoUrl || t.logo_path ? (
                 <img
-                  src={t.logoUrl || t.logo_url}
+                  src={t.logoUrl}
                   alt={`${t.symbol || "Asset"} identifier`}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -85,7 +86,7 @@ const TokenRow = ({ t, idx }) => {
                 />
               ) : null}
 
-              <div className={`symbol-fallback absolute inset-0 w-full h-full flex items-center justify-center text-[10px] text-slate-400 ${(t.logoUrl || t.logo_url) ? "hidden" : "flex"}`}>
+              <div className={`symbol-fallback absolute inset-0 w-full h-full flex items-center justify-center text-[10px] text-slate-400 ${(t.logoUrl) ? "hidden" : "flex"}`}>
                 {t.symbol?.charAt?.(0) ?? "T"}
               </div>
             </div>
@@ -107,7 +108,7 @@ const TokenRow = ({ t, idx }) => {
             </div>
           </div>
 
-          {/* VOLUME COLUMN */}
+          {/* VOLUME COLUMN (Joined Metrics Table Data) */}
           <div className="hidden md:flex md:col-span-3 flex-col items-end justify-center text-right font-mono">
             <span className="text-xs font-bold text-slate-300">
               {formatNumberCompact(parsedVolume)}
@@ -117,7 +118,7 @@ const TokenRow = ({ t, idx }) => {
             </span>
           </div>
 
-          {/* MARKET CAP COLUMN */}
+          {/* MARKET CAP COLUMN (Joined Metrics Table Data) */}
           <div className="col-span-3 md:col-span-2 flex flex-col items-end justify-center text-right font-mono">
             <span className="text-xs font-bold text-slate-200">
               {formatNumberCompact(parsedMarketCap)}
@@ -127,6 +128,7 @@ const TokenRow = ({ t, idx }) => {
             </span>
           </div>
 
+          {/* ACTION NAVIGATION HINT */}
           <div className="col-span-1 hidden md:flex items-center justify-end pr-1">
             <ChevronRight 
               size={14} 
@@ -141,7 +143,7 @@ const TokenRow = ({ t, idx }) => {
   );
 };
 
-// --- TokenList Container Component (Consumes Live Data Props directly from Home.jsx) ---
+// --- TokenList Container Component ---
 export default function TokenList({ data = [] }) {
   return (
     <div className="bg-[#030712] text-slate-100 font-sans py-2">
