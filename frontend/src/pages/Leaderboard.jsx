@@ -12,7 +12,7 @@ const formatNumberCompact = (num) => {
   
   const abs = Math.abs(number);
   
-  // High-precision formatting for values under $1,000 (e.g., initial token launch pools)
+  // High-precision formatting for micro-caps / values under $1,000
   if (abs < 1000) {
     return `$${abs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
@@ -30,12 +30,12 @@ const formatNumberCompact = (num) => {
 const TokenRow = ({ t, idx }) => {
   const [isHovered, setIsHovered] = useState(false);
 
-  // Directly mapping to your optimized INNER JOIN SQL output parameters
+  // Directly mapping to your optimized top_tokens_ranked view parameters
   const parsedVolume = t.volume_24h ?? t.volume24h ?? 0;
   const parsedMarketCap = t.market_cap ?? t.marketcap ?? 0;
   const tokenLogo = t.logo_url ?? t.logoUrl ?? t.logo_path ?? null;
   
-  // Use the rank directly calculated on-chain/in-DB, fallback to map index
+  // Use the database calculated window-function rank value
   const rank = t.rank || idx + 1;
 
   return (
@@ -152,20 +152,27 @@ const TokenRow = ({ t, idx }) => {
 
 // --- TokenList Container Component ---
 export default function TokenList({ data = [] }) {
+  // Defensive normalization step to handle if data arrives wrapped inside another response property
+  const normalizedData = Array.isArray(data) ? data : [];
+
   return (
     <div className="bg-[#030712] text-slate-100 font-sans py-2">
       <div className="max-w-[1600px] mx-auto">
         
         <AnimatePresence mode="wait">
           <div className="space-y-1.5">
-            {data && data.length > 0 ? (
-              data.map((token, i) => (
-                <TokenRow 
-                  key={`${token.address || i}-${i}`} 
-                  t={token} 
-                  idx={i} 
-                />
-              ))
+            {normalizedData.length > 0 ? (
+              normalizedData.map((token, i) => {
+                // Double safety: bail out gracefully if token row data is corrupt or missing an address
+                if (!token) return null;
+                return (
+                  <TokenRow 
+                    key={`${token.address || 'token'}-${i}`} 
+                    t={token} 
+                    idx={i} 
+                  />
+                );
+              })
             ) : (
               <motion.div
                 initial={{ opacity: 0 }}
