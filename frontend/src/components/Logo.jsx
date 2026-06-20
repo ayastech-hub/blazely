@@ -11,34 +11,28 @@ export default function Logo({ size = 32, className = "" }) {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      <defs>
-        <linearGradient id="blazelyTealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#96d6cd" />
-          <stop offset="50%" stopColor="#64b3a8" />
-          <stop offset="100%" stopColor="#030712" />
-        </linearGradient>
-      </defs>
-      
-      {/* Outer Hexagon Frame */}
-      <polygon
-        points="50,5 90,28 90,72 50,95 10,72 10,28"
-        stroke="#1e293b"
-        strokeWidth="2"
-        fill="#0d121f"
-        fillOpacity="0.4"
-      />
-      
-      {/* Core "B" + Lightning Mark */}
+      {/* 
+        Core "B" + Lightning Mark 
+        - Removed fill to make the inside completely blank/transparent
+        - Increased strokeWidth slightly to make the outline crisp and defined
+      */}
       <path
         d="M38 25 H58 C66 25, 68 33, 58 39 C68 43, 66 53, 54 53 H42 L30 75 L44 47 H36 L52 25"
-        fill="url(#blazelyTealGrad)"
         stroke="#96d6cd"
-        strokeWidth="0.75"
+        strokeWidth="2.5"
         strokeLinejoin="round"
+        strokeLinecap="round"
       />
       
-      {/* Internal Negative Space Cutout */}
-      <polygon points="46,47 54,47 40,75" fill="#030712" />
+      {/* 
+        The Shadow Accent Bolt 
+        - Colored to match a sleek semi-transparent dark shade that blends with the app background
+      */}
+      <polygon 
+        points="46,47 54,47 41,73" 
+        fill="#111827" 
+        fillOpacity="0.4" 
+      />
     </svg>
   );
 }
