@@ -26,9 +26,11 @@ const formatNumberCompact = (num) => {
 const TokenRow = ({ t, idx }) => {
   const [isHovered, setIsHovered] = useState(false);
 
-  // Directly parse normalized fields built from the split-table inner join in Home.jsx
-  const parsedVolume = t.volume_24h ? Number(t.volume_24h) : 0;
-  const parsedMarketCap = t.marketcap ? Number(t.marketcap) : 0;
+  // Fallback checks to catch both camelCase, underscored, or merged database naming systems
+  const parsedVolume = t.volume_24h ?? t.volume24h ?? 0;
+  const parsedMarketCap = t.market_cap ?? t.marketcap ?? 0;
+  const tokenLogo = t.logo_url ?? t.logoUrl ?? t.logo_path ?? null;
+  
   const rank = t.rank || idx + 1;
 
   return (
@@ -73,9 +75,9 @@ const TokenRow = ({ t, idx }) => {
           {/* ASSET PROFILE IDENTIFIER (Tokens Table Data) */}
           <div className="col-span-8 md:col-span-5 flex items-center gap-3 min-w-0">
             <div className="relative w-8 h-8 rounded bg-[#030712] border border-slate-800 flex-shrink-0 flex items-center justify-center font-mono font-black overflow-hidden">
-              {t.logoUrl || t.logo_path ? (
+              {tokenLogo ? (
                 <img
-                  src={t.logoUrl}
+                  src={tokenLogo}
                   alt={`${t.symbol || "Asset"} identifier`}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -86,7 +88,7 @@ const TokenRow = ({ t, idx }) => {
                 />
               ) : null}
 
-              <div className={`symbol-fallback absolute inset-0 w-full h-full flex items-center justify-center text-[10px] text-slate-400 ${(t.logoUrl) ? "hidden" : "flex"}`}>
+              <div className={`symbol-fallback absolute inset-0 w-full h-full flex items-center justify-center text-[10px] text-slate-400 ${tokenLogo ? "hidden" : "flex"}`}>
                 {t.symbol?.charAt?.(0) ?? "T"}
               </div>
             </div>
