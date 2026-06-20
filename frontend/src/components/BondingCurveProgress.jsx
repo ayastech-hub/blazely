@@ -10,7 +10,7 @@ import { computeProgressPercentFixed } from "../utils/progress";
  */
 export default function BondingCurveProgressSpark({
   token,
-  height = 12,
+  height = 4,
   className = "",
 }) {
   const [progress, setProgress] = useState({ graduated: false, percent: 0 });
@@ -39,106 +39,60 @@ export default function BondingCurveProgressSpark({
   }, [token]);
 
   const percent = Math.min(Math.max(Number(progress.percent || 0), 0), 100);
-
-  // size helpers
-  const h = `${height}px`;
-  const sparkSize = Math.max(8, Math.round(height * 0.9));
+  const trackHeight = `${height}px`;
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`w-full ${className}`}>
       {progress.graduated ? (
-        <div className="px-2 py-1 rounded-md bg-slate-800/50 text-xs text-green-400 font-semibold">
-          Listed on Uniswap
+        <div className="inline-flex items-center px-2 py-0.5 border border-slate-900 bg-[#0b0f19]/60 text-[9px] font-mono uppercase tracking-widest text-slate-400 font-bold rounded-sm">
+          [ STATUS: GRADUATED / UNISWAP POOL ACTIVE ]
         </div>
       ) : (
-        <div className="w-full">
+        <div className="w-full flex flex-col gap-1.5">
+          
+          {/* Quantitative Gauge Core Track */}
           <div
-            className="relative w-full rounded-full overflow-hidden ring-1 ring-slate-800/40"
-            style={{
-              height: h,
-              background:
-                "linear-gradient(90deg, rgba(15,23,42,0.6), rgba(15,23,42,0.4))",
-            }}
+            className="relative w-full bg-[#030712] border border-slate-900/60 overflow-hidden rounded-sm"
+            style={{ height: trackHeight }}
           >
-            {/* filled portion */}
-            <div
-              className="h-full rounded-full transition-all duration-500 ease-out"
-              style={{
-                width: `${percent}%`,
-                // use gradient similar to TokenCard
-                background:
-                  "linear-gradient(90deg, rgba(56,189,248,0.95), rgba(16,185,129,0.95))",
-              }}
+            {/* Filled Core Segment */}
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${percent}%` }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              style={{ backgroundColor: '#96d6cd' }}
+              className="h-full opacity-90"
             />
 
-            {/* spark / moving glow */}
+            {/* Micro Precision Target Cursor Line */}
             <motion.div
-              className="absolute top-1/2 -translate-y-1/2 rounded-full"
-              style={{
-                width: `${sparkSize}px`,
-                height: `${sparkSize}px`,
-                left: `${percent}%`,
-                // visually center the spark
-                transform: `translate(-50%, -50%)`,
-                pointerEvents: "none",
+              className="absolute top-0 bottom-0 w-[2px] pointer-events-none"
+              style={{ 
+                left: `${percent}%`, 
+                transform: "translateX(-50%)",
+                backgroundColor: '#96d6cd'
               }}
               animate={{ left: `${percent}%` }}
               transition={{
                 type: "spring",
-                stiffness: 120,
-                damping: 18,
-                mass: 0.6,
+                stiffness: 140,
+                damping: 20,
+                mass: 0.4,
               }}
             >
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: "999px",
-                  background: "rgba(255,255,255,0.95)",
-                  filter: "blur(6px)",
-                  boxShadow: "0 6px 18px rgba(16,185,129,0.25)",
-                }}
-              />
-            </motion.div>
-
-            {/* small crisp dot on top of blur for sharper highlight */}
-            <motion.div
-              className="absolute top-1/2 -translate-y-1/2 rounded-full"
-              style={{
-                width: `${Math.max(4, Math.round(sparkSize * 0.45))}px`,
-                height: `${Math.max(4, Math.round(sparkSize * 0.45))}px`,
-                left: `${percent}%`,
-                transform: `translate(-50%, -50%)`,
-                pointerEvents: "none",
-              }}
-              animate={{ left: `${percent}%` }}
-              transition={{
-                type: "spring",
-                stiffness: 160,
-                damping: 22,
-                mass: 0.35,
-              }}
-            >
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: "999px",
-                  background: "linear-gradient(180deg,#ffffff,#e6fdf6)",
-                  boxShadow: "0 4px 10px rgba(56,189,248,0.2)",
-                }}
-              />
+              {/* Micro reflection header element */}
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-white opacity-80" />
             </motion.div>
           </div>
 
-          {/* percent label under bar */}
-          <div className="mt-2 text-xs text-slate-400">
-            Progress:
-            <span className="font-semibold text-white">
-              {Math.round(percent)}%
+          {/* Telemetry Metric Description Labels */}
+          <div className="flex items-center justify-between font-mono text-[9px] uppercase tracking-wider text-slate-500">
+            <span>CURVE FILL INDEX</span>
+            <span className="font-bold text-slate-200">
+              {percent.toFixed(2)}%
             </span>
           </div>
+
         </div>
       )}
     </div>
