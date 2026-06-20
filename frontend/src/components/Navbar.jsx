@@ -327,38 +327,41 @@ const Navbar = ({ onSearchChange = () => {} }) => {
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#030712] border-b border-slate-900/60 shadow-lg">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
-        {/* Brand Core Placement */}
-        <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2.5 group">
+        
             
-            {/* 3. REPLACE THE OLD <img /> ACCENT WITH YOUR COMPONENT: */}
-            <Logo 
-              size={28} 
-              className="transform group-hover:rotate-6 transition-transform duration-200" 
-            />
-            
-            <span 
-              className="font-black text-sm uppercase tracking-widest transition-colors duration-200"
-              style={{ color: '#96d6cd' }}
-            >
-              Blazely
-            </span>
-          </Link>
 
-          {/* Desktop Links View */}
-          <nav className="hidden lg:flex items-center gap-2">
-            {navLinks.map((link) => (
-              <NavLink
-                key={link.name}
-                to={link.path}
-                end={link.end}
-                className={getNavLinkClass}
-              >
-                {link.name}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
+          {/* Brand Core Placement */}
+<div className="flex items-center gap-8">
+  <Link to="/" className="flex items-center gap-2.5 group">
+    <Logo 
+      size={26} 
+      className="transform group-hover:scale-105 group-hover:rotate-6 transition-transform duration-200" 
+    />
+    
+    {/* Optimized Typography: Notice 'hidden sm:block' to hide text on tiny mobile displays */}
+    <span 
+      className="hidden sm:block font-sans font-black text-sm uppercase tracking-widest transition-colors duration-200 group-hover:text-white"
+      style={{ color: '#96d6cd' }}
+    >
+      Blazely
+    </span>
+  </Link>
+
+  {/* Desktop Links View */}
+  <nav className="hidden lg:flex items-center gap-2">
+    {navLinks.map((link) => (
+      <NavLink
+        key={link.name}
+        to={link.path}
+        end={link.end}
+        className={getNavLinkClass}
+      >
+        {link.name}
+      </NavLink>
+    ))}
+  </nav>
+</div>
+
 
         {/* Action Blocks Deck */}
         <div className="flex items-center gap-2">
