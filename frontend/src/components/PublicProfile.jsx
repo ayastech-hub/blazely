@@ -1,3 +1,4 @@
+// src/pages/PublicProfile.jsx
 import React, { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import {
@@ -11,7 +12,7 @@ import {
 } from "lucide-react";
 import * as supabaseClient from "../lib/supabaseClient";
 
-// Import components you need
+// Component Pipeline Registry
 import CreatedTokensTab from "../tabP/CreatedTokensTab";
 import PortfolioAssetsTab from "../tabP/PortfolioAssetsTab";
 import TransactionHistoryTab from "../tabP/TransactionHistoryTab";
@@ -20,14 +21,14 @@ import { DashboardCard, Toast } from "../tabP/ProfileComponents";
 const supabase =
   supabaseClient.supabase ?? supabaseClient.default ?? supabaseClient;
 
-/* ----------------------------- Helpers ----------------------------- */
+/* ----------------------------- Storage Pipeline Helpers ----------------------------- */
 const getLogoPublicUrl = (path) => {
   if (!path) return null;
   try {
     const res = supabase.storage.from("logos").getPublicUrl(path);
     return res?.data?.publicUrl || res?.publicURL || res?.publicUrl || null;
   } catch (e) {
-    console.warn("getLogoPublicUrl error:", e);
+    console.warn("getLogoPublicUrl sequence failure:", e);
     return null;
   }
 };
@@ -42,19 +43,17 @@ const ensureUserRow = async (wallet) => {
       .maybeSingle();
     return existing;
   } catch (err) {
-    console.error("ensureUserRow unexpected error:", err);
+    console.error("ensureUserRow registry fallback error:", err);
     return null;
   }
 };
 
-/* ----------------------------- Tabs ----------------------------- */
+/* ----------------------------- Tab Parameters ----------------------------- */
 const TABS = { CREATED: "Created", PORTFOLIO: "Portfolio", HISTORY: "History" };
 
-/* ----------------------------- Component ----------------------------- */
+/* ----------------------------- Core Functional Container ----------------------------- */
 const PublicProfile = ({ walletAddress }) => {
-  // Connected wallet (context only)
   const { address: connectedAddress } = useAccount();
-
   const viewingWallet = walletAddress ? walletAddress.toLowerCase() : null;
 
   const [activeTab, setActiveTab] = useState(TABS.CREATED);
@@ -77,7 +76,7 @@ const PublicProfile = ({ walletAddress }) => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("Copy failed", err);
+      console.error("Clipboard operational interface failure:", err);
     }
   };
 
@@ -90,11 +89,9 @@ const PublicProfile = ({ walletAddress }) => {
     (async () => {
       setLoading(true);
       try {
-        // Fetch user row (for display properties) — safe if there's no row
         const row = await ensureUserRow(viewingWallet);
         setUserRow(row);
 
-        // Fetch created tokens from Supabase
         const { data: createdRows, error: createdError } = await supabase
           .from("tokens")
           .select("*")
@@ -102,20 +99,17 @@ const PublicProfile = ({ walletAddress }) => {
           .order("created_at", { ascending: false });
 
         if (createdError) {
-          console.warn("Created tokens fetch error:", createdError);
+          console.warn("Created tokens query termination:", createdError);
           setCreatedTokens([]);
         } else {
           setCreatedTokens(
             (createdRows || []).map((r) => ({
               ...r,
-              logo: r.logo_path
-                ? getLogoPublicUrl(r.logo_path)
-                : r.logo || null,
+              logo: r.logo_path ? getLogoPublicUrl(r.logo_path) : r.logo || null,
             }))
           );
         }
 
-        // Fetch portfolio via API (works even if user not registered)
         const base = import.meta?.env?.VITE_API_BASE || "http://localhost:3000";
         const normalizedBase = base.replace(/\/$/, "");
         const apiUrl = `${normalizedBase}/api/portfolio?wallet=${encodeURIComponent(
@@ -127,17 +121,14 @@ const PublicProfile = ({ walletAddress }) => {
         });
 
         if (!portfolioRes.ok) {
-          // if the API is unavailable, fallback to empty portfolio
-          console.warn(`Portfolio API returned ${portfolioRes.status}`);
+          console.warn(`Portfolio telemetry lookup status exception: ${portfolioRes.status}`);
           setPortfolio([]);
         } else {
           const boughtTokens = await portfolioRes.json();
           setPortfolio(
             (boughtTokens || []).map((r) => ({
               ...r,
-              logo: r.logo_path
-                ? getLogoPublicUrl(r.logo_path)
-                : r.logo || null,
+              logo: r.logo_path ? getLogoPublicUrl(r.logo_path) : r.logo || null,
               amount: r.user_amount ?? r.amount ?? "0",
               value: r.user_value ?? r.value ?? "0",
               change24h: r.change24h ?? "+0.0%",
@@ -145,7 +136,7 @@ const PublicProfile = ({ walletAddress }) => {
           );
         }
       } catch (err) {
-        console.error("Public Profile load error:", err);
+        console.error("Public Profile sequence configuration crash:", err);
         setCreatedTokens([]);
         setPortfolio([]);
       } finally {
@@ -158,15 +149,11 @@ const PublicProfile = ({ walletAddress }) => {
     ? `${viewingWallet.slice(0, 6)}...${viewingWallet.slice(-4)}`
     : "";
 
-  const headerLogo = userRow?.logo_path
-    ? getLogoPublicUrl(userRow.logo_path)
-    : null;
-  const displayName = userRow?.display_name ?? shortAddress; // show short address if no display name
+  const headerLogo = userRow?.logo_path ? getLogoPublicUrl(userRow.logo_path) : null;
+  const displayName = userRow?.display_name ?? shortAddress;
 
   const dicebearAvatarUrl = viewingWallet
-    ? `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(
-        viewingWallet
-      )}`
+    ? `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(viewingWallet)}`
     : null;
 
   const filteredCreatedTokens = createdTokens.filter(
@@ -223,156 +210,128 @@ const PublicProfile = ({ walletAddress }) => {
     return (
       <button
         onClick={() => setActiveTab(tabName)}
-        className={`tab-button flex-none inline-flex items-center gap-2 px-3 py-1 text-sm font-semibold rounded-lg transition-all ${
-          isActive ? "tab-button-active" : "text-slate-400 bg-slate-800/30"
+        style={{ 
+          borderColor: isActive ? '#96d6cd30' : '',
+          backgroundColor: isActive ? '#0b0f19' : ''
+        }}
+        className={`h-9 flex items-center gap-1.5 px-3 border border-slate-900 rounded-sm text-xs font-mono uppercase tracking-wider transition-colors ${
+          isActive ? "text-[#96d6cd] font-bold" : "text-slate-400 bg-[#0b0f19]/40 hover:text-slate-200"
         }`}
         aria-pressed={isActive}
       >
-        <Icon className="w-5 h-5" />
-        <span className="capitalize whitespace-nowrap text-xs sm:text-sm">
-          {tabName}
-        </span>
+        <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#96d6cd]" : "text-slate-500"}`} />
+        <span>{tabName}</span>
       </button>
     );
   };
 
-  const InlineStyles = () => (
-    <style>{`
-      .tab-button, .tab-button * { -webkit-tap-highlight-color: transparent; }
-      .tab-button {
-        border: 1px solid rgba(255,255,255,0.03);
-        background-color: rgba(255,255,255,0.02);
-        color: rgba(255,255,255,0.9);
-      }
-
-      /* Active tab: near-black, slightly different from background */
-      .tab-button-active,
-      .tab-button:active,
-      .tab-button:focus,
-      .tab-button[aria-pressed="true"] {
-        background-color: rgba(0,0,0,0.45) !important; /* near-black */
-        color: #ffffff !important;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.55) !important;
-        border: 1px solid rgba(255,255,255,0.03) !important;
-        outline: none !important;
-      }
-
-      .tab-button:focus { outline: none !important; box-shadow: 0 6px 18px rgba(0,0,0,0.55) !important; }
-      .no-hover *:hover { background-color: transparent !important; color: inherit !important; box-shadow: none !important; }
-      .no-hover img { border-radius: 9999px !important; object-fit: cover !important; }
-      .no-hover .token-logo, .no-hover .logo, .no-hover .rounded-full { border-radius: 9999px !important; overflow: hidden !important; }
-      .no-hover .focus\\:ring-purple-400:focus { box-shadow: none !important; }
-    `}</style>
-  );
-
   if (!viewingWallet) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-        <div className="max-w-md w-full p-6 sm:p-8 rounded-2xl text-center bg-slate-900/60 border border-slate-700 shadow-xl">
-          <User className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h3 className="text-2xl font-bold text-white mb-2">
-            Wallet Not Found
+      <div className="min-h-screen bg-[#030712] flex items-center justify-center p-4">
+        <div className="max-w-md w-full p-5 border border-slate-900 bg-[#0b0f19]/40 rounded text-center">
+          <User className="w-8 h-8 text-red-500/80 mx-auto mb-3" />
+          <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-slate-200 mb-1">
+            TARGET ADDRESS NULL
           </h3>
-          <p className="text-sm text-slate-300 mb-6">
-            Please provide a valid wallet address in the URL.
+          <p className="text-[10px] font-mono text-slate-500 uppercase tracking-wide">
+            Provide a valid network identification payload inside the route.
           </p>
         </div>
       </div>
     );
   }
 
-  const explorerBase = "https://etherscan.io/address"; // change to your chain explorer if needed
+  const explorerBase = "https://etherscan.io/address";
 
   return (
-    <>
-      <InlineStyles />
-      <div className="min-h-screen bg-slate-950 text-white p-4 sm:p-6 lg:p-8">
-        {/* Public Profile Header Card */}
-        <div className="mb-6 p-6 rounded-2xl shadow-xl transition-all duration-300 bg-gradient-to-br from-slate-900/70 via-slate-900/60 to-slate-900/60 border border-slate-800/60">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-start gap-4 w-full">
-              {/* circular avatar */}
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-600/30 to-cyan-400/30 flex items-center justify-center border-2 border-cyan-400/50 shrink-0 overflow-hidden">
-                {headerLogo ? (
-                  <img
-                    src={headerLogo}
-                    alt={displayName}
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                ) : (
-                  <img
-                    src={dicebearAvatarUrl}
-                    alt={`avatar-${shortAddress}`}
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                )}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                {/* displayName or shortened wallet as title */}
-                <h1 className="text-2xl sm:text-3xl font-bold text-white truncate">
-                  {displayName}
-                </h1>
-
-                <div className="flex items-center gap-3 mt-1">
-                  {/* full on md+, shortened on small screens */}
-                  <p className="text-slate-400 font-mono text-sm truncate hidden md:block">
-                    {viewingWallet}
-                  </p>
-                  <p className="text-slate-400 font-mono text-sm truncate md:hidden">
-                    {shortAddress}
-                  </p>
-
-                  {/* copy button */}
-                  <button
-                    onClick={copyAddress}
-                    className="p-1 rounded-full transition-colors active:bg-white/10"
-                    title="Copy address"
-                  >
-                    {copied ? (
-                      <CheckIcon className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <CopyIcon className="w-4 h-4 text-slate-400" />
-                    )}
-                  </button>
-
-                  {/* explorer open (always works, even if user not registered) */}
-                  <a
-                    href={`${explorerBase}/${viewingWallet}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="Open on explorer"
-                    className="p-1 rounded-full hover:bg-white/5 transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4 text-slate-400" />
-                  </a>
-                </div>
-              </div>
+    <div className="min-h-screen bg-[#030712] text-slate-100 font-sans p-4 sm:p-6 max-w-[1600px] mx-auto">
+      
+      {/* Enterprise Identity Metric Frame */}
+      <div className="mb-4 p-4 rounded bg-[#0b0f19]/40 backdrop-blur-md border border-slate-900">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4 min-w-0">
+            
+            {/* Structured Identity Image Module */}
+            <div className="w-12 h-12 rounded-sm bg-[#030712] border border-slate-900 flex items-center justify-center shrink-0 overflow-hidden">
+              {headerLogo ? (
+                <img
+                  src={headerLogo}
+                  alt={displayName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <img
+                  src={dicebearAvatarUrl}
+                  alt={`avatar-${shortAddress}`}
+                  className="w-full h-full object-cover"
+                />
+              )}
             </div>
 
-            {/* Right-side area intentionally empty (balances removed) */}
-            <div />
+            <div className="min-w-0 flex-1">
+              {/* Profile Main Asset Callout */}
+              <h1 className="text-sm font-black text-slate-200 uppercase tracking-wider truncate">
+                {displayName}
+              </h1>
+
+              <div className="flex items-center gap-2 mt-0.5 font-mono text-[10px]">
+                <p className="text-slate-500 truncate hidden md:block tracking-wide">
+                  {viewingWallet}
+                </p>
+                <p className="text-slate-500 truncate md:hidden tracking-wide">
+                  {shortAddress}
+                </p>
+
+                <span className="text-slate-800">•</span>
+
+                {/* Copy Operations Node */}
+                <button
+                  onClick={copyAddress}
+                  className="text-slate-400 hover:text-slate-200 transition-colors p-0.5"
+                  title="Copy account hash"
+                >
+                  {copied ? (
+                    <CheckIcon className="w-3 h-3 text-[#96d6cd]" />
+                  ) : (
+                    <CopyIcon className="w-3 h-3 text-slate-600 hover:text-slate-400" />
+                  )}
+                </button>
+
+                {/* Chain Telemetry Block Explorer Reference Link */}
+                <a
+                  href={`${explorerBase}/${viewingWallet}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Lookup signature metrics"
+                  className="text-slate-600 hover:text-slate-400 transition-colors p-0.5"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
           </div>
+          <div />
         </div>
-
-        {/* Tabs */}
-        <div className="mb-6 p-2 overflow-x-auto">
-          <div className="inline-flex gap-3 items-center px-1">
-            <TabButton tabName={TABS.CREATED} icon={Sparkles} />
-            <TabButton tabName={TABS.PORTFOLIO} icon={TrendingUp} />
-            <TabButton tabName={TABS.HISTORY} icon={History} />
-          </div>
-        </div>
-
-        <div className="no-hover">{getTabComponent()}</div>
-
-        <Toast
-          message={notification.message}
-          show={notification.show}
-          open={notification.show}
-        />
       </div>
-    </>
+
+      {/* Structured Registry Filter Tabs */}
+      <div className="mb-4 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-b border-slate-900">
+        <TabButton tabName={TABS.CREATED} icon={Sparkles} />
+        <TabButton tabName={TABS.PORTFOLIO} icon={TrendingUp} />
+        <TabButton tabName={TABS.HISTORY} icon={History} />
+      </div>
+
+      {/* Sub-tab Screen Output Engine */}
+      <div className="w-full select-none">
+        {getTabComponent()}
+      </div>
+
+      <Toast
+        message={notification.message}
+        show={notification.show}
+        open={notification.show}
+      />
+    </div>
   );
 };
 
