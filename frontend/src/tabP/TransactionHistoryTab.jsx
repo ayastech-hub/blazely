@@ -1,9 +1,8 @@
 // src/components/TransactionHistoryTab.jsx
 import React, { useEffect, useState, useCallback } from "react";
 import { History, RefreshCw, ExternalLink } from "lucide-react";
-import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { supabase } from "../lib/supabaseClient"; // adjust path if needed
+import { supabase } from "../lib/supabaseClient";
 
 const TransactionHistoryTab = ({
   loading = false,
@@ -21,10 +20,7 @@ const TransactionHistoryTab = ({
   const fetchTxs = useCallback(
     async ({ reset = false } = {}) => {
       setError(null);
-      if (!address) {
-        setRows([]);
-        return;
-      }
+      if (!address) { setRows([]); return; }
 
       try {
         setLoadingTx(true);
@@ -32,20 +28,9 @@ const TransactionHistoryTab = ({
 
         const { data, error: sbError } = await supabase
           .from("transactions")
-          .select(
-            `
-          tx_hash,
-          block_number,
-          created_at,
-          token_address, 
-          user_address,
-          type,
-          token_amount, 
-          eth_amount
-        `
-          )
+          .select("tx_hash, block_number, created_at, token_address, user_address, type, token_amount, eth_amount")
           .eq("user_address", address)
-          .order("created_at", { ascending: false }) // sort by time instead
+          .order("created_at", { ascending: false })
           .range(from, from + pageSize - 1);
 
         if (sbError) throw sbError;
@@ -54,19 +39,16 @@ const TransactionHistoryTab = ({
           setRows(data || []);
         } else {
           setRows((prev) => {
-            const map = new Map(prev.map((r) => [r.created_at, r])); // use created_at as key
+            const map = new Map(prev.map((r) => [r.created_at, r]));
             (data || []).forEach((r) => map.set(r.created_at, r));
-            return Array.from(map.values()).sort(
-              (a, b) => new Date(b.created_at) - new Date(a.created_at) // descending by time
-            );
+            return Array.from(map.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
           });
         }
 
         setHasMore((data || []).length === pageSize);
         setPage((p) => (reset ? 1 : p + 1));
       } catch (err) {
-        console.error("Failed to fetch transactions:", err);
-        setError(err.message || "Failed to load transactions");
+        setError(err.message || "Failed to load ledger stream.");
       } finally {
         setLoadingTx(false);
       }
@@ -75,306 +57,156 @@ const TransactionHistoryTab = ({
   );
 
   useEffect(() => {
-    if (!address) {
-      setRows([]);
-      setPage(0);
-      setHasMore(false);
-      return;
-    }
+    if (!address) { setRows([]); setPage(0); setHasMore(false); return; }
     setPage(0);
     fetchTxs({ reset: true });
   }, [address]);
+
   useEffect(() => {
     if (!address) return;
 
     const channel = supabase
       .channel(`realtime-profile-${address}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "transactions",
-        },
-        (payload) => {
-          const tx = payload.new;
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "transactions" }, (payload) => {
+        const tx = payload.new;
+        if (tx.user_address !== address) return;
 
-          // Only this wallet
-          if (tx.user_address !== address) return;
-
-          setRows((prev) => {
-            // Deduplicate (important)
-            if (prev.some((r) => r.tx_hash === tx.tx_hash)) return prev;
-
-            // Prepend new tx
-            return [tx, ...prev].sort(
-              (a, b) => new Date(b.created_at) - new Date(a.created_at)
-            );
-          });
-        }
-      )
+        setRows((prev) => {
+          if (prev.some((r) => r.tx_hash === tx.tx_hash)) return prev;
+          return [tx, ...prev].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        });
+      })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [address]);
 
-  /* -------------------------- Helper Functions -------------------------- */
-
-  const formatShort = (str = "") => {
-    if (!str) return "";
-    if (str.length <= 10) return str;
-    return `${str.slice(0, 3)}..${str.slice(-4)}`;
-  };
-
-  const getAvatarUrl = (addr = "") =>
-    `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(
-      addr.toLowerCase()
-    )}`;
-
-  const formatRelativeTime = (isoDate) => {
-    if (!isoDate) return "-";
-    const standardized = isoDate.replace(" ", "T") + "Z";
-    const seconds = Math.floor((new Date() - new Date(standardized)) / 1000);
-
-    if (seconds < 0) return "Just now";
-    if (seconds >= 31536000) return Math.floor(seconds / 31536000) + "y ago";
-    if (seconds >= 2592000) return Math.floor(seconds / 2592000) + "mo ago";
-    if (seconds >= 86400) return Math.floor(seconds / 86400) + "d ago";
-    if (seconds >= 3600) return Math.floor(seconds / 3600) + "h ago";
-    if (seconds >= 60) return Math.floor(seconds / 60) + "m ago";
-    return seconds + "s ago";
+  const formatShort = (s = "") => s && s.length > 10 ? `${s.slice(0, 4)}..${s.slice(-4)}` : s;
+  
+  const formatRelativeTime = (iso) => {
+    if (!iso) return "-";
+    const delta = Math.floor((new Date() - new Date(iso.replace(" ", "T") + "Z")) / 1000);
+    if (delta < 60) return `${delta}s`;
+    if (delta < 3600) return `${Math.floor(delta / 60)}m`;
+    if (delta < 86400) return `${Math.floor(delta / 3600)}h`;
+    return `${Math.floor(delta / 86400)}d`;
   };
 
   const formatEth = (val) => {
-    if (val == null) return "-";
-    try {
-      const n = Number(val);
-      if (Number.isNaN(n)) return val;
-      return n >= 0.000001
-        ? n.toLocaleString(undefined, {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 6,
-          })
-        : n.toFixed(8);
-    } catch {
-      return val;
-    }
+    const n = Number(val);
+    if (Number.isNaN(n) || val == null) return "-";
+    return n >= 0.000001 ? n.toLocaleString(undefined, { maximumFractionDigits: 6 }) : n.toFixed(8);
   };
 
   const formatTokens = (val) => {
-    if (val == null) return "-";
-    try {
-      const n = Number(val);
-      if (Number.isNaN(n)) return val;
-
-      if (Math.abs(n) >= 1000) {
-        const lookup = [
-          { value: 1e12, symbol: "T" },
-          { value: 1e9, symbol: "B" },
-          { value: 1e6, symbol: "M" },
-          { value: 1e3, symbol: "k" },
-        ];
-        const item = lookup.find((i) => Math.abs(n) >= i.value) || {
-          value: 1,
-          symbol: "",
-        };
-
-        let formatted = (n / item.value).toFixed(2);
-        formatted = formatted.replace(/\.0+$|(\.[0-9]*[1-9])0+$/, "$1");
-        return formatted + item.symbol;
-      }
-      return n.toLocaleString(undefined, { maximumFractionDigits: 6 });
-    } catch {
-      return val;
+    const n = Number(val);
+    if (Number.isNaN(n) || val == null) return "-";
+    if (Math.abs(n) >= 1000) {
+      const lookup = [
+        { value: 1e12, symbol: "T" },
+        { value: 1e9, symbol: "B" },
+        { value: 1e6, symbol: "M" },
+        { value: 1e3, symbol: "k" },
+      ];
+      const item = lookup.find((i) => Math.abs(n) >= i.value) || { value: 1, symbol: "" };
+      return (n / item.value).toFixed(2).replace(/\.0+$|(\.[0-9]*[1-9])0+$/, "$1") + item.symbol;
     }
+    return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
   };
-
-  const handleRefresh = async () => {
-    setPage(0);
-    await fetchTxs({ reset: true });
-  };
-
-  const loadMore = async () => {
-    await fetchTxs({ reset: false });
-  };
-
-  /* ---------------------------- Render ---------------------------- */
 
   return (
-    <motion.div
-      className="card p-6 flex flex-col items-stretch justify-center min-h-[400px] border border-slate-800/50 bg-slate-900/50 rounded-xl"
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
-      <div className="flex items-center justify-between mb-5 border-b border-slate-800 pb-4">
-        <div className="flex items-center space-x-3">
-          <History className="w-6 h-6 text-purple-400" />
-          <h3 className="text-xl font-extrabold text-white">
-            Transaction History
-          </h3>
-
-          <span className="text-sm text-slate-500 hidden sm:inline">
-            {address && (
-              <span className="inline-flex items-center gap-2">
-                <img
-                  src={getAvatarUrl(address)}
-                  alt="addr avatar"
-                  className="w-4 h-4 rounded-full"
-                />
-                <span>{formatShort(address)}</span>
-              </span>
-            )}
-          </span>
+    <div className="font-mono text-[11px] bg-[#0b0f19]/40 border border-slate-900 p-4 rounded-none min-h-[400px] flex flex-col justify-between">
+      
+      {/* Module Title Registry Panel Header */}
+      <div className="flex items-center justify-between border-b border-slate-900 pb-3 mb-3 shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-[#030712] border border-slate-900 flex items-center justify-center text-slate-500 rounded-none">
+            <History size={14} />
+          </div>
+          <h3 className="text-xs font-black uppercase tracking-wider text-slate-200">LEDGER_TRANSACTION_HISTORY</h3>
         </div>
 
         <button
-          onClick={handleRefresh}
-          className="text-sm text-slate-300 hover:text-white transition-colors flex items-center gap-2 p-2 rounded-lg hover:bg-slate-800/50"
-          title="Refresh"
+          onClick={() => { setPage(0); fetchTxs({ reset: true }); }}
           disabled={loading || loadingTx || !address}
+          className="p-1.5 border border-slate-900 bg-[#030712] text-slate-500 hover:text-slate-300 flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider"
         >
-          <RefreshCw
-            className={`w-4 h-4 ${
-              loadingTx ? "animate-spin text-purple-400" : "text-slate-400"
-            }`}
-          />
-          <span className="hidden sm:inline">Refresh</span>
+          <RefreshCw size={11} className={loadingTx ? "animate-spin text-[#96d6cd]" : ""} />
+          <span>REFRESH</span>
         </button>
       </div>
 
-      <div className="flex-1">
+      {/* Terminal Grid Output Workspace Context Frame */}
+      <div className="flex-grow flex flex-col justify-center">
         {!address && hideIfNoAddress ? (
-          <div className="flex h-72 flex-col items-center justify-center text-center px-4">
-            <p className="text-slate-400">
-              Connect a wallet to view transaction history.
-            </p>
-          </div>
-        ) : loading || loadingTx ? (
-          <div className="flex h-72 items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
-          </div>
+          <div className="text-center py-12 border border-dashed border-slate-900"><span className="text-slate-600 uppercase font-bold">!! RUNTIME_ERROR // WALLET_NOT_LINKED</span></div>
+        ) : loading || loadingTx && page === 0 ? (
+          <div className="flex justify-center py-12"><div className="animate-spin rounded-none h-5 w-5 border border-[#96d6cd] border-t-transparent"></div></div>
         ) : error ? (
-          <div className="flex h-72 flex-col items-center justify-center text-center px-4">
-            <p className="text-red-400 mb-2 font-semibold">
-              Error loading transactions
-            </p>
-            <p className="text-slate-500 text-sm">{error}</p>
-          </div>
+          <div className="text-center py-12 border border-slate-900 text-rose-500 font-bold uppercase"><span>ERR_LOAD_FAIL // {error}</span></div>
         ) : rows.length === 0 ? (
-          <div className="flex h-72 flex-col items-center justify-center text-center px-4">
-            <History className="w-10 h-10 text-slate-700 mb-3" />
-            <h4 className="text-white font-semibold mb-1">
-              No transactions found
-            </h4>
-            <p className="text-slate-500 text-sm max-w-sm">
-              We will show pad buys/sells here.
-            </p>
+          <div className="text-center py-12 border border-dashed border-slate-900 flex flex-col items-center justify-center space-y-1">
+            <History size={16} className="text-slate-700" />
+            <span className="text-slate-600 font-bold uppercase tracking-wider">NULL_SET // EMPTY_LEDGER_STREAM</span>
           </div>
         ) : (
           <div className="overflow-y-auto max-h-[420px] pr-1">
-            <table className="w-full text-left table-auto">
-              <thead className="text-slate-400 text-xs uppercase sticky top-0 bg-slate-900/80 backdrop-blur-sm z-10 border-b border-slate-700">
+            <table className="w-full text-left table-auto border-collapse">
+              <thead className="text-slate-500 text-[10px] uppercase font-bold tracking-widest sticky top-0 bg-[#030712] z-10 border-b border-slate-900">
                 <tr>
-                  <th className="py-3 px-3">Account</th>
-                  <th className="py-3 px-3">Type</th>
-                  <th className="py-3 px-3 text-right">Tokens</th>
-                  <th className="py-3 px-3 text-right">ETH</th>
-                  <th className="py-3 px-3">Tx</th>
-                  <th className="py-3 px-3">When</th>
+                  <th className="py-2 px-2">ASSET_ID</th>
+                  <th className="py-2 px-2">OP_TYPE</th>
+                  <th className="py-2 px-2 text-right">QUANTITY</th>
+                  <th className="py-2 px-2 text-right">VALUE_ETH</th>
+                  <th className="py-2 px-2">TX_HASH</th>
+                  <th className="py-2 px-2 text-right">DELTA_T</th>
                 </tr>
               </thead>
-
-              <tbody>
+              <tbody className="divide-y divide-slate-900/60 font-mono text-slate-300">
                 {rows.map((r) => (
-                  <motion.tr
-                    key={r.tx_hash}
-                    className="border-t border-slate-800 hover:bg-slate-800/30 transition-colors"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2, delay: 0.05 }}
-                  >
-                    {/* ACCOUNT COLUMN (with DiceBear avatar) */}
-
-                    <td className="py-3 px-3 align-middle">
-                      <Link
-                        to={`/token/${r.address}`} // <-- dynamic route
-                        className="text-slate-400 text-xs inline-flex items-center gap-2 hover:text-purple-400 transition-colors"
-                        title={r.address}
-                      >
-                        <img
-                          src={getAvatarUrl(r.address)}
-                          alt="wallet avatar"
-                          className="w-5 h-5 rounded-full flex-shrink-0"
-                        />
-                        <span className="text-slate-300">
-                          {formatShort(r.address)}
-                        </span>
+                  <tr key={r.tx_hash} className="hover:bg-[#0b0f19]/60 transition-colors">
+                    <td className="py-2.5 px-2">
+                      <Link to={`/token/${r.token_address}`} className="text-slate-400 hover:text-[#96d6cd] font-bold">
+                        {formatShort(r.token_address)}
                       </Link>
                     </td>
-                    <td className="py-3 px-3 align-middle">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-semibold uppercase ${
-                          r.type === "buy"
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : "bg-rose-500/20 text-rose-400"
-                        }`}
-                      >
+                    <td className="py-2.5 px-2">
+                      <span className={`px-1 py-0.5 text-[9px] font-black uppercase tracking-wide border ${r.type === "buy" ? "border-emerald-900 bg-emerald-950/20 text-[#96d6cd]" : "border-rose-900 bg-rose-950/20 text-rose-400"}`}>
                         {r.type}
                       </span>
                     </td>
-
-                    <td className="py-3 px-3 align-middle text-right text-sm text-slate-200 font-mono">
-                      {formatTokens(r.token_amount)}
-                    </td>
-
-                    <td className="py-3 px-3 align-middle text-right text-sm text-slate-200 font-mono">
-                      {formatEth(r.eth_amount)}
-                    </td>
-
-                    <td className="py-3 px-3 align-middle">
-                      <a
-                        className="text-purple-400 text-xs inline-flex items-center gap-1 hover:text-purple-300 transition-colors"
-                        href={`${chainExplorerBase}${r.tx_hash}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        title={r.tx_hash}
-                      >
-                        <ExternalLink className="w-3 h-3" />
+                    <td className="py-2.5 px-2 text-right text-slate-200">{formatTokens(r.token_amount)}</td>
+                    <td className="py-2.5 px-2 text-right text-slate-200">{formatEth(r.eth_amount)}</td>
+                    <td className="py-2.5 px-2">
+                      <a href={`${chainExplorerBase}${r.tx_hash}`} target="_blank" rel="noreferrer" className="text-slate-500 hover:text-slate-300 inline-flex items-center gap-1">
+                        <ExternalLink size={10} />
                         <span>{formatShort(r.tx_hash)}</span>
                       </a>
                     </td>
-
-                    <td className="py-3 px-3 align-middle">
-                      <div className="text-xs text-slate-500 whitespace-nowrap">
-                        {formatRelativeTime(r.created_at)}
-                      </div>
-                    </td>
-                  </motion.tr>
+                    <td className="py-2.5 px-2 text-right text-slate-500">{formatRelativeTime(r.created_at)}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="flex items-center justify-center gap-2 mt-6 pb-4">
+            {/* Pagination Controls Footer Tracker */}
+            <div className="flex items-center justify-center pt-4 shrink-0">
               {hasMore ? (
                 <button
-                  className="px-4 py-2 border border-slate-700 text-slate-400 text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors"
-                  onClick={loadMore}
+                  onClick={() => fetchTxs({ reset: false })}
                   disabled={loadingTx}
+                  className="px-3 py-1.5 border border-slate-900 bg-[#030712] hover:border-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wider"
                 >
-                  {loadingTx ? "Loading..." : "Load more"}
+                  {loadingTx ? "FETCHING..." : "LOAD_NEXT_BATCH"}
                 </button>
               ) : (
-                <div className="text-slate-600 text-xs py-2">
-                  End of history
-                </div>
+                <span className="text-slate-600 text-[9px] font-bold uppercase tracking-widest">[END_OF_HISTORIC_STREAM_BUFFER]</span>
               )}
             </div>
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 };
 
