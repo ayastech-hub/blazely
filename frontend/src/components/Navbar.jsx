@@ -334,7 +334,7 @@ const Navbar = ({ onSearchChange = () => {} }) => {
 <div className="flex items-center gap-8">
   <Link to="/" className="flex items-center gap-2.5 group">
     <Logo 
-      size={26} 
+      size={42} 
       className="transform group-hover:scale-105 group-hover:rotate-6 transition-transform duration-200" 
     />
     
