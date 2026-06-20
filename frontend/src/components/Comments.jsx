@@ -175,64 +175,80 @@ export default function Comments({ tokenAddress }) {
     tokenCreator && addr?.toLowerCase() === tokenCreator;
 
   return (
-    <div className="relative bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 p-4 rounded-2xl border border-slate-800/70 h-full flex flex-col max-h-[500px] shadow-2xl">
+    <div className="relative bg-[#0b0f19]/20 flex flex-col h-[480px] max-w-full overflow-hidden">
+      {/* Toast Alert System styled with #96d6cd */}
       {toast && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 text-xs rounded-full z-50 animate-bounce bg-cyan-500 text-white shadow-lg font-bold">
+        <div 
+          className="absolute top-2 left-1/2 -translate-x-1/2 px-4 py-1.5 text-[11px] font-bold rounded-md z-50 shadow-xl border border-[#96d6cd]/30 text-[#030712] backdrop-blur-md"
+          style={{ backgroundColor: '#96d6cd' }}
+        >
           {toast.msg}
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-4">
+      {/* Terminal Title Header */}
+      <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-900">
         <div className="flex items-center gap-2">
-          <MessageCircle className="text-cyan-400" size={20} />
-          <h3 className="text-lg font-bold text-white tracking-tight">
-            Discussion
+          <MessageCircle style={{ color: '#96d6cd' }} size={15} />
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            Protocol Network Feed
           </h3>
-          <span className="bg-slate-800 text-cyan-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-700">
+          <span 
+            className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border bg-[#030712]/60 border-slate-800/60"
+            style={{ color: '#96d6cd' }}
+          >
             {list.length}
           </span>
         </div>
+        <span className="text-[10px] text-slate-600 font-mono tracking-widest uppercase">Realtime Stream</span>
       </div>
 
+      {/* Stream Terminal Content View */}
       <div
         ref={commentsContainerRef}
-        className="flex-1 overflow-y-auto space-y-4 mb-4 pr-1 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent"
+        className="flex-1 overflow-y-auto space-y-3 mb-4 pr-1 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent"
       >
         <div ref={commentsStartRef} />
         {list.length === 0 ? (
-          <div className="text-center py-10 text-slate-500 text-xs">
-            No comments yet. Be the first!
+          <div className="text-center py-24 text-slate-600 font-mono text-[11px] uppercase tracking-wider">
+            No secure feed packets found. Initialize discussion...
           </div>
         ) : (
           list.map((c) => (
             <div
               key={c.id}
-              className={`group transition-all duration-300 ${
-                c.isTemporary ? "opacity-40 scale-95" : "opacity-100 scale-100"
+              className={`transition-all duration-200 ${
+                c.isTemporary ? "opacity-30 scale-[0.99]" : "opacity-100 scale-100"
               }`}
             >
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-slate-700 to-slate-600 flex items-center justify-center border border-slate-600 shadow-inner">
-                  <User size={12} className="text-slate-300" />
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-5 h-5 rounded bg-slate-900 border border-slate-800 flex items-center justify-center">
+                  <User size={10} className="text-slate-500" />
                 </div>
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-mono font-semibold text-slate-200">
-                      {shortenWallet(c.user_wallet)}
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono text-slate-300 font-medium">
+                    {shortenWallet(c.user_wallet)}
+                  </span>
+                  
+                  {isCommentFromCreator(c.user_wallet) && (
+                    <span 
+                      className="text-[8px] border px-1.5 py-0.25 rounded-sm font-extrabold uppercase tracking-widest bg-[#96d6cd]/10"
+                      style={{ color: '#96d6cd', borderColor: '#96d6cd/30' }}
+                    >
+                      dev
                     </span>
-                    {isCommentFromCreator(c.user_wallet) && (
-                      <span className="text-[9px] bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-1.5 rounded-sm font-black uppercase tracking-tighter">
-                        dev
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[9px] text-slate-500 uppercase font-bold">
-                    {timeAgo(c.created_at, now)}
+                  )}
+                  
+                  <span className="text-[9px] text-slate-600 font-mono">
+                    • {timeAgo(c.created_at, now)}
                   </span>
                 </div>
               </div>
-              <div className="ml-8 relative">
-                <p className="text-slate-300 text-xs leading-relaxed bg-slate-800/40 p-2.5 rounded-tr-xl rounded-br-xl rounded-bl-xl border-l-2 border-cyan-500/50 shadow-sm group-hover:bg-slate-800/60 transition-colors">
+              <div className="ml-7">
+                <p 
+                  className="text-slate-300 text-xs leading-relaxed bg-[#030712]/40 p-2.5 rounded border-l border-slate-800 hover:bg-[#030712]/70 transition-colors"
+                  style={{ borderLeftColor: isCommentFromCreator(c.user_wallet) ? '#96d6cd' : 'rgb(30, 41, 59)' }}
+                >
                   {c.comment}
                 </p>
               </div>
@@ -241,7 +257,8 @@ export default function Comments({ tokenAddress }) {
         )}
       </div>
 
-      <div className="bg-slate-900/80 p-3 rounded-2xl border border-slate-700/50 shadow-inner">
+      {/* Input Action Deck */}
+      <div className="bg-[#030712]/60 p-3 rounded-lg border border-slate-900 shadow-sm">
         <textarea
           value={val}
           onChange={(e) => setVal(e.target.value)}
@@ -250,24 +267,30 @@ export default function Comments({ tokenAddress }) {
             !e.shiftKey &&
             (e.preventDefault(), addComment())
           }
-          className="w-full bg-transparent text-white text-xs outline-none resize-none placeholder-slate-600 mb-2"
+          className="w-full bg-transparent text-slate-200 text-xs outline-none resize-none placeholder-slate-700 min-h-[44px]"
           placeholder={
-            wallet ? "Share your thoughts..." : "Please connect wallet..."
+            wallet ? "Broadcast secure comment block to ledger..." : "Access restricted. Connect wallet node..."
           }
           rows={2}
           maxLength={500}
           disabled={!wallet}
         />
-        <div className="flex justify-between items-center pt-1 border-t border-slate-800">
-          <span className="text-[10px] text-slate-600 font-medium">
+        <div className="flex justify-between items-center pt-2 border-t border-slate-900/60">
+          <span className="text-[10px] text-slate-600 font-mono">
             {val.length}/500
           </span>
           <button
             onClick={addComment}
             disabled={!val.trim() || !wallet}
-            className="bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-600 text-white px-4 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-2 text-[11px] font-bold shadow-lg shadow-cyan-900/20"
+            style={{ 
+              backgroundColor: val.trim() && wallet ? '#96d6cd' : '',
+            }}
+            className="disabled:bg-slate-900 disabled:text-slate-600 text-[#030712] hover:opacity-90 transition-all duration-150 px-3.5 py-1.5 rounded font-bold uppercase tracking-wider text-[10px] flex items-center gap-1.5"
           >
-            POST <Send size={12} />
+            <span className={!val.trim() || !wallet ? "text-slate-600" : "text-[#030712]"}>
+              Broadcast
+            </span> 
+            <Send size={10} className={!val.trim() || !wallet ? "text-slate-600" : "text-[#030712]"} />
           </button>
         </div>
       </div>
