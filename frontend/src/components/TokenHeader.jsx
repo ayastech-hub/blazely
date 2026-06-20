@@ -1,34 +1,28 @@
+// src/components/TokenHeader.jsx
 import React, { useState } from "react";
 import { Globe, Twitter, Send, Copy } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 
-// ------------------- Helpers -------------------
+// ------------------- Quantitative Formatters -------------------
 const formatPrice = (price) => {
   if (!price) return "—";
   const num = Number(price);
   if (isNaN(num)) return "—";
   if (num === 0) return "$0.00";
 
-  if (num >= 0.1)
+  if (num >= 0.1) {
     return `$${num.toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 4,
     })}`;
+  }
 
   const str = num.toFixed(20);
   const match = str.match(/^0\.(0+)/);
   if (match) {
     const zeroCount = match[1].length;
-    const sigDigits = str.substring(zeroCount + 2, zeroCount + 4);
-    return (
-      <span className="flex items-baseline font-sans">
-        <span>$0.0</span>
-        <sub className="text-[11px] font-bold leading-none text-white">
-          {zeroCount}
-        </sub>
-        <span>{sigDigits}</span>
-      </span>
-    );
+    const sigDigits = str.substring(zeroCount + 2, zeroCount + 6).replace(/0+$/, "");
+    return `$0.0(${zeroCount})${sigDigits}`;
   }
 
   return `$${num.toFixed(6)}`;
@@ -40,7 +34,7 @@ const formatCompact = (num, isCurrency = false) => {
   if (isNaN(n)) return "—";
   const sign = isCurrency ? "$" : "";
   if (Math.abs(n) < 1000) return `${sign}${n.toFixed(2)}`;
-  const units = ["", "k", "m", "b"];
+  const units = ["", "K", "M", "B"];
   const i = Math.floor(Math.log10(Math.abs(n)) / 3);
   return `${sign}${(n / 10 ** (i * 3)).toFixed(1)}${units[i]}`;
 };
@@ -64,14 +58,14 @@ const getLogoUrl = (token) => {
   return "/fallback-logo.png";
 };
 
-// ------------------- Description -------------------
+// ------------------- Description Sub-Module -------------------
 const Description = ({ text }) => {
   const [open, setOpen] = useState(false);
   if (!text) return null;
 
   return (
     <p
-      className={`text-sm text-slate-300 leading-relaxed mt-2 cursor-pointer transition-all break-words whitespace-pre-wrap ${
+      className={`text-xs text-slate-400 leading-relaxed mt-1 border border-slate-900/60 bg-[#030712]/20 p-2 rounded-none cursor-pointer transition-all break-words whitespace-pre-wrap ${
         open ? "line-clamp-none" : "line-clamp-2"
       }`}
       onClick={() => setOpen(!open)}
@@ -81,7 +75,7 @@ const Description = ({ text }) => {
   );
 };
 
-// ------------------- Main Component -------------------
+// ------------------- Main Component Module -------------------
 export default function TokenHeader({
   token,
   marketCap,
@@ -105,10 +99,11 @@ export default function TokenHeader({
   };
 
   return (
-    <div className="bg-slate-950/70 backdrop-blur-xl rounded-2xl p-4 border border-slate-800/50 shadow-md">
-      <div className="grid grid-cols-[4rem_1fr] gap-4 min-w-0">
-        {/* Logo */}
-        <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-900/40 border border-slate-800/50 shadow-inner flex-shrink-0">
+    <div className="font-mono bg-[#0b0f19]/40 p-4 border border-slate-900 rounded-sm text-slate-300">
+      <div className="grid grid-cols-1 sm:grid-cols-[4.5rem_1fr] gap-4 min-w-0">
+        
+        {/* Rigid Identity Frame */}
+        <div className="w-16 h-16 rounded-none overflow-hidden bg-[#030712] border border-slate-900 flex-shrink-0 mx-auto sm:mx-0">
           <img
             src={logoUrl}
             alt="token logo"
@@ -116,100 +111,113 @@ export default function TokenHeader({
           />
         </div>
 
-        {/* Info Section */}
+        {/* Primary Data Assembly Segment */}
         <div className="flex flex-col gap-2 min-w-0">
-          {/* Name + Socials */}
-          <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <h1 className="text-lg sm:text-xl font-semibold truncate min-w-0">
+          
+          {/* Identity Title Block + Social Anchor Pins */}
+          <div className="flex items-center gap-2 flex-wrap min-w-0 justify-center sm:justify-start">
+            <h1 className="text-sm font-black uppercase tracking-wider text-slate-100 truncate min-w-0">
               {token?.name || "—"}
             </h1>
-            <span className="text-xs px-2 py-0.5 rounded-md bg-slate-900/60 border border-slate-800 flex-shrink-0">
-              <p className="uppercase font-mono truncate">
-                ${token?.symbol || "—"}
-              </p>
-            </span>
-            <div className="flex items-center gap-1 flex-wrap min-w-0">
-              {twitter && (
-                <Social href={twitter} icon={<Twitter size={12} />} />
-              )}
-              {telegram && <Social href={telegram} icon={<Send size={12} />} />}
-              {website && <Social href={website} icon={<Globe size={12} />} />}
+            
+            <div className="text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-[#030712] border border-slate-900 text-slate-400">
+              ${token?.symbol || "—"}
+            </div>
+
+            <div className="flex items-center gap-1">
+              {twitter && <Social href={twitter} icon={<Twitter size={10} />} label="X" />}
+              {telegram && <Social href={telegram} icon={<Send size={10} />} label="TG" />}
+              {website && <Social href={website} icon={<Globe size={10} />} label="WEB" />}
             </div>
           </div>
 
-          {/* Contract Address */}
-          <div className="flex items-center flex-wrap gap-2 mt-1 min-w-0">
-            <span className="text-xs text-slate-400">CA</span>
-            <span className="font-mono text-xs text-cyan-400 bg-slate-900/60 px-2 py-1 rounded-md border border-slate-800 truncate min-w-0">
-              {shortenAddress(contractAddress)}
+          {/* Network Cryptographic Registry Verification Row */}
+          <div className="flex items-center flex-wrap gap-2 justify-center sm:justify-start min-w-0 text-[11px]">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">CA:</span>
+            <span className="bg-[#030712] px-2 py-0.5 border border-slate-900 text-slate-300 tracking-wide truncate min-w-0">
+              {shortenAddress(contractAddress).toUpperCase()}
             </span>
-            <button
-              onClick={copyContract}
-              className="relative p-1.5 rounded-md bg-slate-900/50 border border-slate-800 hover:border-cyan-400/40 transition"
-            >
-              <Copy size={14} />
-              {copied === "contract" && (
-                <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] bg-cyan-500 text-black px-2 py-0.5 rounded">
-                  Copied
-                </span>
-              )}
-            </button>
-            <a
-              href={`https://dexscreener.com/base/${contractAddress}`}
-              target="_blank"
-              rel="noreferrer"
-              className="p-1.5 rounded-md bg-slate-900/50 border border-slate-800 hover:border-purple-400/40 transition"
-            >
-              <img src="/dexscreener.png" alt="dex" className="w-4 h-4" />
-            </a>
+            
+            <div className="flex items-center gap-1">
+              <button
+                onClick={copyContract}
+                className="relative p-1 bg-[#030712] border border-slate-900 text-slate-400 hover:text-slate-200 transition-colors rounded-none"
+                title="Copy interface hash"
+              >
+                <Copy size={11} />
+                {copied === "contract" && (
+                  <span 
+                    style={{ backgroundColor: '#96d6cd', color: '#030712' }}
+                    className="absolute -top-6 left-1/2 -translate-x-1/2 text-[8px] font-black uppercase tracking-widest px-1 py-0.5 rounded-none"
+                  >
+                    COPIED
+                  </span>
+                )}
+              </button>
+
+              <a
+                href={`https://dexscreener.com/base/${contractAddress}`}
+                target="_blank"
+                rel="noreferrer"
+                className="p-1 bg-[#030712] border border-slate-900 text-slate-400 hover:text-slate-200 transition-colors rounded-none"
+                title="DexScreener Telemetry"
+              >
+                <span className="text-[9px] font-black uppercase px-0.5">DEX</span>
+              </a>
+            </div>
           </div>
 
-          {/* Creator */}
-          <div className="text-xs sm:text-sm text-slate-400 mt-1">
-            Created by{" "}
+          {/* Creator Origin Footprint */}
+          <div className="text-[10px] text-slate-500 uppercase tracking-wide text-center sm:text-left">
+            ORIGIN_NODE:{" "}
             <a
               href={`https://basescan.org/address/${creatorWallet}`}
               target="_blank"
               rel="noreferrer"
-              className="font-mono text-white hover:underline break-words"
+              className="text-slate-300 hover:text-slate-100 underline decoration-slate-800 transition-colors"
             >
-              {shortenAddress(creatorWallet)}
+              {shortenAddress(creatorWallet).toUpperCase()}
             </a>
           </div>
 
-          {/* Description */}
+          {/* Description Block */}
           <Description text={description} />
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-3 mt-3 min-w-0">
-            <Stat label="MC" value={formatCompact(marketCap, true)} />
-            <Stat label="Vol" value={formatCompact(volume24h, true)} />
-            <Stat label="Price" value={formatPrice(price)} />
+          {/* Core Analytics Metric Matrix */}
+          <div className="grid grid-cols-3 gap-2 mt-2 min-w-0 border-t border-slate-900/60 pt-2.5">
+            <Stat label="INDEX_MCAP" value={formatCompact(marketCap, true)} />
+            <Stat label="VOLUME_24H" value={formatCompact(volume24h, true)} />
+            <Stat label="SPOT_PRICE" value={formatPrice(price)} />
           </div>
+
         </div>
       </div>
     </div>
   );
 }
 
-// ------------------- Social Component -------------------
-const Social = ({ href, icon }) => (
+// ------------------- Social Sub-Component -------------------
+const Social = ({ href, icon, label }) => (
   <a
     href={href}
     target="_blank"
     rel="noreferrer"
-    className="p-2 rounded-lg bg-slate-900/50 border border-slate-800 hover:text-cyan-400 transition flex-shrink-0"
+    style={{ color: '#96d6cd', borderColor: '#96d6cd20' }}
+    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#96d6cd]/5 border rounded-none text-[9px] font-black tracking-wider hover:opacity-80 transition-opacity"
   >
     {icon}
+    <span>[{label}]</span>
   </a>
 );
 
-// ------------------- Stat Component -------------------
+// ------------------- Stat Panel Sub-Component -------------------
 const Stat = ({ label, value }) => (
-  <div className="bg-slate-900/50 border border-slate-800 rounded-xl px-3 py-2 shadow-sm min-w-0">
-    <div className="text-[10px] text-slate-400 uppercase tracking-wider">
+  <div className="bg-[#030712]/40 border border-slate-900 p-2 min-w-0 rounded-none">
+    <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">
       {label}
     </div>
-    <div className="text-sm font-semibold text-white truncate">{value}</div>
+    <div className="text-xs font-black text-slate-200 truncate font-mono tracking-wide">
+      {value}
+    </div>
   </div>
 );
