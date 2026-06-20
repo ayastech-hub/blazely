@@ -2,21 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ======================
-🎨 Design Tokens (same as TokenInfoPage)
-====================== */
+/* ==========================================================================
+   🎨 Design Tokens (Synchronized for Premium Mint Trading Architecture)
+   ========================================================================== */
 :root {
-  --card-bg: rgba(2, 6, 23, 0.6); /* slate-950/60 */
-  --card-border: rgba(30, 41, 59, 0.7); /* slate-800/70 */
-
-  --accent-cyan: #22d3ee;
-  --accent-purple: #a855f7;
-  --accent-pink: #ec4899;
+  /* Institutional Base Layers */
+  --bg-main: #030712;         /* Deep rich dark canvas */
+  --bg-card: rgba(11, 15, 25, 0.4); /* #0b0f19/40 - crisp layered windowing */
+  --bg-deck: rgba(14, 20, 36, 0.8); /* Order matching engine container */
+  --border-slate: rgba(30, 41, 59, 0.4); /* Ultra-thin geometric borders */
+  
+  /* Primary Identity Accent Token */
+  --brand-primary: #96d6cd;   /* Requested Mint Core */
+  --brand-primary-rgb: 150, 214, 205;
+  
+  /* Auxiliary Structural Tones */
+  --text-muted: #64748b;      /* Terminal description metadata */
+  --accent-purple: #a855f7;   /* Supplementary matrix arrays */
 }
 
-/* ======================
-🌌 GLOBAL BACKGROUND (EXACT MATCH)
-====================== */
+/* ==========================================================================
+   🌌 Global Reset & Environmental Overrides
+   ========================================================================== */
 html,
 body,
 #root {
@@ -24,153 +31,137 @@ body,
   width: 100%;
   margin: 0;
   padding: 0;
-
-  background-color: #020617; /* ✅ slate-950 */
-  color: #e5e7eb; /* slate-200 */
-
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial;
+  background-color: var(--bg-main);
+  color: #f1f5f9; /* slate-100 built for dark readability */
+  
+  /* Premium Trading Typography Matrix */
+  font-family: 
+    "JetBrains Mono", 
+    Inter, 
+    ui-monospace, 
+    SFMono-Regular, 
+    Menlo, 
+    Monaco, 
+    Consolas, 
+    monospace;
 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-/* Root layout */
+/* Custom Asset Text Selection Overrides */
+::selection {
+  background-color: rgba(var(--brand-primary-rgb), 0.15);
+  color: var(--brand-primary);
+}
+
+/* Unified Frame Vector Orientation */
 #root > div {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-/* ======================
-🪐 GLASS CARD (USED EVERYWHERE)
-====================== */
+/* ==========================================================================
+   📐 Geometric Terminal Structure Layouts
+   ========================================================================== */
+
+/* The Enterprise Container Card - Upgraded from blob shapes to sharp frames */
 .card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 1rem; /* rounded-2xl */
+  background: var(--bg-card);
+  border: 1px solid var(--border-slate);
+  border-radius: 0.75rem; /* Clean 12px metric edge lines */
   padding: 1.25rem;
-  backdrop-filter: blur(16px);
-  transition: all 0.3s ease;
+  backdrop-filter: blur(12px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* ======================
-🔮 NAVBAR (SAME COLOR FAMILY)
-====================== */
+.card:hover {
+  border-color: rgba(var(--brand-primary-rgb), 0.25);
+}
+
+/* Institutional Navigation Dock */
 .navbar {
-  background: rgba(2, 6, 23, 0.8); /* slate-950/80 */
-  border-bottom: 1px solid var(--card-border);
+  background: rgba(3, 7, 18, 0.85);
+  border-bottom: 1px solid var(--border-slate);
   backdrop-filter: blur(16px);
   position: sticky;
   top: 0;
   z-index: 50;
 }
 
-/* ======================
-📦 MAIN LAYOUT (NO BACKGROUND)
-====================== */
+/* High Performance Main Deck View Grid Constraints */
 main {
   flex: 1;
   width: 100%;
-  max-width: 80rem; /* max-w-7xl */
+  max-width: 100rem; /* Expanded to max-w-[1600px] to optimize high resolution viewports */
   margin: 0 auto;
   padding-left: 1rem;
   padding-right: 1rem;
 }
 
-/* ======================
-✨ BUTTONS
-====================== */
+/* ==========================================================================
+   ⚡ Interactive Form Factors & System Inputs
+   ========================================================================== */
 .glass-button {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  background: rgba(2, 6, 23, 0.6);
-  border: 1px solid var(--card-border);
-  backdrop-filter: blur(10px);
-  transition: all 0.25s ease;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  tracking-wider: 0.05em;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.375rem; /* Precise 6px edge radius matching terminal forms */
+  background: #030712;
+  border: 1px solid var(--border-slate);
+  color: #94a3b8;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
 }
 
-.glass-button:hover {
-  border-color: var(--accent-cyan);
-  box-shadow: 0 0 16px rgba(34, 211, 238, 0.35);
+.glass-button:hover:not(:disabled) {
+  border-color: var(--brand-primary);
+  color: #030712;
+  background-color: var(--brand-primary);
+  box-shadow: 0 0 14px rgba(var(--brand-primary-rgb), 0.2);
 }
 
-/* ======================
-✨ ANIMATIONS (DEDUPED)
-====================== */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.glass-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
-.animate-fadeInUp {
-  animation: fadeInUp 0.5s ease-out;
+/* Input Fields & Textareas Core Focus Halo Reset */
+input, textarea, select {
+  outline: none !important;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(var(--brand-primary-rgb), 0.5) !important;
 }
 
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  20%,
-  60% {
-    transform: translateX(-4px);
-  }
-  40%,
-  80% {
-    transform: translateX(4px);
-  }
-}
-
-.animate-shake {
-  animation: shake 0.5s ease-in-out;
-}
-
-/* ======================
-📱 MOBILE
-====================== */
-@media (max-width: 768px) {
-  .card {
-    padding: 1rem;
-  }
-}
-
-/* ======================
-🧭 SCROLLBAR (DARK)
-====================== */
+/* ==========================================================================
+   🧭 Micro-engineered System Scrollbars
+   ========================================================================== */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #020617; /* slate-950 */
+  background: #030712;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155; /* slate-700 */
-  border-radius: 4px;
+  background: #1e293b; /* slate-800 anchor lines */
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569; /* slate-600 */
+  background: rgba(var(--brand-primary-rgb), 0.4); /* Highlight path on target interface action */
 }
 
-/* ======================
-🔢 INPUT FIX
-====================== */
+/* ==========================================================================
+   🎛️ Data Integrity Utilities (Numeric Filtering Resets)
+   ========================================================================== */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -179,4 +170,12 @@ input[type="number"]::-webkit-inner-spin-button {
 
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+/* Responsive Adaptive Adjustments */
+@media (max-width: 640px) {
+  .card {
+    padding: 1rem;
+    border-radius: 0.5rem;
+  }
 }
