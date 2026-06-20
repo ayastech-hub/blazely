@@ -1,6 +1,6 @@
 // src/pages/Bridge.jsx
 import React, { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 export default function Bridge() {
   const [isLoading, setIsLoading] = useState(true);
@@ -11,9 +11,8 @@ export default function Bridge() {
     const INIT_FLAG = "__debridge_widget_initialized";
 
     const initWidget = () => {
-      if (window[INIT_FLAG]) return; // prevent duplicate init
-      if (!window.deBridge || typeof window.deBridge.widget !== "function")
-        return;
+      if (window[INIT_FLAG]) return;
+      if (!window.deBridge || typeof window.deBridge.widget !== "function") return;
 
       window.deBridge.widget({
         v: "1",
@@ -47,12 +46,10 @@ export default function Bridge() {
         disabledElements: [],
       });
 
-      // Mark as initialized & remove loader after a small delay
       window[INIT_FLAG] = true;
       setTimeout(() => setIsLoading(false), 800);
     };
 
-    // Load widget script (only once)
     const existingScript = document.getElementById(SCRIPT_ID);
     if (window.deBridge && typeof window.deBridge.widget === "function") {
       initWidget();
@@ -75,17 +72,17 @@ export default function Bridge() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 relative">
+    <div className="font-mono min-h-screen bg-[#030712] text-slate-300 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 relative">
       {isLoading && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 z-10 transition-opacity duration-500">
-          <Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-3" />
-          <p className="text-slate-400 text-sm">Loading Bridge...</p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#030712] z-10 transition-opacity duration-300">
+          <RefreshCw size={18} className="text-[#96d6cd] animate-spin mb-2" />
+          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">INITIALIZING_BRIDGE_STREAM</span>
         </div>
       )}
 
       <div
         id="debridgeWidget"
-        className={`w-full max-w-3xl h-[800px] rounded-2xl shadow-xl border border-slate-800 bg-slate-900/50 transition-opacity duration-700 ${
+        className={`w-full max-w-3xl h-[800px] rounded-none border border-slate-900 bg-[#0b0f19]/40 transition-opacity duration-300 ${
           isLoading ? "opacity-0" : "opacity-100"
         }`}
       ></div>
