@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ShieldCheck, ArrowRight, EyeOff, AlertTriangle, HelpCircle } from "lucide-react";
 
-export default function Welcome() {
+export default function Welcome({ onDismiss }) {
   const navigate = useNavigate();
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
@@ -12,15 +12,25 @@ export default function Welcome() {
   useEffect(() => {
     const hasOptedOut = localStorage.getItem("hideWelcomeScreen");
     if (hasOptedOut === "true") {
-      navigate("/leaderboard", { replace: true });
+      if (onDismiss) {
+        onDismiss();
+      } else {
+        navigate("/", { replace: true });
+      }
     }
-  }, [navigate]);
+  }, [navigate, onDismiss]);
 
   const handleEnterApp = () => {
     if (dontShowAgain) {
       localStorage.setItem("hideWelcomeScreen", "true");
     }
-    navigate("/leaderboard");
+    
+    // Smoothly drop the screen state or clear the route to show the Home component (/)
+    if (onDismiss) {
+      onDismiss();
+    } else {
+      navigate("/");
+    }
   };
 
   return (
