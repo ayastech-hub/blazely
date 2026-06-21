@@ -130,7 +130,7 @@ const Profile = () => {
     } catch (err) { alert(err.message); } finally { setLoading(false); }
   };
 
-     useEffect(() => {
+  useEffect(() => {
     if (!address) return;
     (async () => {
       setLoading(true);
@@ -138,7 +138,7 @@ const Profile = () => {
         const wallet = address.toLowerCase();
         setUserRow(await ensureUserRow(wallet));
 
-        // FIX: Implement logical .or constraint checking to guarantee cross-case matching coverage
+        // FIX: Implement cross-case matching coverage via explicit logical .or constraint setup
         const { data: cRows, error: tokenErr } = await supabase
           .from("tokens")
           .select("*")
@@ -149,15 +149,20 @@ const Profile = () => {
 
         setCreatedTokens((cRows || []).map((r) => ({ ...r, logo: r.logo_path ? getLogoPublicUrl(r.logo_path) : r.logo || null })));
 
-        const base = import.meta?.env?.VITE_API_BASE || "http://localhost:3000";
-        const res = await fetch(`${base.replace(/\/$/, "")}/api/portfolio?wallet=${encodeURIComponent(wallet)}`, { headers: { Accept: "application/json" } });
-        if (res.ok && res.headers.get("content-type")?.includes("application/json")) {
-          setPortfolio((await res.json() || []).map((r) => ({ ...r, logo: r.logo_path ? getLogoPublicUrl(r.logo_path) : r.logo || null, amount: r.user_amount ?? r.amount ?? "0", value: r.user_value ?? r.value ?? "0", change24h: r.change24h ?? "+0.0%" })));
+        // FIX: Isolated local portfolio API routing loop within its own runtime block to shield state assignments from server dropouts
+        try {
+          const base = import.meta?.env?.VITE_API_BASE || "http://localhost:3000";
+          const res = await fetch(`${base.replace(/\/$/, "")}/api/portfolio?wallet=${encodeURIComponent(wallet)}`, { headers: { Accept: "application/json" } });
+          if (res.ok && res.headers.get("content-type")?.includes("application/json")) {
+            setPortfolio((await res.json() || []).map((r) => ({ ...r, logo: r.logo_path ? getLogoPublicUrl(r.logo_path) : r.logo || null, amount: r.user_amount ?? r.amount ?? "0", value: r.user_value ?? r.value ?? "0", change24h: r.change24h ?? "+0.0%" })));
+          }
+        } catch (portfolioError) {
+          console.error("Local network portfolio dataset collection bypass applied:", portfolioError);
         }
+        
       } catch (e) { console.error("Identity collection error", e); } finally { setLoading(false); }
     })();
   }, [address, isConnected]);
-
 
   const totalPortfolioValue = useMemo(() => portfolio.reduce((sum, t) => sum + parseFloat(String(t.value || "0").replace(/,/g, "")), 0), [portfolio]);
   const filteredCreatedTokens = useMemo(() => createdTokens.filter((t) => t.name?.toLowerCase().includes(createdSearch.toLowerCase()) || t.symbol?.toLowerCase().includes(createdSearch.toLowerCase())), [createdTokens, createdSearch]);
