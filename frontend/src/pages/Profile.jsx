@@ -19,6 +19,8 @@ const sanitizeFilename = (s = "") => String(s).trim().replace(/\s+/g, "_").repla
 
 const getLogoPublicUrl = (path) => {
   if (!path) return null;
+  // If path is already an absolute HTTP URL, don't append supabase pathing
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
   try {
     const res = supabase.storage.from("logos").getPublicUrl(path);
     return res?.data?.publicUrl || res?.publicURL || res?.publicUrl || null;
@@ -134,11 +136,18 @@ const Profile = () => {
     if (!address) return;
     (async () => {
       setLoading(true);
-      try {
-        const wallet = address.toLowerCase();
-        setUserRow(await ensureUserRow(wallet));
+      const wallet = address.toLowerCase();
 
-        // FIX: Implement cross-case matching coverage via explicit logical .or constraint setup
+      // Safe evaluation boundary for profile initialization rows
+      try {
+        const userRowData = await ensureUserRow(wallet);
+        setUserRow(userRowData);
+      } catch (userErr) {
+        console.error("Non-fatal user initialization skip:", userErr);
+      }
+
+      // Safe Database Fetch - Pulls directly from Supabase, protected against API dropouts
+      try {
         const { data: cRows, error: tokenErr } = await supabase
           .from("tokens")
           .select("*")
@@ -147,26 +156,34 @@ const Profile = () => {
           
         if (tokenErr) throw tokenErr;
 
-        setCreatedTokens((cRows || []).map((r) => ({ ...r, logo: r.logo_path ? getLogoPublicUrl(r.logo_path) : r.logo || null })));
-
-        // FIX: Isolated local portfolio API routing loop within its own runtime block to shield state assignments from server dropouts
-        try {
-          const base = import.meta?.env?.VITE_API_BASE || "http://localhost:3000";
-          const res = await fetch(`${base.replace(/\/$/, "")}/api/portfolio?wallet=${encodeURIComponent(wallet)}`, { headers: { Accept: "application/json" } });
-          if (res.ok && res.headers.get("content-type")?.includes("application/json")) {
-            setPortfolio((await res.json() || []).map((r) => ({ ...r, logo: r.logo_path ? getLogoPublicUrl(r.logo_path) : r.logo || null, amount: r.user_amount ?? r.amount ?? "0", value: r.user_value ?? r.value ?? "0", change24h: r.change24h ?? "+0.0%" })));
-          }
-        } catch (portfolioError) {
-          console.error("Local network portfolio dataset collection bypass applied:", portfolioError);
+        if (cRows) {
+          setCreatedTokens(cRows.map((r) => ({ 
+            ...r, 
+            logo: r.logo_path ? getLogoPublicUrl(r.logo_path) : (r.logo_url || r.logo || null) 
+          })));
         }
-        
-      } catch (e) { console.error("Identity collection error", e); } finally { setLoading(false); }
+      } catch (dbErr) {
+        console.error("Supabase direct pull error caught:", dbErr);
+      }
+
+      // Safe Portfolio Fetch - Isolated out-of-bounds loop to handle API server down scenarios
+      try {
+        const base = import.meta?.env?.VITE_API_BASE || "http://localhost:3000";
+        const res = await fetch(`${base.replace(/\/$/, "")}/api/portfolio?wallet=${encodeURIComponent(wallet)}`, { headers: { Accept: "application/json" } });
+        if (res.ok && res.headers.get("content-type")?.includes("application/json")) {
+          setPortfolio((await res.json() || []).map((r) => ({ ...r, logo: r.logo_path ? getLogoPublicUrl(r.logo_path) : (r.logo_url || r.logo || null), amount: r.user_amount ?? r.amount ?? "0", value: r.user_value ?? r.value ?? "0", change24h: r.change24h ?? "+0.0%" })));
+        }
+      } catch (portfolioError) {
+        console.error("Local network ecosystem portfolio API skipped cleanly:", portfolioError);
+      }
+      
+      setLoading(false);
     })();
   }, [address, isConnected]);
 
   const totalPortfolioValue = useMemo(() => portfolio.reduce((sum, t) => sum + parseFloat(String(t.value || "0").replace(/,/g, "")), 0), [portfolio]);
-  const filteredCreatedTokens = useMemo(() => createdTokens.filter((t) => t.name?.toLowerCase().includes(createdSearch.toLowerCase()) || t.symbol?.toLowerCase().includes(createdSearch.toLowerCase())), [createdTokens, createdSearch]);
-  const filteredPortfolio = useMemo(() => portfolio.filter((t) => t.name?.toLowerCase().includes(portfolioSearch.toLowerCase()) || t.symbol?.toLowerCase().includes(portfolioSearch.toLowerCase())), [portfolio, portfolioSearch]);
+  const filteredCreatedTokens = useMemo(() => createdTokens.filter((t) => (t.name || "").toLowerCase().includes(createdSearch.toLowerCase()) || (t.symbol || "").toLowerCase().includes(createdSearch.toLowerCase())), [createdTokens, createdSearch]);
+  const filteredPortfolio = useMemo(() => portfolio.filter((t) => (t.name || "").toLowerCase().includes(portfolioSearch.toLowerCase()) || (t.symbol || "").toLowerCase().includes(portfolioSearch.toLowerCase())), [portfolio, portfolioSearch]);
 
   if (!isConnected) {
     return (
