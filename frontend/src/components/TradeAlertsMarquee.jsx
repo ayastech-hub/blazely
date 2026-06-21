@@ -1,6 +1,9 @@
+
 // src/components/TradeAlertsMarquee.jsx
-import React, { useEffect, useRef, useState, useMemo } from "react";
+
+import React, { useEffect, useState, useMemo } from "react";
 import { buyEmitter } from "../utils/buyEmitter";
+import { supabase } from "../lib/supabase";
 
 const shortenAddr = (a = "") =>
   typeof a === "string" && a.length > 10
@@ -8,48 +11,64 @@ const shortenAddr = (a = "") =>
     : a;
 
 const TradeAlertsMarquee = ({
-  wsUrl = typeof window !== "undefined" &&
-  window.location.origin?.startsWith("http")
-    ? `ws://${window.location.hostname}:8080`
-    : "ws://localhost:8080",
-  etherscanBase = "https://etherscan.io",
-  maxAlerts = 20,
-  initialAlerts = [],
+  etherscanBase = "https://basescan.org",
+  maxAlerts = 10,
 }) => {
-  const [alerts, setAlerts] = useState(initialAlerts);
-  const wsRef = useRef(null);
-  const reconnectTimer = useRef(null);
-  const mounted = useRef(true);
+  const [alerts, setAlerts] = useState([]);
 
   useEffect(() => {
-    mounted.current = true;
+    let channel;
 
-    function connect() {
-      try {
-        wsRef.current = new WebSocket(wsUrl);
+    const loadLatestTrades = async () => {
+      const { data, error } = await supabase
+        .from("transactions") // <-- replace with your table name
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
 
-        wsRef.current.addEventListener("message", (ev) => {
-          try {
-            const data = JSON.parse(ev.data);
-            const t = (data.type || "").toString().toLowerCase();
-            const typeReadable =
-              t === "buy" || t === "bought" ? "BOUGHT" : "SOLD";
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      const formatted = data.map((trade) => ({
+        type: trade.type === "buy" ? "BOUGHT" : "SOLD",
+        token: trade.token_address,
+        user: trade.user_address,
+        eth: trade.eth_amount,
+        tx_hash: trade.tx_hash,
+        ts: new Date(trade.created_at).getTime(),
+      }));
+
+      setAlerts(formatted);
+    };
+
+    const subscribeRealtime = () => {
+      channel = supabase
+        .channel("trade-alerts")
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "trade_history", // <-- replace with your table
+          },
+          (payload) => {
+            const trade = payload.new;
 
             const newAlert = {
-              type: typeReadable,
-              token: (data.token && data.token.toString()) || data.token || "UNKNOWN",
-              user: data.user || data.buyer || data.seller || "UNKNOWN",
-              eth: data.eth || data.eth_amount || data.ethAmount || "0",
-              tx_hash: data.tx_hash || data.txHash || null,
+              type: trade.type === "buy" ? "BOUGHT" : "SOLD",
+              token: trade.token_address,
+              user: trade.user_address,
+              eth: trade.eth_amount,
+              tx_hash: trade.tx_hash,
               ts: Date.now(),
             };
 
-            if (!mounted.current) return;
-
             setAlerts((prev) => {
-              const deduped = newAlert.tx_hash
-                ? prev.filter((p) => p.tx_hash !== newAlert.tx_hash)
-                : prev;
+              const deduped = prev.filter(
+                (item) => item.tx_hash !== newAlert.tx_hash
+              );
 
               const next = [newAlert, ...deduped].slice(0, maxAlerts);
 
@@ -59,119 +78,85 @@ const TradeAlertsMarquee = ({
 
               return next;
             });
-          } catch (e) {
-            console.warn("WS parsing error", e);
           }
-        });
+        )
+        .subscribe();
+    };
 
-        wsRef.current.addEventListener("close", () => {
-          attemptReconnect();
-        });
-
-        wsRef.current.addEventListener("error", () => {
-          try {
-            wsRef.current.close();
-          } catch {}
-        });
-      } catch (err) {
-        attemptReconnect();
-      }
-    }
-
-    function attemptReconnect() {
-      if (reconnectTimer.current) return;
-      reconnectTimer.current = setTimeout(() => {
-        reconnectTimer.current = null;
-        if (mounted.current) connect();
-      }, 2500);
-    }
-
-    connect();
+    loadLatestTrades();
+    subscribeRealtime();
 
     return () => {
-      mounted.current = false;
-      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-      try {
-        wsRef.current?.close();
-      } catch {}
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
-  }, [wsUrl, maxAlerts]);
+  }, [maxAlerts]);
 
   const marqueeItems = useMemo(() => {
-    if (!alerts || alerts.length === 0) return [];
+    if (!alerts.length) return [];
 
-    const map = new Map();
-    alerts.forEach((a, idx) => {
-      const stableKey =
-        a.tx_hash || `${a.token}-${a.user}-${a.eth}-${a.ts}-${idx}`;
-      if (!map.has(stableKey)) {
-        map.set(stableKey, { ...a, __stableKey: stableKey });
-      }
-    });
-    const deduped = Array.from(map.values()).slice(0, maxAlerts);
-
-    return deduped.flatMap((a, idx) => [
+    return alerts.flatMap((a, idx) => [
       { ...a, __dup: 0, __origIdx: idx },
       { ...a, __dup: 1, __origIdx: idx },
     ]);
-  }, [alerts, maxAlerts]);
+  }, [alerts]);
 
-  if (!marqueeItems || marqueeItems.length === 0) {
+  if (!marqueeItems.length) {
     return (
-      <div className="w-full bg-[#030712] border-y border-slate-950 h-8 flex items-center px-3 font-mono text-[9px] text-slate-600 font-bold tracking-widest uppercase">
-        AWAITING_TELEMETRY_STREAM...
+      <div className="w-full bg-[#030712] border-y border-slate-950 h-8 flex items-center px-3 font-mono text-[9px] text-slate-600">
+        AWAITING_TRADES...
       </div>
     );
   }
 
   return (
-    <div className="w-full bg-[#030712] border-y border-slate-950 h-8 flex items-center overflow-hidden font-mono text-[10px] select-none group">
-      <div className="flex whitespace-nowrap items-center animate-[marquee_30s_linear_infinite] motion-reduce:animate-none group-hover:[animation-play-state:paused] will-change-transform">
+    <div className="w-full bg-[#030712] border-y border-slate-950 h-8 flex items-center overflow-hidden font-mono text-[10px]">
+      <div className="flex whitespace-nowrap items-center animate-[marquee_30s_linear_infinite]">
         {marqueeItems.map((alert, index) => {
-          const base =
-            alert.__stableKey ||
-            alert.tx_hash ||
-            `${alert.token}-${alert.user}-${alert.eth}-${alert.ts}-${alert.__origIdx}`;
-          const key = `${base}-${alert.__origIdx}-${alert.__dup}`;
-          const isBuy = alert.type === "BOUGHT";
+          const key = `${alert.tx_hash}-${index}`;
 
           return (
             <div
               key={key}
               className="inline-flex items-center gap-1.5 mx-3 text-slate-400 shrink-0"
             >
-              <span className="text-slate-500 uppercase tracking-wide">
-                {shortenAddr(alert.user).toUpperCase()}
+              <span className="text-slate-500">
+                {shortenAddr(alert.user)}
               </span>
 
-              <span 
-                style={{ color: isBuy ? '#96d6cd' : '#f43f5e' }}
-                className="font-black tracking-wider"
+              <span
+                style={{
+                  color:
+                    alert.type === "BOUGHT"
+                      ? "#96d6cd"
+                      : "#f43f5e",
+                }}
+                className="font-black"
               >
-                {isBuy ? "[BUY]" : "[SELL]"}
+                {alert.type === "BOUGHT"
+                  ? "[BUY]"
+                  : "[SELL]"}
               </span>
 
-              <span className="text-slate-200 font-bold font-mono">{alert.eth} ETH</span>
-              
+              <span className="text-slate-200 font-bold">
+                {alert.eth} ETH
+              </span>
+
               <span className="text-slate-600">➔</span>
 
-              <span className="text-slate-300 font-bold tracking-wide">
-                {typeof alert.token === "string" && alert.token.startsWith("0x")
-                  ? shortenAddr(alert.token).toUpperCase()
-                  : String(alert.token).toUpperCase()}
+              <span className="text-slate-300 font-bold">
+                {shortenAddr(alert.token)}
               </span>
 
-              {alert.tx_hash && (
-                <a
-                  href={`${etherscanBase}/tx/${alert.tx_hash}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-slate-600 hover:text-slate-400 text-[9px] font-black tracking-widest ml-1 border border-slate-900 px-1 bg-[#0b0f19]/30"
-                  title="View cryptographic verification"
-                >
-                  [TX]
-                </a>
-              )}
+              <a
+                href={`${etherscanBase}/tx/${alert.tx_hash}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-slate-600 hover:text-slate-400"
+              >
+                [TX]
+              </a>
             </div>
           );
         })}
