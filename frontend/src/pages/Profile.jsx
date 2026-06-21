@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useAccount, useBalance } from "wagmi";
 import { formatEther } from "viem";
-import { User, TrendingUp, Sparkles, Shield, Edit3, Check, Copy, Image, History, X } from "lucide-react";
+import { User, TrendingUp, Sparkles, Shield, Edit3, Check, Copy, History, X } from "lucide-react";
 import { ConnectKitButton } from "connectkit";
 import * as supabaseClient from "../lib/supabaseClient";
 
@@ -10,6 +10,11 @@ import CreatedTokensTab from "../tabP/CreatedTokensTab";
 import PortfolioAssetsTab from "../tabP/PortfolioAssetsTab";
 import TransactionHistoryTab from "../tabP/TransactionHistoryTab";
 import { DashboardCard, Modal, Toast } from "../tabP/ProfileComponents";
+
+// Modular UI Injectables
+import { SocialConnect } from "../tabP/SocialConnect";
+import { SocialMetrics } from ".
+/tabP/SocialMetrics";
 
 const supabase = supabaseClient.supabase ?? supabaseClient.default ?? supabaseClient;
 const TABS = { CREATED: "Created", PORTFOLIO: "Portfolio", HISTORY: "History" };
@@ -19,7 +24,6 @@ const sanitizeFilename = (s = "") => String(s).trim().replace(/\s+/g, "_").repla
 
 const getLogoPublicUrl = (path) => {
   if (!path) return null;
-  // If path is already an absolute HTTP URL, don't append supabase pathing
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   try {
     const res = supabase.storage.from("logos").getPublicUrl(path);
@@ -57,6 +61,10 @@ const Profile = () => {
   const [logoFile, setLogoFile] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: "" });
   const [tokenUpdateForm, setTokenUpdateForm] = useState({ telegram: "", twitter: "", website: "", logo: "", description: "" });
+  
+  // Custom tracking state counts
+  const [followingCount, setFollowingCount] = useState(0);
+  const [watchlistCount, setWatchlistCount] = useState(0);
 
   useEffect(() => { setNameInput(address ? (userRow?.display_name ?? "") : ""); }, [address, userRow]);
 
@@ -77,6 +85,26 @@ const Profile = () => {
     setTokenUpdateForm({ telegram: t.telegram || "", twitter: t.twitter || "", website: t.website || "", logo: t.logo || "", description: t.description || "" });
     setLogoFile(null);
     setIsModalOpen(true);
+  };
+
+  const handleSocialsUpdate = async (socialsPayload) => {
+    if (!address) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .update({ ...socialsPayload, updated_at: new Date().toISOString() })
+        .eq("wallet", address.toLowerCase())
+        .select()
+        .maybeSingle();
+      if (error) throw error;
+      setUserRow(data);
+      showNotification("Social coordinates successfully locked.");
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleUpdateSubmit = async () => {
@@ -138,7 +166,6 @@ const Profile = () => {
       setLoading(true);
       const wallet = address.toLowerCase();
 
-      // Safe evaluation boundary for profile initialization rows
       try {
         const userRowData = await ensureUserRow(wallet);
         setUserRow(userRowData);
@@ -146,7 +173,16 @@ const Profile = () => {
         console.error("Non-fatal user initialization skip:", userErr);
       }
 
-      // Safe Database Fetch - Pulls directly from Supabase, protected against API dropouts
+      // Fetch Follows & Watchlist row lengths dynamically from Supabase
+      try {
+        const { count: followingCountData } = await supabase.from("user_follow").select("*", { count: "exact", head: true }).eq("user_wallet", wallet).eq("is_active", true);
+        const { count: watchlistCountData } = await supabase.from("watchlist").select("*", { count: "exact", head: true }).eq("user_wallet", wallet);
+        setFollowingCount(followingCountData || 0);
+        setWatchlistCount(watchlistCountData || 0);
+      } catch (countErr) {
+        console.error("Error reading network metadata counters:", countErr);
+      }
+
       try {
         const { data: cRows, error: tokenErr } = await supabase
           .from("tokens")
@@ -166,7 +202,6 @@ const Profile = () => {
         console.error("Supabase direct pull error caught:", dbErr);
       }
 
-      // Safe Portfolio Fetch - Isolated out-of-bounds loop to handle API server down scenarios
       try {
         const base = import.meta?.env?.VITE_API_BASE || "http://localhost:3000";
         const res = await fetch(`${base.replace(/\/$/, "")}/api/portfolio?wallet=${encodeURIComponent(wallet)}`, { headers: { Accept: "application/json" } });
@@ -188,15 +223,15 @@ const Profile = () => {
   if (!isConnected) {
     return (
       <div className="font-mono min-h-screen bg-[#030712] flex items-center justify-center p-4 text-slate-400">
-        <div className="max-w-md w-full p-4 bg-[#0b0f19]/40 border border-slate-900 text-center space-y-4">
-          <Shield size={24} className="mx-auto text-slate-500" />
+        <div className="max-w-md w-full p-6 bg-[#0b0f19]/40 border border-slate-900 rounded-lg text-center space-y-4 shadow-xl shadow-black/50">
+          <Shield size={28} className="mx-auto text-slate-600 animate-pulse" />
           <div>
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-200">AUTHENTICATION_REQUIRED</h3>
             <p className="text-[11px] text-slate-500 uppercase mt-1">Initialize Web3 engine block configuration link to access terminal</p>
           </div>
           <ConnectKitButton.Custom>
             {({ show }) => (
-              <button onClick={show} className="w-full p-2.5 bg-[#030712] border border-slate-800 hover:border-slate-700 text-slate-200 text-xs font-bold uppercase tracking-wider">
+              <button onClick={show} className="w-full p-2.5 bg-[#030712] border border-slate-800 hover:border-slate-600 hover:text-white rounded text-slate-200 text-xs font-bold uppercase tracking-wider transition-all">
                 CONNECT_WALLET
               </button>
             )}
@@ -207,58 +242,70 @@ const Profile = () => {
   }
 
   return (
-    <div className="font-mono min-h-screen bg-[#030712] text-slate-300 p-4 sm:p-6 lg:p-8 space-y-4">
+    <div className="font-mono min-h-screen bg-[#030712] text-slate-300 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Metrics Node Module */}
-      <div className="p-4 bg-[#0b0f19]/40 border border-slate-900 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2 flex gap-3 items-start min-w-0">
-          <div className="w-12 h-12 bg-[#030712] border border-slate-900 flex items-center justify-center shrink-0">
-            <User size={18} className="text-slate-500" />
+      <div className="p-5 bg-[#0b0f19]/40 border border-slate-900 rounded-lg shadow-xl grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+        <div className="lg:col-span-2 flex flex-col md:flex-row gap-4 items-start min-w-0">
+          <div className="w-14 h-14 bg-[#030712] border border-slate-800 rounded-md flex items-center justify-center shrink-0 shadow-inner">
+            <User size={22} className="text-slate-400" />
           </div>
-          <div className="min-w-0 flex-1 space-y-1">
-            <h1 className="text-sm font-black text-slate-200 tracking-wider uppercase truncate">{address?.slice(0, 6)}...{address?.slice(-4)}</h1>
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 break-all select-all">
-              <span>{address}</span>
-              <button onClick={copyAddress} className="text-slate-500 hover:text-slate-300 shrink-0">
+          <div className="min-w-0 flex-1 space-y-1 w-full">
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-black text-slate-200 tracking-wider uppercase truncate">{address?.slice(0, 6)}...{address?.slice(-4)}</h1>
+              <span className="text-[9px] bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 font-bold text-slate-500">USER_NODE</span>
+            </div>
+            
+            <div className="flex items-center gap-2 text-[10px] text-slate-500 break-all select-all font-mono">
+              <span className="truncate max-w-xs sm:max-w-md">{address}</span>
+              <button onClick={copyAddress} className="text-slate-500 hover:text-[#96d6cd] transition-colors shrink-0 p-0.5 hover:bg-[#030712] rounded border border-transparent hover:border-slate-800">
                 {copied ? <Check size={11} className="text-[#96d6cd]" /> : <Copy size={11} />}
               </button>
             </div>
             
             <div className="pt-2">
               {!isEditingName ? (
-                <button onClick={() => { setNameError(""); setIsEditingName(true); setNameInput(userRow?.display_name ?? ""); }} className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[#030712] border border-slate-800 text-slate-400 hover:text-slate-200 flex items-center gap-1">
+                <button onClick={() => { setNameError(""); setIsEditingName(true); setNameInput(userRow?.display_name ?? ""); }} className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider bg-[#030712] border border-slate-800 rounded text-slate-400 hover:text-slate-200 hover:border-slate-700 flex items-center gap-1 transition-all">
                   <Edit3 size={10} /> {userRow?.display_name ? `ID: ${userRow.display_name}` : "ASSIGN_DISPLAY_NAME"}
                 </button>
               ) : (
-                <div className="flex flex-col sm:flex-row gap-1.5 max-w-md mt-1">
-                  <input value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder="A-Z, 0-9 (Max 30)" className="px-2 py-1 bg-[#030712] border border-slate-900 text-xs text-slate-200 focus:outline-none" />
-                  <div className="flex gap-1">
-                    <button onClick={saveName} disabled={loading} className="px-2 py-1 bg-[#0b0f19] border border-slate-800 text-[#96d6cd] text-[10px] font-bold uppercase">SAVE</button>
-                    <button onClick={() => setIsEditingName(false)} className="px-2 py-1 bg-[#030712] border border-slate-900 text-slate-500 text-[10px] font-bold uppercase">CANCEL</button>
+                <div className="flex gap-1.5 max-w-md mt-1">
+                  <input value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder="A-Z, 0-9 (Max 30)" className="px-2 py-1.5 bg-[#030712] border border-slate-850 rounded text-xs text-slate-200 focus:outline-none focus:border-slate-700 w-full" />
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={saveName} disabled={loading} className="px-2.5 py-1 bg-[#0b0f19] border border-slate-800 text-[#96d6cd] rounded text-[10px] font-bold uppercase transition-all hover:bg-slate-900">SAVE</button>
+                    <button onClick={() => setIsEditingName(false)} className="px-2.5 py-1 bg-[#030712] border border-slate-800 text-slate-500 rounded text-[10px] font-bold uppercase transition-all hover:text-slate-400">CANCEL</button>
                   </div>
                 </div>
               )}
-              {nameError && <p className="text-rose-500 text-[9px] mt-1 uppercase">!! {nameError}</p>}
+              {nameError && <p className="text-rose-500 text-[9px] mt-1 uppercase tracking-tight">!! {nameError}</p>}
             </div>
+
+            {/* Social Connect Module */}
+            <SocialConnect userRow={userRow} onUpdate={handleSocialsUpdate} loading={loading} />
           </div>
         </div>
 
         {/* Engine Metrics Dashboard Column Right */}
-        <div className="lg:col-span-1 grid grid-cols-2 gap-2 text-left font-mono border-t lg:border-t-0 lg:border-l border-slate-900 pt-4 lg:pt-0 lg:pl-6 text-[11px]">
-          <div>
-            <span className="text-slate-500 uppercase font-bold block tracking-wider mb-0.5">NATIVE_BAL</span>
-            <span className="text-sm font-black text-slate-200 block">{balanceData ? Number(formatEther(balanceData.value)).toFixed(4) : "0.00"}</span>
-            <span className="text-[9px] text-slate-600 font-bold block">{balanceData?.symbol || "ETH"}</span>
+        <div className="lg:col-span-1 flex flex-col gap-4 border-t lg:border-t-0 lg:border-l border-slate-900 pt-4 lg:pt-0 lg:pl-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <span className="text-slate-500 uppercase font-bold block tracking-wider text-[9px] mb-0.5">NATIVE_BAL</span>
+              <span className="text-base font-black text-slate-200 block tracking-tight">{balanceData ? Number(formatEther(balanceData.value)).toFixed(4) : "0.00"}</span>
+              <span className="text-[9px] text-slate-600 font-bold block uppercase">{balanceData?.symbol || "ETH"} // Core_Gas</span>
+            </div>
+            <div>
+              <span className="text-slate-500 uppercase font-bold block tracking-wider text-[9px] mb-0.5">PORTFOLIO_VAL</span>
+              <span className="text-base font-black text-slate-200 block tracking-tight">${totalPortfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="text-[9px] text-slate-600 font-bold block uppercase">USD_VALUE_INDEX</span>
+            </div>
           </div>
-          <div>
-            <span className="text-slate-500 uppercase font-bold block tracking-wider mb-0.5">PORTFOLIO_VAL</span>
-            <span className="text-sm font-black text-slate-200 block">${totalPortfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            <span className="text-[9px] text-slate-600 font-bold block">USD_VALUE_INDEX</span>
-          </div>
+          
+          {/* Realtime dynamic database follower indicators */}
+          <SocialMetrics followingCount={followingCount} watchlistCount={watchlistCount} />
         </div>
       </div>
 
       {/* Tabs Menu Navigation Bar */}
-      <div className="flex gap-1 border-b border-slate-900 pb-px overflow-x-auto">
+      <div className="flex gap-1 border-b border-slate-900 pb-px overflow-x-auto scrollbar-hide">
         {[
           { id: TABS.CREATED, label: "SYS_CREATED", icon: Sparkles },
           { id: TABS.PORTFOLIO, label: "SYS_PORTFOLIO", icon: TrendingUp },
@@ -268,16 +315,16 @@ const Profile = () => {
           return (
             <button
               key={t.id} onClick={() => setActiveTab(t.id)}
-              className={`px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors border-t border-x rounded-none shrink-0 ${Active ? "bg-[#0b0f19]/40 text-[#96d6cd] border-slate-900" : "bg-transparent text-slate-500 border-transparent hover:text-slate-300"}`}
+              className={`px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all border-t border-x rounded-t-md shrink-0 ${Active ? "bg-[#0b0f19]/40 text-[#96d6cd] border-slate-900 font-black relative before:absolute before:bottom-[-1px] before:left-0 before:right-0 before:h-[1px] before:bg-[#0b0f19]" : "bg-transparent text-slate-500 border-transparent hover:text-slate-300"}`}
             >
-              <t.icon size={11} /> {t.label}
+              <t.icon size={11} className={Active ? "text-[#96d6cd]" : "text-slate-600"} /> {t.label}
             </button>
           );
         })}
       </div>
 
       {/* Primary Workspace View Frame */}
-      <div className="min-w-0">
+      <div className="min-w-0 bg-[#0b0f19]/10 rounded-lg border border-slate-900/40 p-1">
         {activeTab === TABS.CREATED && <CreatedTokensTab data={filteredCreatedTokens} loading={loading} searchTerm={createdSearch} setSearchTerm={setCreatedSearch} openUpdateModal={openUpdateModal} DashboardCard={DashboardCard} />}
         {activeTab === TABS.PORTFOLIO && <PortfolioAssetsTab data={filteredPortfolio} loading={loading} searchTerm={portfolioSearch} setSearchTerm={setPortfolioSearch} DashboardCard={DashboardCard} />}
         {activeTab === TABS.HISTORY && <TransactionHistoryTab address={address} hideIfNoAddress={!isConnected} loading={loading} />}
@@ -286,45 +333,45 @@ const Profile = () => {
       {/* Update Token Node Configuration Panel Modal */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         {selectedToken && (
-          <div className="p-4 font-mono text-[11px]">
-            <div className="flex items-center justify-between border-b border-slate-900 pb-2 mb-4">
+          <div className="p-5 font-mono text-[11px]">
+            <div className="flex items-center justify-between border-b border-slate-900 pb-2.5 mb-4">
               <div className="min-w-0">
                 <span className="text-xs font-black text-slate-200 block tracking-wider uppercase">UPDATE_TOKEN_METADATA</span>
                 <span className="text-[10px] text-slate-500 block truncate font-bold uppercase">${selectedToken.symbol} // {selectedToken.name}</span>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-slate-200"><X size={14} /></button>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-slate-200 p-1 hover:bg-slate-900 rounded"><X size={14} /></button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               {["telegram", "twitter", "website"].map((f) => (
                 <div key={f} className="flex flex-col">
-                  <label className="text-slate-500 font-bold uppercase tracking-wider mb-1">{f}_ROUTING_URL</label>
+                  <label className="text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-1">{f}_ROUTING_URL</label>
                   <input
                     type="url" value={tokenUpdateForm[f]} maxLength={f === "website" ? 100 : 40}
                     placeholder={f === "telegram" ? "https://t.me/channel" : f === "twitter" ? "https://x.com/handle" : "https://domain.com"}
                     onChange={(e) => setTokenUpdateForm((p) => ({ ...p, [f]: e.target.value }))}
-                    className="p-2 bg-[#030712] border border-slate-900 text-xs text-slate-200 focus:outline-none"
+                    className="p-2 bg-[#030712] border border-slate-900 rounded text-xs text-slate-200 focus:outline-none focus:border-slate-700"
                   />
                 </div>
               ))}
 
               <div className="flex flex-col">
-                <label className="text-slate-500 font-bold uppercase tracking-wider mb-1">IMAGE_RESOURCE_LOGO (MAX 3MB)</label>
-                <div className="flex items-center gap-2 p-2 bg-[#030712] border border-slate-900">
-                  <input type="file" accept="image/png, image/jpeg, image/gif, image/svg+xml" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} className="text-xs file:bg-[#0b0f19] file:border file:border-slate-800 file:text-slate-400 file:text-[10px] file:font-bold file:px-2 file:py-0.5 text-slate-400" />
-                  {logoFile ? <span className="text-[10px] text-[#96d6cd] font-bold shrink-0">READY</span> : selectedToken.logo && <img src={selectedToken.logo} className="w-5 h-5 object-cover border border-slate-800 shrink-0" />}
+                <label className="text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-1">IMAGE_RESOURCE_LOGO (MAX 3MB)</label>
+                <div className="flex items-center justify-between gap-2 p-2 bg-[#030712] border border-slate-900 rounded">
+                  <input type="file" accept="image/png, image/jpeg, image/gif, image/svg+xml" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} className="text-xs file:bg-[#0b0f19] file:border file:border-slate-800 file:text-slate-400 file:text-[10px] file:font-bold file:px-2 file:py-0.5 file:rounded text-slate-400 w-full" />
+                  {logoFile ? <span className="text-[10px] text-[#96d6cd] font-bold shrink-0 bg-[#96d6cd]/10 px-1.5 py-0.5 border border-#96d6cd/20 rounded">READY</span> : selectedToken.logo && <img src={selectedToken.logo} className="w-5 h-5 object-cover border border-slate-800 rounded shrink-0" />}
                 </div>
               </div>
 
               <div className="flex flex-col">
-                <div className="flex justify-between text-slate-500 font-bold uppercase tracking-wider mb-1"><span>DESCRIPTION</span><span>{String(tokenUpdateForm.description || "").length}/200</span></div>
-                <textarea rows={2} maxLength={200} value={tokenUpdateForm.description} onChange={(e) => setTokenUpdateForm((p) => ({ ...p, description: e.target.value }))} className="p-2 bg-[#030712] border border-slate-900 text-xs text-slate-200 focus:outline-none resize-none" />
+                <div className="flex justify-between text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-1"><span>DESCRIPTION</span><span>{String(tokenUpdateForm.description || "").length}/200</span></div>
+                <textarea rows={2.5} maxLength={200} value={tokenUpdateForm.description} onChange={(e) => setTokenUpdateForm((p) => ({ ...p, description: e.target.value }))} className="p-2 bg-[#030712] border border-slate-900 rounded text-xs text-slate-200 focus:outline-none focus:border-slate-700 resize-none" />
               </div>
 
               <button
                 onClick={handleUpdateSubmit} disabled={loading}
                 style={{ backgroundColor: !loading ? '#96d6cd' : '', color: !loading ? '#030712' : '' }}
-                className={`w-full p-2.5 font-bold text-xs uppercase tracking-widest text-center transition-all ${loading ? "bg-slate-900 text-slate-600 border border-slate-900 cursor-not-allowed" : "hover:opacity-95"}`}
+                className={`w-full p-2.5 rounded font-bold text-xs uppercase tracking-widest text-center transition-all shadow-md ${loading ? "bg-slate-900 text-slate-600 border border-slate-900 cursor-not-allowed" : "hover:opacity-90 active:scale-[0.99]"}`}
               >
                 {loading ? "PROCESSING..." : "COMMIT_METADATA_CHANGES"}
               </button>
