@@ -25,11 +25,13 @@ const TransactionHistoryTab = ({
       try {
         setLoadingTx(true);
         const from = reset ? 0 : page * pageSize;
+        const walletLower = address.toLowerCase();
 
+        // FIX: Modified matching filters using cross-case parameters to bridge mixed-case web3 address structures
         const { data, error: sbError } = await supabase
           .from("transactions")
           .select("tx_hash, block_number, created_at, token_address, user_address, type, token_amount, eth_amount")
-          .eq("user_address", address)
+          .or(`user_address.eq.${walletLower},user_address.eq.${address}`)
           .order("created_at", { ascending: false })
           .range(from, from + pageSize - 1);
 
@@ -39,8 +41,8 @@ const TransactionHistoryTab = ({
           setRows(data || []);
         } else {
           setRows((prev) => {
-            const map = new Map(prev.map((r) => [r.created_at, r]));
-            (data || []).forEach((r) => map.set(r.created_at, r));
+            const map = new Map(prev.map((r) => [r.tx_hash, r])); // Fixed key assignment map reference to use transaction hashes rather than timestamps
+            (data || []).forEach((r) => map.set(r.tx_hash, r));
             return Array.from(map.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
           });
         }
@@ -65,11 +67,12 @@ const TransactionHistoryTab = ({
   useEffect(() => {
     if (!address) return;
 
+    const walletLower = address.toLowerCase();
     const channel = supabase
-      .channel(`realtime-profile-${address}`)
+      .channel(`realtime-profile-${walletLower}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "transactions" }, (payload) => {
         const tx = payload.new;
-        if (tx.user_address !== address) return;
+        if (tx.user_address?.toLowerCase() !== walletLower) return;
 
         setRows((prev) => {
           if (prev.some((r) => r.tx_hash === tx.tx_hash)) return prev;
@@ -83,9 +86,13 @@ const TransactionHistoryTab = ({
 
   const formatShort = (s = "") => s && s.length > 10 ? `${s.slice(0, 4)}..${s.slice(-4)}` : s;
   
+  // FIX: Fixed chronological calculation offsets by standardizing runtime values to pure UTC milliseconds
   const formatRelativeTime = (iso) => {
     if (!iso) return "-";
-    const delta = Math.floor((new Date() - new Date(iso.replace(" ", "T") + "Z")) / 1000);
+    const recordTime = new Date(iso.includes("T") ? iso : iso.replace(" ", "T") + "Z").getTime();
+    const delta = Math.floor((Date.now() - recordTime) / 1000);
+    
+    if (delta < 0) return "0s";
     if (delta < 60) return `${delta}s`;
     if (delta < 3600) return `${Math.floor(delta / 60)}m`;
     if (delta < 86400) return `${Math.floor(delta / 3600)}h`;
@@ -140,7 +147,7 @@ const TransactionHistoryTab = ({
       <div className="flex-grow flex flex-col justify-center">
         {!address && hideIfNoAddress ? (
           <div className="text-center py-12 border border-dashed border-slate-900"><span className="text-slate-600 uppercase font-bold">!! RUNTIME_ERROR // WALLET_NOT_LINKED</span></div>
-        ) : loading || loadingTx && page === 0 ? (
+        ) : loading || (loadingTx && page === 0) ? (
           <div className="flex justify-center py-12"><div className="animate-spin rounded-none h-5 w-5 border border-[#96d6cd] border-t-transparent"></div></div>
         ) : error ? (
           <div className="text-center py-12 border border-slate-900 text-rose-500 font-bold uppercase"><span>ERR_LOAD_FAIL // {error}</span></div>
@@ -171,7 +178,7 @@ const TransactionHistoryTab = ({
                       </Link>
                     </td>
                     <td className="py-2.5 px-2">
-                      <span className={`px-1 py-0.5 text-[9px] font-black uppercase tracking-wide border ${r.type === "buy" ? "border-emerald-900 bg-emerald-950/20 text-[#96d6cd]" : "border-rose-900 bg-rose-950/20 text-rose-400"}`}>
+                      <span className={`px-1 py-0.5 text-[9px] font-black uppercase tracking-wide border ${r.type?.toLowerCase() === "buy" ? "border-emerald-900 bg-emerald-950/20 text-[#96d6cd]" : "border-rose-900 bg-rose-950/20 text-rose-400"}`}>
                         {r.type}
                       </span>
                     </td>
