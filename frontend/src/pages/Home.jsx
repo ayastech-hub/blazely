@@ -179,7 +179,7 @@ export default function Home() {
 
   const navigate = useNavigate();
 
-  const loadTokens = async (page = 1, overrides = {}) => {
+    const loadTokens = async (page = 1, overrides = {}) => {
     setLoading(true);
     try {
       const from = (page - 1) * TOKENS_PER_PAGE;
@@ -189,6 +189,7 @@ export default function Home() {
       const effectiveSort = overrides.sort ?? sort;
       const effectiveListed = overrides.listedOnly ?? listedOnly;
 
+      // FIXED: Pull metrics properties directly at root layout level to avoid relational parser drops
       let query = supabase.from("tokens").select(
         `
           id,
@@ -204,14 +205,7 @@ export default function Home() {
           market_cap,
           volume_24h,
           price,
-          last_trade_at,
-          token_metrics_latest (
-            market_cap,
-            volume_24h,
-            price,
-            market_cap_text,
-            volume_24h_text
-          )
+          last_trade_at
         `,
         { count: "exact" }
       );
@@ -247,7 +241,7 @@ export default function Home() {
           break;
       }
 
-      // FIX: Clean up the dual sorting hierarchy parameters to prevent RPC parser generation errors
+      // Order rows cleanly
       query = query.order(orderByColumn, { ascending, nullsFirst: false });
       if (orderByColumn !== "created_at") {
         query = query.order("created_at", { ascending: false });
@@ -259,14 +253,10 @@ export default function Home() {
       if (error) throw error;
 
       const normalized = (data || []).map((t) => {
-        // Safe handle if relation arrives as single element object or index array
-        const latestMetrics = Array.isArray(t.token_metrics_latest)
-          ? t.token_metrics_latest[0]
-          : t.token_metrics_latest;
-
-        const marketcapValue = parseFloat(latestMetrics?.market_cap ?? t.market_cap ?? 0);
-        const volumeValue = parseFloat(latestMetrics?.volume_24h ?? t.volume_24h ?? 0);
-        const priceValue = parseFloat(latestMetrics?.price ?? t.price ?? 0);
+        // FIXED: Extract fallback variables explicitly from the flat parent model parameters
+        const marketcapValue = parseFloat(t.market_cap ?? 0);
+        const volumeValue = parseFloat(t.volume_24h ?? 0);
+        const priceValue = parseFloat(t.price ?? 0);
 
         const logoUrl = t.logo_path
           ? supabase.storage.from("logos").getPublicUrl(t.logo_path).data.publicUrl
@@ -279,8 +269,8 @@ export default function Home() {
           volume_24h: volumeValue,
           price: priceValue,
           initialMetrics: {
-            market_cap_text: latestMetrics?.market_cap_text || (marketcapValue ? `$${marketcapValue.toLocaleString()}` : "0.00"),
-            volume_24h_text: latestMetrics?.volume_24h_text || (volumeValue ? `$${volumeValue.toLocaleString()}` : "0.00"),
+            market_cap_text: marketcapValue ? `$${marketcapValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "0.00",
+            volume_24h_text: volumeValue ? `$${volumeValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "0.00",
           },
         };
       });
@@ -295,6 +285,10 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+
+     
+ 
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.matchMedia("(max-width: 640px)").matches);
