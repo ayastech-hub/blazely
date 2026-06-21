@@ -59,7 +59,7 @@ const InitialBuySection = ({ ethAmount, setEthAmount, walletBalance }) => {
     if (isNaN(eth) || eth <= 0) return setInputError("Enter a valid ETH amount");
     if (balance > 0 && eth > balance) return setInputError("Insufficient balance");
     if (((eth * ETH_PER_TOKEN) / TOTAL_SUPPLY) * 100 > 50) return setInputError("Initial buy cannot exceed 50% of total supply");
-    setInputError("");
+    inputError && setInputError("");
   };
 
   const setPercent = (pct) => {
@@ -130,6 +130,7 @@ const CreateToken = () => {
   const [logoPreview, setLogoPreview] = useState(null);
   const [ethAmount, setEthAmount] = useState("");
   const [error, setError] = useState(null);
+  const [dbWarning, setDbWarning] = useState(null);
   const [copied, setCopied] = useState(false);
 
   const [tokenData, setTokenData] = useState({ name: "", symbol: "", website: "", telegram: "", twitter: "", description: "" });
@@ -150,7 +151,7 @@ const CreateToken = () => {
     return { ok: true, reason: null };
   }, [ethAmount, walletBalanceEth]);
 
-  useEffect(() => { if (error) { const t = setTimeout(() => setError(null), 6000); return () => clearTimeout(t); } }, [error]);
+  useEffect(() => { if (error) { const t = setTimeout(() => setError(null), 8000); return () => clearTimeout(t); } }, [error]);
   useEffect(() => { if (copied) { const t = setTimeout(() => setCopied(false), 2000); return () => clearTimeout(t); } }, [copied]);
 
   const handleChange = (e) => {
@@ -207,7 +208,7 @@ const CreateToken = () => {
     };
 
     if (typeof createTokenInDb === "function") {
-      try { return await createTokenInDb(payload, logo); } catch { /* pass-through to direct fallback manual sync */ }
+      try { return await createTokenInDb(payload, logo); } catch { /* pass-through */ }
     }
     const { error: dberr } = await supabase.from("tokens").upsert(payload, { onConflict: "address" });
     if (dberr) throw dberr;
@@ -227,10 +228,16 @@ const CreateToken = () => {
   }
 
   const handleDeploy = async () => {
+    let finalAddress = null;
+    setError(null);
+    setDbWarning(null);
+
+    // STEP A: Deploy Smart Contract Execution
     try {
       setStep(2);
       setLoading(true);
       if (!signer) throw new Error("Wallet connectivity drop. Please authenticate.");
+      
       const creator = (await signer.getAddress())?.toLowerCase();
       const lpAddr = BlazelyLaunchpad.address || "0xf23fFE56BB661d2462F60E8B4D18A45444f20156";
       const contract = new ethers.Contract(lpAddr, BlazelyLaunchpad.abi || BlazelyLaunchpad, signer);
@@ -247,21 +254,34 @@ const CreateToken = () => {
       for (const log of receipt.logs) {
         try {
           const p = contract.interface.parseLog(log);
-          if (p && p.name === "Launched") { tokenAddressParsed = p.args.token ?? p.args[0]; break; }
+          if (p && p.name === "Launched") { 
+            tokenAddressParsed = p.args.token ?? p.args[0]; 
+            break; 
+          }
         } catch {}
       }
+      
       if (!tokenAddressParsed) tokenAddressParsed = "Unknown";
-      const finalAddress = String(tokenAddressParsed).toLowerCase();
+      finalAddress = String(tokenAddressParsed).toLowerCase();
       setTokenAddress(finalAddress);
 
-      await sendTokenToDatabase({
-        address: finalAddress, name, symbol, website: tokenData.website,
-        twitter: tokenData.twitter, telegram: tokenData.telegram,
-        description: tokenData.description, creator_wallet: creator, chain_id: chainId || sepolia.id
-      }, logoFile);
+      // STEP B: Safely Try Syncing database inside separate handler
+      try {
+        await sendTokenToDatabase({
+          address: finalAddress, name, symbol, website: tokenData.website,
+          twitter: tokenData.twitter, telegram: tokenData.telegram,
+          description: tokenData.description, creator_wallet: creator, chain_id: chainId || sepolia.id
+        }, logoFile);
+      } catch (dbErr) {
+        console.error("Database tracking sync failed:", dbErr);
+        // Do not crash execution or reverse layout view. Alert user they can capture the CA manually.
+        setDbWarning("Contract deployed successfully, but metadata could not be indexed due to connection blocklines.");
+      }
 
+      // Proceed directly to Success panel representation
       setStep(3);
     } catch (err) {
+      console.error("Deployment step rejected:", err);
       setError(parseErrorMessage(err));
       setStep(1);
     } finally {
@@ -332,7 +352,7 @@ const CreateToken = () => {
                   className="w-full bg-[#030712] border border-dashed border-slate-900 p-4 flex flex-col items-center justify-center min-h-[140px]"
                 >
                   {logoPreview ? (
-                    <img src={logoPreview} className="w-20 h-20 border border-slate-900 object-cover rounded-none" />
+                    <img src={logoPreview} className="w-20 h-20 border border-slate-900 object-cover rounded-none" alt="logo preview" />
                   ) : (
                     <UploadCloud size={24} className="text-slate-600 mb-2" />
                   )}
@@ -379,6 +399,13 @@ const CreateToken = () => {
                   <CheckCircle size={32} style={{ color: '#96d6cd' }} />
                   <span className="text-xs font-black uppercase tracking-widest text-slate-200">DEPLOYMENT_SUCCESSFUL</span>
                 </div>
+
+                {dbWarning && (
+                  <div className="p-3 bg-amber-950/40 border border-amber-800 text-amber-400 text-left text-xs uppercase tracking-wide flex gap-2">
+                    <AlertTriangle size={16} className="shrink-0" />
+                    <p>{dbWarning}</p>
+                  </div>
+                )}
                 
                 <div className="bg-[#030712] border border-slate-900 p-3 text-left">
                   <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">REGISTERED_CONTRACT_ADDRESS</div>
@@ -386,18 +413,23 @@ const CreateToken = () => {
                     <span className="font-mono text-slate-300 truncate tracking-wide uppercase break-all">{tokenAddress}</span>
                     <div className="flex gap-1 shrink-0">
                       <button onClick={async () => { await navigator.clipboard.writeText(tokenAddress); setCopied(true); }} className="p-1 border border-slate-800 text-slate-400 hover:text-slate-200" title="Copy address hash"><Copy size={12} /></button>
-                      <Link to={`/token/${tokenAddress}`} target="_blank" className="p-1 border border-slate-800 text-slate-400 hover:text-slate-200" title="Open metrics layout"><ExternalLink size={12} /></Link>
+                      {tokenAddress !== "Unknown" && (
+                        <Link to={`/token/${tokenAddress}`} target="_blank" className="p-1 border border-slate-800 text-slate-400 hover:text-slate-200" title="Open metrics layout"><ExternalLink size={12} /></Link>
+                      )}
                     </div>
                   </div>
                   {copied && <p className="text-[10px] text-[#96d6cd] mt-1 font-bold">HASH_COPIED_TO_CLIPBOARD</p>}
                 </div>
 
                 <div className="flex gap-2 justify-center pt-2">
-                  <button onClick={() => navigate(`/token/${tokenAddress}`)} style={{ backgroundColor: '#96d6cd', color: '#030712' }} className="px-4 py-1.5 text-xs font-black uppercase tracking-wider hover:opacity-90">VIEW_TOKEN</button>
+                  {tokenAddress !== "Unknown" && (
+                    <button onClick={() => navigate(`/token/${tokenAddress}`)} style={{ backgroundColor: '#96d6cd', color: '#030712' }} className="px-4 py-1.5 text-xs font-black uppercase tracking-wider hover:opacity-90">VIEW_TOKEN</button>
+                  )}
                   <button
                     onClick={() => {
                       setStep(1); setTokenAddress(null); setLogoFile(null); setLogoPreview(null); setEthAmount("");
                       setTokenData({ name: "", symbol: "", website: "", telegram: "", twitter: "", description: "" });
+                      setDbWarning(null);
                     }}
                     className="px-4 py-1.5 text-xs font-bold uppercase tracking-wider bg-[#030712] border border-slate-800 text-slate-400 hover:text-slate-200"
                   >
