@@ -1,4 +1,3 @@
-// src/components/Profile.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import { useAccount, useBalance } from "wagmi";
 import { formatEther } from "viem";
@@ -12,9 +11,8 @@ import TransactionHistoryTab from "../tabP/TransactionHistoryTab";
 import { DashboardCard, Modal, Toast } from "../tabP/ProfileComponents";
 
 // Modular UI Injectables
-import { SocialConnect } from "../tabP/SocialConnect";
-import { SocialMetrics } from ".
-/tabP/SocialMetrics";
+import { SocialConnect } from "../tabP/SocialConnect"; // Real connection for users
+import { SocialMetrics } from "./tabP/SocialMetrics";
 
 const supabase = supabaseClient.supabase ?? supabaseClient.default ?? supabaseClient;
 const TABS = { CREATED: "Created", PORTFOLIO: "Portfolio", HISTORY: "History" };
@@ -60,9 +58,10 @@ const Profile = () => {
   const [portfolioSearch, setPortfolioSearch] = useState("");
   const [logoFile, setLogoFile] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: "" });
+  
+  // Simple form state strictly for Token info inputs
   const [tokenUpdateForm, setTokenUpdateForm] = useState({ telegram: "", twitter: "", website: "", logo: "", description: "" });
   
-  // Custom tracking state counts
   const [followingCount, setFollowingCount] = useState(0);
   const [watchlistCount, setWatchlistCount] = useState(0);
 
@@ -80,13 +79,7 @@ const Profile = () => {
     setTimeout(() => setNotification({ show: false, message: "" }), 3000);
   };
 
-  const openUpdateModal = (t) => {
-    setSelectedToken(t);
-    setTokenUpdateForm({ telegram: t.telegram || "", twitter: t.twitter || "", website: t.website || "", logo: t.logo || "", description: t.description || "" });
-    setLogoFile(null);
-    setIsModalOpen(true);
-  };
-
+  // User Profile secure handshake update
   const handleSocialsUpdate = async (socialsPayload) => {
     if (!address) return;
     setLoading(true);
@@ -105,6 +98,14 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const openUpdateModal = (t) => {
+    setSelectedToken(t);
+    // Populate form fields with existing text strings
+    setTokenUpdateForm({ telegram: t.telegram || "", twitter: t.twitter || "", website: t.website || "", logo: t.logo || "", description: t.description || "" });
+    setLogoFile(null);
+    setIsModalOpen(true);
   };
 
   const handleUpdateSubmit = async () => {
@@ -173,7 +174,6 @@ const Profile = () => {
         console.error("Non-fatal user initialization skip:", userErr);
       }
 
-      // Fetch Follows & Watchlist row lengths dynamically from Supabase
       try {
         const { count: followingCountData } = await supabase.from("user_follow").select("*", { count: "exact", head: true }).eq("user_wallet", wallet).eq("is_active", true);
         const { count: watchlistCountData } = await supabase.from("watchlist").select("*", { count: "exact", head: true }).eq("user_wallet", wallet);
@@ -264,7 +264,7 @@ const Profile = () => {
             
             <div className="pt-2">
               {!isEditingName ? (
-                <button onClick={() => { setNameError(""); setIsEditingName(true); setNameInput(userRow?.display_name ?? ""); }} className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider bg-[#030712] border border-slate-800 rounded text-slate-400 hover:text-slate-200 hover:border-slate-700 flex items-center gap-1 transition-all">
+                <button onClick={() => { setNameError(""); setIsEditingName(true); setNameInput(userRow?.display_name ?? "") }} className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider bg-[#030712] border border-slate-800 rounded text-slate-400 hover:text-slate-200 hover:border-slate-700 flex items-center gap-1 transition-all">
                   <Edit3 size={10} /> {userRow?.display_name ? `ID: ${userRow.display_name}` : "ASSIGN_DISPLAY_NAME"}
                 </button>
               ) : (
@@ -279,12 +279,11 @@ const Profile = () => {
               {nameError && <p className="text-rose-500 text-[9px] mt-1 uppercase tracking-tight">!! {nameError}</p>}
             </div>
 
-            {/* Social Connect Module */}
+            {/* USER SOCIALS: Handshake Connection Protocol */}
             <SocialConnect userRow={userRow} onUpdate={handleSocialsUpdate} loading={loading} />
           </div>
         </div>
 
-        {/* Engine Metrics Dashboard Column Right */}
         <div className="lg:col-span-1 flex flex-col gap-4 border-t lg:border-t-0 lg:border-l border-slate-900 pt-4 lg:pt-0 lg:pl-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -299,7 +298,6 @@ const Profile = () => {
             </div>
           </div>
           
-          {/* Realtime dynamic database follower indicators */}
           <SocialMetrics followingCount={followingCount} watchlistCount={watchlistCount} />
         </div>
       </div>
@@ -330,7 +328,7 @@ const Profile = () => {
         {activeTab === TABS.HISTORY && <TransactionHistoryTab address={address} hideIfNoAddress={!isConnected} loading={loading} />}
       </div>
 
-      {/* Update Token Node Configuration Panel Modal */}
+      {/* TOKEN SOCIALS: Classic Simple Form Input Setup */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         {selectedToken && (
           <div className="p-5 font-mono text-[11px]">
@@ -347,7 +345,9 @@ const Profile = () => {
                 <div key={f} className="flex flex-col">
                   <label className="text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-1">{f}_ROUTING_URL</label>
                   <input
-                    type="url" value={tokenUpdateForm[f]} maxLength={f === "website" ? 100 : 40}
+                    type="url" 
+                    value={tokenUpdateForm[f]} 
+                    maxLength={f === "website" ? 100 : 40}
                     placeholder={f === "telegram" ? "https://t.me/channel" : f === "twitter" ? "https://x.com/handle" : "https://domain.com"}
                     onChange={(e) => setTokenUpdateForm((p) => ({ ...p, [f]: e.target.value }))}
                     className="p-2 bg-[#030712] border border-slate-900 rounded text-xs text-slate-200 focus:outline-none focus:border-slate-700"
@@ -359,7 +359,7 @@ const Profile = () => {
                 <label className="text-slate-500 font-bold uppercase tracking-wider text-[9px] mb-1">IMAGE_RESOURCE_LOGO (MAX 3MB)</label>
                 <div className="flex items-center justify-between gap-2 p-2 bg-[#030712] border border-slate-900 rounded">
                   <input type="file" accept="image/png, image/jpeg, image/gif, image/svg+xml" onChange={(e) => setLogoFile(e.target.files?.[0] || null)} className="text-xs file:bg-[#0b0f19] file:border file:border-slate-800 file:text-slate-400 file:text-[10px] file:font-bold file:px-2 file:py-0.5 file:rounded text-slate-400 w-full" />
-                  {logoFile ? <span className="text-[10px] text-[#96d6cd] font-bold shrink-0 bg-[#96d6cd]/10 px-1.5 py-0.5 border border-#96d6cd/20 rounded">READY</span> : selectedToken.logo && <img src={selectedToken.logo} className="w-5 h-5 object-cover border border-slate-800 rounded shrink-0" />}
+                  {logoFile ? <span className="text-[10px] text-[#96d6cd] font-bold shrink-0 bg-[#96d6cd]/10 px-1.5 py-0.5 border border-[#96d6cd]/20 rounded">READY</span> : selectedToken.logo && <img src={selectedToken.logo} className="w-5 h-5 object-cover border border-slate-800 rounded shrink-0" />}
                 </div>
               </div>
 
