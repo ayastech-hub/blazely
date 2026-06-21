@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { buyEmitter } from "../utils/buyEmitter";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../lib/supabaseClient";
 
 const shortenAddr = (a = "") =>
   typeof a === "string" && a.length > 10
