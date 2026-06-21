@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ShieldCheck, ArrowRight, EyeOff, AlertTriangle, HelpCircle } from "lucide-react";
+import { ShieldCheck, ArrowRight, EyeOff, AlertTriangle, Terminal } from "lucide-react";
 
 export default function Welcome({ onDismiss }) {
   const navigate = useNavigate();
@@ -25,7 +25,6 @@ export default function Welcome({ onDismiss }) {
       localStorage.setItem("hideWelcomeScreen", "true");
     }
     
-    // Smoothly drop the screen state or clear the route to show the Home component (/)
     if (onDismiss) {
       onDismiss();
     } else {
@@ -34,91 +33,104 @@ export default function Welcome({ onDismiss }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#030712] text-slate-100 flex items-center justify-center font-sans p-4 relative overflow-hidden selection:bg-[#96d6cd]/20">
+    <div className="min-h-screen bg-[#030712] text-slate-100 flex items-center justify-center font-mono p-4 relative selection:bg-[#96d6cd]/20">
       
-      {/* Ambient Lighting Backdrops */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[400px] h-[400px] rounded-full bg-[#96d6cd]/5 blur-[120px] pointer-events-none" />
-      
+      {/* Blinking Cursor Terminal Styling Injected Globally */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+        .terminal-cursor::after {
+          content: '_';
+          animation: blink 1s step-end infinite;
+          color: #96d6cd;
+        }
+      `}} />
+
       <motion.div 
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="max-w-[480px] w-full bg-[#0d121f]/40 border border-slate-900/90 rounded-2xl p-6 md:p-8 backdrop-blur-md relative"
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="max-w-[500px] w-full bg-black border border-slate-900 rounded p-6 relative"
       >
-        {/* Brand Icon Accent */}
-        <div className="mx-auto w-12 h-12 rounded-full bg-[#96d6cd]/10 border border-[#96d6cd]/20 flex items-center justify-center text-[#96d6cd] mb-4">
-          <ShieldCheck size={22} strokeWidth={1.5} />
+        {/* Terminal Header Info Panel */}
+        <div className="bg-[#0b0f19]/40 border border-slate-900/60 rounded p-3 mb-5 flex items-center justify-between text-xs">
+          <div className="text-[#96d6cd] font-bold flex items-center gap-2">
+            <Terminal className="w-3.5 h-3.5" />
+            INITIALIZING_INDEXER_
+          </div>
+          <div className="text-slate-600 text-[10px]">SYS_REV: v1.0.0</div>
         </div>
 
-        <h1 className="text-lg font-bold tracking-tight text-center text-slate-100 mb-6">
-          Ecosystem Metric Indexer
+        <h1 className="text-base font-bold tracking-wider text-slate-200 uppercase mb-5 terminal-cursor">
+          SYSTEM METRIC INDEXER
         </h1>
 
-        {/* --- HOW IT WORKS SECTION --- */}
-        <div className="mb-6 space-y-3.5">
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider pb-1.5 border-b border-slate-900">
-            <HelpCircle size={13} className="text-[#96d6cd]" />
-            <span>Platform Blueprint</span>
+        {/* --- INDEXER CONFIGURATION HOW IT WORKS --- */}
+        <div className="mb-5 space-y-4">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest pb-1.5 border-b border-slate-900">
+            <span>INDEXER PROFILE</span>
           </div>
           
-          <div className="space-y-2.5 text-xs">
+          <div className="space-y-3 text-[11px]">
             <div className="flex items-start gap-2.5">
-              <span className="font-mono text-[#96d6cd] bg-[#96d6cd]/10 px-1.5 py-0.5 rounded text-[10px] font-bold">01</span>
-              <p className="text-slate-300 leading-normal">
-                <strong className="text-slate-200 font-medium">On-Chain Monitoring:</strong> Automatically maps raw coin deployments, matching historical token profiles with live tracking metrics.
+              <span className="text-[#96d6cd] font-bold">[01]</span>
+              <p className="text-slate-400 leading-normal">
+                <strong className="text-slate-200 uppercase font-sans tracking-wide">On-Chain Monitoring:</strong> Tracks newly deployed token contracts, recording historical metadata parameters against real-time block activity.
               </p>
             </div>
             <div className="flex items-start gap-2.5">
-              <span className="font-mono text-[#96d6cd] bg-[#96d6cd]/10 px-1.5 py-0.5 rounded text-[10px] font-bold">02</span>
-              <p className="text-slate-300 leading-normal">
-                <strong className="text-slate-200 font-medium">Performance Rankings:</strong> Computes data tables directly on database view architectures, sorting assets by live 24H volume loops and market capitalization.
+              <span className="text-[#96d6cd] font-bold">[02]</span>
+              <p className="text-slate-400 leading-normal">
+                <strong className="text-slate-200 uppercase font-sans tracking-wide">Performance Metrics:</strong> Aggregates live volume, market capitalization, and pool metrics directly from database views.
               </p>
             </div>
           </div>
         </div>
 
-        {/* --- DISCLAIMER SECTION --- */}
-        <div className="mb-8 p-3.5 bg-amber-500/[0.02] border border-amber-500/10 rounded-xl">
-          <div className="flex items-center gap-2 text-[11px] font-bold text-amber-500/90 uppercase tracking-wider mb-1.5">
-            <AlertTriangle size={12} />
-            <span>Risk Disclaimer</span>
+        {/* --- SYSTEM RISK REGISTRY --- */}
+        <div className="mb-6 p-3.5 bg-amber-500/5 border border-amber-500/10 rounded">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-amber-500/80 uppercase tracking-widest mb-2">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span>RISK WARNING</span>
           </div>
-          <p className="text-[11px] text-slate-400 leading-relaxed">
-            All indexed material, analytical telemetry, and sorted rows are generated strictly for computational transparency. This protocol does not provide financial guidance, market endorsement, or liquidity guarantees. Digital assets carry severe financial exposure. Do your own research.
+          <p className="text-[10px] text-slate-500 uppercase leading-relaxed">
+            All database indexes, logs, and aggregated rows are provided for technical transparency purposes only. This system does not deliver financial auditing, token endorsements, or execution parameters. Digital assets involve extreme risk vectors. Maintain operational autonomy.
           </p>
         </div>
 
-        {/* Action Layer */}
+        {/* Action Layer Controls */}
         <div className="space-y-4">
           <button
             onClick={handleEnterApp}
-            className="w-full flex items-center justify-center gap-2 bg-[#96d6cd] hover:bg-[#85c2b9] text-[#030712] font-semibold text-xs py-3 px-4 rounded-xl transition-all active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-2 bg-[#96d6cd] hover:bg-[#85c2b9] text-[#030712] font-bold text-xs uppercase tracking-widest py-3 px-4 rounded transition-colors"
           >
-            Acknowledge & Launch <ArrowRight size={14} strokeWidth={2.5} />
+            ACKNOWLEDGE & LAUNCH TERMINAL <ArrowRight className="w-3.5 h-3.5" />
           </button>
 
-          {/* Interactive Opt-Out Toggle Control */}
+          {/* Persistent Visibility Input Toggle Switch */}
           <div 
             onClick={() => setDontShowAgain(!dontShowAgain)}
             className="flex items-center justify-center gap-2 py-1 group cursor-pointer select-none"
           >
-            <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${
+            <div className={`w-3 h-3 rounded border flex items-center justify-center transition-all ${
               dontShowAgain 
                 ? "bg-[#96d6cd]/20 border-[#96d6cd]" 
                 : "border-slate-800 bg-[#030712] group-hover:border-slate-700"
             }`}>
-              {dontShowAgain && <div className="w-1.5 h-1.5 rounded-full bg-[#96d6cd]" />}
+              {dontShowAgain && <div className="w-1.5 h-1.5 bg-[#96d6cd] rounded-sm" />}
             </div>
             
-            <span className="text-[11px] text-slate-500 group-hover:text-slate-400 transition-colors flex items-center gap-1">
-              <EyeOff size={11} /> Don't show this screen again
+            <span className="text-[10px] text-slate-500 group-hover:text-slate-400 uppercase tracking-wider transition-colors flex items-center gap-1.5">
+              <EyeOff className="w-3 h-3" /> Hide terminal banner on next session
             </span>
           </div>
         </div>
 
-        {/* Minimalist Footnote */}
-        <div className="mt-6 pt-4 border-t border-slate-900/40 text-center text-[9px] text-slate-600 font-mono tracking-wider">
-          v1.0.0 // PRODUCTION BUILD SECURE
+        {/* Footnote Core Execution Validation */}
+        <div className="mt-5 pt-3 border-t border-slate-900/60 text-center text-[9px] text-slate-700 tracking-widest uppercase">
+          SECURE CONNECTION VERIFIED // 2026_BUILD
         </div>
 
       </motion.div>
