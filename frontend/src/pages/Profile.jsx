@@ -130,7 +130,7 @@ const Profile = () => {
     } catch (err) { alert(err.message); } finally { setLoading(false); }
   };
 
-  useEffect(() => {
+     useEffect(() => {
     if (!address) return;
     (async () => {
       setLoading(true);
@@ -138,7 +138,15 @@ const Profile = () => {
         const wallet = address.toLowerCase();
         setUserRow(await ensureUserRow(wallet));
 
-        const { data: cRows } = await supabase.from("tokens").select("*").eq("creator_wallet", wallet).order("created_at", { ascending: false });
+        // FIX: Implement logical .or constraint checking to guarantee cross-case matching coverage
+        const { data: cRows, error: tokenErr } = await supabase
+          .from("tokens")
+          .select("*")
+          .or(`creator_wallet.eq.${wallet},creator_wallet.eq.${address}`)
+          .order("created_at", { ascending: false });
+          
+        if (tokenErr) throw tokenErr;
+
         setCreatedTokens((cRows || []).map((r) => ({ ...r, logo: r.logo_path ? getLogoPublicUrl(r.logo_path) : r.logo || null })));
 
         const base = import.meta?.env?.VITE_API_BASE || "http://localhost:3000";
@@ -149,6 +157,7 @@ const Profile = () => {
       } catch (e) { console.error("Identity collection error", e); } finally { setLoading(false); }
     })();
   }, [address, isConnected]);
+
 
   const totalPortfolioValue = useMemo(() => portfolio.reduce((sum, t) => sum + parseFloat(String(t.value || "0").replace(/,/g, "")), 0), [portfolio]);
   const filteredCreatedTokens = useMemo(() => createdTokens.filter((t) => t.name?.toLowerCase().includes(createdSearch.toLowerCase()) || t.symbol?.toLowerCase().includes(createdSearch.toLowerCase())), [createdTokens, createdSearch]);
