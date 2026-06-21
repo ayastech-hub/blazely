@@ -12,8 +12,8 @@ import TransactionHistoryTab from "../tabP/TransactionHistoryTab";
 import { DashboardCard, Modal, Toast } from "../tabP/ProfileComponents";
 
 // Enterprise Modular Injectables
-import { SocialConnect } from "./profile/SocialConnect";
-import { SocialMetrics } from "./profile/SocialMetrics";
+import { SocialConnect } from "../tabP/SocialConnect";
+import { SocialMetrics } from "../tabP/SocialMetrics";
 
 const supabase = supabaseClient.supabase ?? supabaseClient.default ?? supabaseClient;
 const TABS = { CREATED: "Created", PORTFOLIO: "Portfolio", NETWORKS: "Networks", HISTORY: "History" };
