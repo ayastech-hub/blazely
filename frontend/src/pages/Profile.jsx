@@ -12,7 +12,7 @@ import { DashboardCard, Modal, Toast } from "../tabP/ProfileComponents";
 
 // Modular UI Injectables
 import { SocialConnect } from "../tabP/SocialConnect"; // Real connection for users
-import { SocialMetrics } from "./tabP/SocialMetrics";
+import { SocialMetrics } from "../tabP/SocialMetrics";
 
 const supabase = supabaseClient.supabase ?? supabaseClient.default ?? supabaseClient;
 const TABS = { CREATED: "Created", PORTFOLIO: "Portfolio", HISTORY: "History" };
