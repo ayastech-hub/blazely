@@ -1,144 +1,100 @@
 import React, { useState } from "react";
-import { Twitter, Send, Globe, Disc, ShieldAlert, CheckCircle2, Link2 } from "lucide-react";
-import { useSignMessage } from "wagmi";
+import { Twitter, Send, Globe, Disc, Link2, ExternalLink } from "lucide-react";
 
 export const SocialConnect = ({ userRow, onUpdate, loading }) => {
-  const { signMessageAsync } = useSignMessage();
-  const [verifying, setVerifying] = useState(null);
+  const [authorizing, setAuthorizing] = useState(null);
 
-  // 1. Genuine Telegram Widget Connector Integration
-  const handleTelegramConnect = () => {
-    setVerifying("telegram");
-    // Standard Telegram Auth integration wrapper injection
-    window.TelegramLoginWidget = {
-      dataOnauth: async (user) => {
-        if (user && user.username) {
-          await onUpdate({ telegram: `https://t.me/${user.username}` });
-        }
-        setVerifying(null);
-      },
-    };
+  // Enterprise Provider Window Authentication Triggers
+  const triggerOAuthFlow = (provider) => {
+    setAuthorizing(provider);
     
-    // Open standard custom redirect routing window or fallback prompt if testing locally
-    const username = prompt("Enter your authenticated Telegram handle (without @):");
-    if (username) {
-      onUpdate({ telegram: `https://t.me/${username.trim()}` });
-    }
-    setVerifying(null);
-  };
+    // Calculate centered coordinate points for a clean modern pop-up panel frame
+    const width = 575;
+    const height = 650;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
 
-  // 2. Genuine Farcaster (SIWF Protocol handshake mock-up template)
-  const handleFarcasterConnect = async () => {
-    setVerifying("farcaster");
-    try {
-      // In production, you would wrap this with @farcaster/auth-kit SignInButton.
-      // We request a secure message challenge signature to verify custody of the underlying wallet.
-      const message = `Sign this message to securely bind this wallet node to your Farcaster profile.\n\nTimestamp: ${Date.now()}`;
-      await signMessageAsync({ message });
-      
-      const fidPrompt = prompt("Enter your verified Farcaster FID or Username:");
-      if (fidPrompt) {
-        await onUpdate({ farcaster: fidPrompt.trim() });
+    // Use your backend route to direct straight into passport/oauth layer providers
+    const apiBaseUrl = import.meta.env.VITE_API_BASE || "http://localhost:3000";
+    const authUrl = `${apiBaseUrl}/api/auth/${provider}?wallet=${userRow?.wallet}`;
+
+    const authWindow = window.open(
+      authUrl,
+      `${provider}-authorization-handshake`,
+      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes`
+    );
+
+    // Track active connection window and pull handle updates directly on window close events
+    const monitorInterval = setInterval(async () => {
+      if (!authWindow || authWindow.closed) {
+        clearInterval(monitorInterval);
+        setAuthorizing(null);
+        // Refresh profile row down the line to pull verified username designations down from db index
+        if (onUpdate) onUpdate({});
       }
-    } catch (err) {
-      console.error("Farcaster protocol link handshake aborted:", err);
-    } finally {
-      setVerifying(null);
-    }
-  };
-
-  // 3. Twitter cryptographic attestation binding
-  const handleTwitterConnect = async () => {
-    setVerifying("twitter");
-    try {
-      const handle = prompt("Enter your Twitter/X handle (without @):");
-      if (!handle) return setVerifying(null);
-
-      const message = `Verify ownership of X handle: @${handle.replace("@", "")}\n\nEcosystem node verification.`;
-      await signMessageAsync({ message });
-      
-      await onUpdate({ twitter: `https://x.com/${handle.replace("@", "").trim()}` });
-    } catch (err) {
-      console.error("Twitter validation verification aborted:", err);
-    } finally {
-      setVerifying(null);
-    }
-  };
-
-  // 4. Domain signature binding
-  const handleWebsiteConnect = async () => {
-    const domain = prompt("Enter your domain URL (e.g., project.com):");
-    if (!domain) return;
-    
-    try {
-      setVerifying("website");
-      const message = `Attest configuration ownership of domain: ${domain}`;
-      await signMessageAsync({ message });
-      await onUpdate({ website: domain.startsWith("http") ? domain : `https://${domain}` });
-    } catch (err) {
-      console.error("Domain attestation verification aborted:", err);
-    } finally {
-      setVerifying(null);
-    }
+    }, 1000);
   };
 
   const channels = [
-    { key: "twitter", label: "Twitter / X", icon: Twitter, action: handleTwitterConnect },
-    { key: "telegram", label: "Telegram Secure", icon: Send, action: handleTelegramConnect },
-    { key: "farcaster", label: "Farcaster ID", icon: Disc, action: handleFarcasterConnect },
-    { key: "website", label: "Verified Web", icon: Globe, action: handleWebsiteConnect },
+    { key: "twitter", label: "Twitter / X", icon: Twitter },
+    { key: "telegram", label: "Telegram Auth", icon: Send },
+    { key: "farcaster", label: "Farcaster ID", icon: Disc },
   ];
 
   return (
-    <div className="mt-4 p-4 bg-[#030712] border border-slate-900 rounded-lg space-y-3 max-w-xl">
+    <div className="mt-4 p-4 bg-[#070a13] border border-slate-900 rounded-lg space-y-3 max-w-xl font-mono">
       <div className="flex items-center justify-between border-b border-slate-900 pb-2">
         <div className="flex items-center gap-1.5">
           <Link2 size={12} className="text-[#96d6cd]" />
-          <span className="text-[10px] font-black text-slate-200 tracking-widest uppercase">SECURE_PROTOCOL_CONNECTIVITY</span>
+          <span className="text-[10px] font-bold text-slate-200 tracking-wider uppercase">ENTERPRISE_IDENTITY_LINK</span>
         </div>
-        <span className="text-[9px] text-slate-600 font-bold font-mono">STATUS: CRYPTO_VERIFIED</span>
+        <span className="text-[9px] text-slate-500 font-bold">PROTOCOL: OAUTH_2.0</span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {channels.map((chan) => {
-          const connectedValue = userRow?.[chan.key];
-          const isProcessing = verifying === chan.key;
+          const verifiedHandle = userRow?.[chan.key];
+          const isCurrentAuth = authorizing === chan.key;
 
           return (
             <div 
               key={chan.key} 
-              className={`flex items-center justify-between p-2.5 rounded border transition-all ${
-                connectedValue 
-                  ? "bg-[#0b0f19]/80 border-slate-900" 
-                  : "bg-[#030712] border-dashed border-slate-800 hover:border-slate-700"
+              className={`flex flex-col justify-between p-3 rounded border transition-all ${
+                verifiedHandle 
+                  ? "bg-[#0b1324] border-slate-800" 
+                  : "bg-[#030712] border-dashed border-slate-900"
               }`}
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <chan.icon size={13} className={connectedValue ? "text-[#96d6cd]" : "text-slate-600"} />
-                <div className="min-w-0">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wide">{chan.label}</span>
-                  {connectedValue ? (
-                    <span className="text-[9px] text-[#96d6cd] font-mono block truncate max-w-[140px]">
-                      {connectedValue.replace("https://", "")}
-                    </span>
-                  ) : (
-                    <span className="text-[9px] text-slate-600 font-mono block">NOT_PROVISIONED</span>
-                  )}
-                </div>
+              <div className="flex items-center gap-2 mb-3">
+                <chan.icon size={14} className={verifiedHandle ? "text-[#96d6cd]" : "text-slate-500"} />
+                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wide">{chan.label}</span>
               </div>
 
-              <button
-                type="button"
-                disabled={loading || isProcessing}
-                onClick={chan.action}
-                className={`text-[9px] font-black px-2 py-1 rounded transition-all tracking-wider font-mono ${
-                  connectedValue
-                    ? "bg-slate-900/50 hover:bg-rose-950/20 text-slate-500 hover:text-rose-400 border border-slate-850 hover:border-rose-900/40"
-                    : "bg-[#0b0f19] text-slate-300 hover:text-white border border-slate-800 hover:border-slate-600"
-                }`}
-              >
-                {isProcessing ? "LINKING..." : connectedValue ? "DISCONNECT" : "AUTHORIZE"}
-              </button>
+              {verifiedHandle ? (
+                <div className="space-y-2">
+                  <span className="text-[10px] text-[#96d6cd] bg-[#96d6cd]/5 border border-[#96d6cd]/10 px-1.5 py-0.5 rounded block truncate font-bold">
+                    @{verifiedHandle}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => onUpdate({ [chan.key]: null })}
+                    className="w-full text-[9px] font-bold py-1 bg-slate-900 hover:bg-rose-950/30 text-slate-500 hover:text-rose-400 border border-slate-850 rounded transition-all uppercase"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={loading || isCurrentAuth}
+                  onClick={() => triggerOAuthFlow(chan.key)}
+                  className="w-full text-[9px] font-bold py-1.5 bg-[#0b1324] hover:bg-[#111c35] text-[#96d6cd] border border-slate-800 rounded transition-all flex items-center justify-center gap-1 uppercase"
+                >
+                  {isCurrentAuth ? "Connecting..." : "Authorize"}
+                  <ExternalLink size={8} />
+                </button>
+              )}
             </div>
           );
         })}
