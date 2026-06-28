@@ -1,18 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ShieldCheck, ArrowRight, EyeOff, AlertTriangle, Terminal, Rocket, Lock, Layers, RefreshCcw } from "lucide-react";
+import { Rocket, ShieldCheck, Lock, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export default function Welcome({ onDismiss }) {
   const navigate = useNavigate();
   const [dontShowAgain, setDontShowAgain] = useState(false);
-
-  useEffect(() => {
-    const hasOptedOut = localStorage.getItem("hideWelcomeScreen");
-    if (hasOptedOut === "true") {
-      onDismiss ? onDismiss() : navigate("/", { replace: true });
-    }
-  }, [navigate, onDismiss]);
 
   const handleEnterApp = () => {
     if (dontShowAgain) localStorage.setItem("hideWelcomeScreen", "true");
@@ -20,72 +13,57 @@ export default function Welcome({ onDismiss }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#030712] text-slate-100 flex items-center justify-center font-mono p-4 relative selection:bg-[#96d6cd]/20">
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-        .terminal-cursor::after { content: '_'; animation: blink 1s step-end infinite; color: #96d6cd; }
-      `}} />
-
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
       <motion.div 
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="max-w-[550px] w-full bg-black border border-slate-900 rounded p-6 relative"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-[480px] w-full bg-[#111] border border-white/10 rounded-2xl p-8 shadow-2xl"
       >
-        <div className="bg-[#0b0f19]/40 border border-slate-900/60 rounded p-3 mb-5 flex items-center justify-between text-xs">
-          <div className="text-[#96d6cd] font-bold flex items-center gap-2">
-            <Terminal className="w-3.5 h-3.5" />
-            LAUNCHPAD_PROTOCOL_INIT
+        {/* Header Section */}
+        <div className="text-center mb-8">
+          <div className="mx-auto w-12 h-12 bg-[#96d6cd]/10 rounded-full flex items-center justify-center mb-4">
+            <Rocket className="w-6 h-6 text-[#96d6cd]" />
           </div>
-          <div className="text-slate-600 text-[10px]">VER: 2026.06.27</div>
+          <h1 className="text-2xl font-bold text-white mb-2">Welcome to LaunchPad</h1>
+          <p className="text-slate-400 text-sm">Create, launch, and manage tokens with ease.</p>
         </div>
 
-        <h1 className="text-base font-bold tracking-wider text-slate-200 uppercase mb-5 terminal-cursor">
-          TOKEN FACTORY & LIQUIDITY ENGINE
-        </h1>
-
-        <div className="mb-6 space-y-4">
-          <div className="grid grid-cols-2 gap-3 text-[11px]">
-            <div className="flex items-center gap-2 text-slate-400">
-              <Rocket className="w-3.5 h-3.5 text-[#96d6cd]" /> Bonding Curve Launch
+        {/* The Workflow Process (Inspired by 1000094151.jpg) */}
+        <div className="space-y-4 mb-8">
+          {[
+            { icon: Rocket, title: "Create Token", desc: "Launch via bonding curve." },
+            { icon: ShieldCheck, title: "Automated Migration", desc: "DEX liquidity triggered." },
+            { icon: Lock, title: "Secure & Stake", desc: "Locked liquidity & staking." }
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-4 p-3 rounded-xl border border-white/5 hover:border-[#96d6cd]/30 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-[#1a1a1a] flex items-center justify-center">
+                <item.icon className="w-4 h-4 text-[#96d6cd]" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-white">{item.title}</div>
+                <div className="text-[11px] text-slate-500">{item.desc}</div>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-slate-400">
-              <RefreshCcw className="w-3.5 h-3.5 text-[#96d6cd]" /> Auto-DEX Migration
-            </div>
-            <div className="flex items-center gap-2 text-slate-400">
-              <Lock className="w-3.5 h-3.5 text-[#96d6cd]" /> Liquidity Locking
-            </div>
-            <div className="flex items-center gap-2 text-slate-400">
-              <Layers className="w-3.5 h-3.5 text-[#96d6cd]" /> Staking & Bridging
-            </div>
-          </div>
+          ))}
         </div>
 
-        <div className="mb-6 p-3.5 bg-amber-500/5 border border-amber-500/10 rounded">
-          <div className="flex items-center gap-2 text-[10px] font-bold text-amber-500/80 uppercase tracking-widest mb-2">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span>OPERATIONAL DISCLAIMER</span>
-          </div>
-          <p className="text-[10px] text-slate-500 uppercase leading-relaxed">
-            By proceeding, you acknowledge that tokens created via bonding curves are high-risk. Ensure all migration parameters and locking schedules are verified before deployment. Use at your own risk.
-          </p>
-        </div>
-
+        {/* CTA Button (Inspired by 1000094151.jpg) */}
         <button
           onClick={handleEnterApp}
-          className="w-full flex items-center justify-center gap-2 bg-[#96d6cd] hover:bg-[#85c2b9] text-[#030712] font-bold text-xs uppercase tracking-widest py-3 px-4 rounded transition-colors"
+          className="w-full bg-[#96d6cd] hover:bg-[#7dbcb3] text-black font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2"
         >
-          INITIALIZE TERMINAL <ArrowRight className="w-3.5 h-3.5" />
+          CONTINUE <ArrowRight className="w-4 h-4" />
         </button>
 
-        <div 
-          onClick={() => setDontShowAgain(!dontShowAgain)}
-          className="flex items-center justify-center gap-2 mt-4 cursor-pointer"
-        >
-          <div className={`w-3 h-3 rounded border flex items-center justify-center ${dontShowAgain ? "bg-[#96d6cd]/20 border-[#96d6cd]" : "border-slate-800"}`}>
-            {dontShowAgain && <div className="w-1.5 h-1.5 bg-[#96d6cd] rounded-sm" />}
-          </div>
-          <span className="text-[10px] text-slate-500 uppercase">Hide this notification</span>
+        {/* Footer Toggle */}
+        <div className="mt-6 text-center">
+          <button 
+            onClick={() => setDontShowAgain(!dontShowAgain)}
+            className="text-[11px] text-slate-600 hover:text-slate-400 uppercase tracking-widest flex items-center justify-center gap-2 w-full"
+          >
+            {dontShowAgain ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-3 h-3 border border-slate-700 rounded-sm" />}
+            Don't show this again
+          </button>
         </div>
       </motion.div>
     </div>
