@@ -12,7 +12,7 @@ import Locking from "./pages/Locking"; // Added the new locking page register
 import PublicProfile from "./components/PublicProfile";
 import Welcome from "./pages/Welcome"; // Premium Welcome Onboarding Screen
 import { useWallet } from "./context/WalletContext";
-
+import { MaintenanceGuard } from "./components/MaintenanceGuard";
 import { WagmiConfig, createConfig } from "wagmi";
 import {
   ConnectKitProvider,
@@ -134,7 +134,8 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <WagmiConfig config={config}>
         <ConnectKitProvider customTheme={ckTheme} mode="dark">
-          <div className="flex flex-col min-h-screen bg-[#030712]">
+            <MaintenanceGuard>
+            <div className="flex flex-col min-h-screen bg-[#030712]">
             <Navbar />
             
             {/* Standard main grid tracking panel spacing blocks */}
@@ -152,6 +153,7 @@ export default function App() {
             </main>
             
           </div>
+</MaintenanceGuard>
         </ConnectKitProvider>
       </WagmiConfig>
     </QueryClientProvider>
