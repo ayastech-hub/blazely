@@ -1,6 +1,6 @@
 // src/components/MaintenanceGuard.jsx
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient"; // Import your existing client
+import { supabase } from "../lib/supabaseClient";// Import your existing client
 
 export function MaintenanceGuard({ children }) {
   const [isMaintenance, setIsMaintenance] = useState(false);
