@@ -76,7 +76,7 @@ function buildBaseQuery({ filter, search, owner, excludeGraduated, sort } = {}) 
     "24h volume": "volume_24h"
   };
 
-  column = sortMap[(sort || "").toLowerCase()] || "marketcap";
+  column = sortMap[(sort || "").toLowerCase()] || "market_cap";
   query = query.order(column, { ascending });
   
   if (column !== "created_at") {
