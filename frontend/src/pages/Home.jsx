@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 import FilterBar from "../components/FilterBar";
@@ -15,10 +14,11 @@ import {
 import { useNavigate } from "react-router-dom";
 import { buyEmitter } from "../utils/buyEmitter";
 import TokenList from "../components/TokenList";
+import { fetchTokensFromSupabase } from "../api/supabaseTokens";
 
 const TOKENS_PER_PAGE = 12;
 
-// --- Pagination helpers (keep these unchanged) ---
+// --- Pagination helpers ---
 function buildPageList(currentPage, totalPages, maxVisible = 5) {
   const pages = [];
   if (totalPages <= maxVisible) {
@@ -130,10 +130,7 @@ const Footer = () => (
   <footer className="mt-16 border-t border-slate-900 bg-[#0b0f19]/30 backdrop-blur-sm">
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
       <div className="flex items-center gap-3">
-        <div 
-          className="text-xs font-black uppercase tracking-widest"
-          style={{ color: '#96d6cd' }}
-        >
+        <div className="text-xs font-black uppercase tracking-widest" style={{ color: '#96d6cd' }}>
           Blazely
         </div>
         <p className="text-[10px] font-mono text-slate-600">
@@ -177,107 +174,20 @@ export default function Home() {
     pausedAllRef.current = pausedAll;
   }, [pausedAll]);
 
-  const navigate = useNavigate();
-
-    const loadTokens = async (page = 1, overrides = {}) => {
+  const loadTokens = async (page = 1, overrides = {}) => {
     setLoading(true);
     try {
-      const from = (page - 1) * TOKENS_PER_PAGE;
-      const to = from + TOKENS_PER_PAGE - 1;
-
-      const effectiveSearch = overrides.searchTerm ?? searchTerm;
-      const effectiveSort = overrides.sort ?? sort;
-      const effectiveListed = overrides.listedOnly ?? listedOnly;
-
-      // FIXED: Pull metrics properties directly at root layout level to avoid relational parser drops
-      let query = supabase.from("tokens").select(
-        `
-          id,
-          address,
-          name,
-          symbol,
-          logo_path,
-          telegram,
-          website,
-          twitter,
-          graduated,
-          created_at,
-          market_cap,
-          volume_24h,
-          price,
-          last_trade_at
-        `,
-        { count: "exact" }
-      );
-
-      if (effectiveListed) {
-        query = query.eq("graduated", true);
-      }
-
-      if (effectiveSearch) {
-        const escaped = String(effectiveSearch).replace(/%/g, "\\%").replace(/_/g, "\\_");
-        query = query.or(`name.ilike.%${escaped}%,symbol.ilike.%${escaped}%,address.ilike.%${escaped}%`);
-      }
-
-      let orderByColumn = "created_at";
-      let ascending = false;
-
-      switch (effectiveSort) {
-        case "Last Trade":
-          orderByColumn = "last_trade_at";
-          ascending = false;
-          break;
-        case "Marketcap":
-          orderByColumn = "market_cap";
-          ascending = false;
-          break;
-        case "24h Volume":
-          orderByColumn = "volume_24h";
-          ascending = false;
-          break;
-        case "Recently Listed":
-          orderByColumn = "created_at";
-          ascending = false;
-          break;
-      }
-
-      // Order rows cleanly
-      query = query.order(orderByColumn, { ascending, nullsFirst: false });
-      if (orderByColumn !== "created_at") {
-        query = query.order("created_at", { ascending: false });
-      }
-      
-      query = query.range(from, to);
-
-      const { data, count, error } = await query;
-      if (error) throw error;
-
-      const normalized = (data || []).map((t) => {
-        // FIXED: Extract fallback variables explicitly from the flat parent model parameters
-        const marketcapValue = parseFloat(t.market_cap ?? 0);
-        const volumeValue = parseFloat(t.volume_24h ?? 0);
-        const priceValue = parseFloat(t.price ?? 0);
-
-        const logoUrl = t.logo_path
-          ? supabase.storage.from("logos").getPublicUrl(t.logo_path).data.publicUrl
-          : null;
-console.log(`DEBUG: Token ${t.symbol} URL ->`, logoUrl);
-
-         return {
-          ...t,
-          logoUrl,
-          marketcap: marketcapValue,
-          volume_24h: volumeValue,
-          price: priceValue,
-          initialMetrics: {
-            market_cap_text: marketcapValue ? `$${marketcapValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "0.00",
-            volume_24h_text: volumeValue ? `$${volumeValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "0.00",
-          },
-        };
+      const { data, count, error } = await fetchTokensFromSupabase({
+        page,
+        perPage: TOKENS_PER_PAGE,
+        sort: overrides.sort ?? sort,
+        search: overrides.searchTerm ?? searchTerm,
+        listedOnly: overrides.listedOnly ?? listedOnly,
       });
 
-      setTokens(normalized);
-      setTotalCount(count || normalized.length);
+      if (error) throw error;
+      setTokens(data);
+      setTotalCount(count);
     } catch (err) {
       console.error("Error loading tokens:", err);
       setTokens([]);
@@ -286,10 +196,6 @@ console.log(`DEBUG: Token ${t.symbol} URL ->`, logoUrl);
       setLoading(false);
     }
   };
-
-
-     
- 
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.matchMedia("(max-width: 640px)").matches);
@@ -313,7 +219,6 @@ console.log(`DEBUG: Token ${t.symbol} URL ->`, logoUrl);
     let reconnectBackoff = 1000;
     const MAX_BACKOFF = 30_000;
 
-    // FIX: Detect browser security context. Fallback to production Secure WebSockets (wss://) when loaded via HTTPS
     let WS_URL = import.meta.env.VITE_TRADES_WS || "ws://localhost:8080";
     if (window.location.protocol === "https:" && WS_URL.startsWith("ws://")) {
       WS_URL = WS_URL.replace("ws://", "wss://");
@@ -364,17 +269,10 @@ console.log(`DEBUG: Token ${t.symbol} URL ->`, logoUrl);
           const patched = { ...newArr[currentIdx] };
           if (p.price != null) patched.price = p.price;
           if (p.last_trade_at) patched.last_trade_at = p.last_trade_at;
-          patched._last_trade = {
-            tx_hash: p.tx_hash,
-            eth: p.eth,
-            token_amount: p.token_amount,
-          };
+          patched._last_trade = { tx_hash: p.tx_hash, eth: p.eth, token_amount: p.token_amount };
 
           newArr[currentIdx] = patched;
-
-          if (p.type === "buy" || p.isBuy) {
-            toFront.push({ addr, token: patched });
-          }
+          if (p.type === "buy" || p.isBuy) toFront.push({ addr, token: patched });
         }
 
         if (pausedAllRef.current) {
@@ -386,7 +284,6 @@ console.log(`DEBUG: Token ${t.symbol} URL ->`, logoUrl);
           for (let i = toFront.length - 1; i >= 0; i--) {
             const { addr } = toFront[i];
             const pos = newArr.findIndex((t) => (t.address || "").toLowerCase() === addr);
-
             if (pos > -1) {
               const [tok] = newArr.splice(pos, 1);
               newArr.unshift(tok);
@@ -398,7 +295,6 @@ console.log(`DEBUG: Token ${t.symbol} URL ->`, logoUrl);
             buyEmitter.emit("buy", addr);
           }
         }
-
         setTokensOnce(newArr);
       });
     };
@@ -432,24 +328,20 @@ console.log(`DEBUG: Token ${t.symbol} URL ->`, logoUrl);
     };
 
     const connect = () => {
-      // Don't connect to raw localhost if running on public secure domains
       if (window.location.hostname !== "localhost" && WS_URL.includes("localhost")) {
         console.warn("Skipping loopback socket stream engine connection on public production domains.");
         return;
       }
-
       try {
         ws = new WebSocket(WS_URL);
       } catch (err) {
         setTimeout(connect, reconnectBackoff);
         return;
       }
-
       ws.addEventListener("open", () => {
         reconnectBackoff = 1000;
         startHeartbeat();
       });
-
       ws.addEventListener("message", (evt) => {
         try {
           const payload = JSON.parse(evt.data);
@@ -461,31 +353,23 @@ console.log(`DEBUG: Token ${t.symbol} URL ->`, logoUrl);
           if (type !== "trade" || !inner) return;
           const addr = (inner.token || inner.address || "").toLowerCase();
           if (!addr) return;
-
           const bufferedData = buffer.get(addr) || { address: addr };
           const newTradeData = { ...bufferedData, ...inner };
-          if (inner.type === "buy" || inner.isBuy) {
-            newTradeData.isBuy = true;
-          }
+          if (inner.type === "buy" || inner.isBuy) newTradeData.isBuy = true;
           buffer.set(addr, newTradeData);
-
           scheduleFlush();
         } catch {}
       });
-
       ws.addEventListener("close", () => {
         stopHeartbeat();
         if (!shouldStop) setTimeout(connect, reconnectBackoff);
         reconnectBackoff = Math.min(reconnectBackoff * 1.5, MAX_BACKOFF);
       });
-
       ws.addEventListener("error", () => {
         try { ws.close(); } catch {}
       });
     };
-
     connect();
-
     return () => {
       shouldStop = true;
       try { ws.close(); } catch {}
