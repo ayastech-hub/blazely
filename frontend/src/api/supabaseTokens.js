@@ -1,12 +1,10 @@
 import { supabase } from "../lib/supabaseClient";
 
-/** * Cleans the logo path to ensure it doesn't double-prefix 'logos/'. */
 export function getCleanLogoPath(path) {
   if (!path) return null;
   return path.replace(/^logos\//, '');
 }
 
-/** Safely get a public URL from storage path */
 export async function getPublicUrlSafe(path) {
   if (!path) return null;
   try {
@@ -19,25 +17,19 @@ export async function getPublicUrlSafe(path) {
   }
 }
 
-/** Normalize raw token row from Supabase */
 export function normalizeToken(row) {
   if (!row) return null;
-
-  // Extract metrics from the joined table (defaulting to 0)
+  // Access the joined object.
   const metrics = row.token_metrics_latest || {};
   
-  const logo_path = row.logo_path || null;
-  const logo = row.logo || row.logo_url || (row.socials?.logo || row.socials?.image) || null;
-
   return {
     address: String(row.address || ""),
     id: row.id || row.address,
     name: row.name || row.symbol || row.address,
     symbol: row.symbol || (row.name ? row.name.slice(0, 6).toUpperCase() : "TKN"),
-    logo,
-    logo_path,
+    logo: row.logo || row.logo_url || (row.socials?.logo || row.socials?.image) || null,
+    logo_path: row.logo_path || null,
     category: row.type || row.category || "Other",
-    // Metrics now come from the joined table
     marketcap_usd: metrics.market_cap ?? 0,
     volume_24h: metrics.volume_24h ?? 0,
     price: metrics.price ?? 0,
@@ -49,9 +41,8 @@ export function normalizeToken(row) {
   };
 }
 
-/** Build base query with filters */
-function buildBaseQuery({ filter, search, owner, excludeGraduated, sort } = {}) {
-  // RELATIONAL JOIN: Only select token columns + metrics join
+function buildBaseQuery({ filter, search, owner, excludeGraduated } = {}) {
+  // Select ONLY the join, removing references to market_cap/price in the tokens table
   let query = supabase.from("tokens").select(`
     *, 
     token_metrics_latest (
@@ -79,22 +70,9 @@ function buildBaseQuery({ filter, search, owner, excludeGraduated, sort } = {}) 
     query = query.or(`name.ilike.${term},symbol.ilike.${term},address.ilike.${term}`);
   }
 
-  // Sorting logic now references the joined metrics table via dot notation
-  const sortMap = {
-    "recently listed": "created_at",
-    "marketcap": "token_metrics_latest(market_cap)",
-    "24h volume": "token_metrics_latest(volume_24h)"
-  };
-
-  const column = sortMap[(sort || "").toLowerCase()] || "token_metrics_latest(market_cap)";
-  
-  // Note: Supabase handles the order on joined tables automatically
-  query = query.order(column, { ascending: false });
-
   return query;
 }
 
-/** Fetch tokens */
 export async function fetchTokensFromSupabase(params = {}) {
   try {
     const from = (params.page - 1) * params.perPage;
@@ -102,23 +80,33 @@ export async function fetchTokensFromSupabase(params = {}) {
 
     let query = buildBaseQuery(params);
 
-    // FIX: Using 'graduated' column for the "Graduated Only" toggle
     if (params.listedOnly) {
       query = query.eq("graduated", true);
     }
 
+    // Sort by created_at as a fallback, then we sort metrics in JS
+    query = query.order("created_at", { ascending: false });
+
     const { data, error, count } = await query.range(from, to);
-    
     if (error) throw error;
-    
-    return { data: (data || []).map(normalizeToken), count: count || 0, error: null };
+
+    let normalizedData = (data || []).map(normalizeToken);
+
+    // Sort in JavaScript to avoid "42703: column does not exist" errors
+    const sort = (params.sort || "").toLowerCase();
+    if (sort === "marketcap") {
+      normalizedData.sort((a, b) => b.marketcap_usd - a.marketcap_usd);
+    } else if (sort === "24h volume") {
+      normalizedData.sort((a, b) => b.volume_24h - a.volume_24h);
+    }
+
+    return { data: normalizedData, count: count || 0, error: null };
   } catch (err) {
     console.error("fetchTokensFromSupabase Error:", err);
     return { data: [], count: 0, error: err };
   }
 }
 
-/** Fetch a single token */
 export async function fetchTokenByAddress(address) {
   try {
     const { data, error } = await supabase
