@@ -39,7 +39,6 @@ export function normalizeToken(row) {
     price: row.price ?? 0,
     last_updated: row.last_updated || row.updated_at || null,
     graduated: Boolean(row.graduated === true || String(row.graduated) === "true"),
-    // Only check the columns that actually exist in your database
     listed: Boolean(row.listed === true || String(row.listed) === "true"),
     initialMetrics: row.token_metrics_latest || null,
     __raw: row,
@@ -89,23 +88,32 @@ function buildBaseQuery({ filter, search, owner, excludeGraduated, sort } = {}) 
 
 /** Fetch tokens */
 export async function fetchTokensFromSupabase(params = {}) {
+  console.log("--- DEBUG: Fetching Tokens ---", params);
+  
   try {
     const from = (params.page - 1) * params.perPage;
     const to = from + params.perPage - 1;
 
     let query = buildBaseQuery(params);
 
-    // Apply filter strictly on the column that exists ('listed')
     if (params.listedOnly) {
+      console.log("DEBUG: Applying 'listed' filter");
       query = query.eq("listed", true);
     }
 
     const { data, error, count } = await query.range(from, to);
-    if (error) throw error;
+    
+    if (error) {
+      console.error("--- DEBUG: Supabase Error ---", error);
+      throw error;
+    }
+    
+    console.log("--- DEBUG: Raw Data Received ---", data);
+    console.log("--- DEBUG: Total Count ---", count);
     
     return { data: (data || []).map(normalizeToken), count: count || 0, error: null };
   } catch (err) {
-    console.error("fetchTokensFromSupabase error:", err);
+    console.error("--- DEBUG: fetchTokensFromSupabase Catch Block Error ---", err);
     return { data: [], count: 0, error: err };
   }
 }
