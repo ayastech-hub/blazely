@@ -67,12 +67,12 @@ function buildBaseQuery({ filter, search, owner, excludeGraduated, sort } = {}) 
     query = query.or(`name.ilike.${term},symbol.ilike.${term},address.ilike.${term}`);
   }
 
-  let column = "marketcap";
+  let column = "market_cap";
   let ascending = false;
 
   const sortMap = {
     "recently listed": "created_at",
-    "marketcap": "marketcap",
+    "marketcap": "market_cap",
     "24h volume": "volume_24h"
   };
 
@@ -123,7 +123,7 @@ export async function fetchTokenByAddress(address) {
   try {
     const { data, error } = await supabase
       .from("tokens")
-      .select(`*, marketcap, volume_24h, price, token_metrics_latest(*)`)
+      .select(`*, market_cap, volume_24h, price, token_metrics_latest(*)`)
       .ilike("address", String(address).toLowerCase())
       .limit(1)
       .maybeSingle();
