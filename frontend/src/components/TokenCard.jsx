@@ -1,9 +1,10 @@
-// src/components/TokenCard.jsx
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Globe, Twitter, Send } from "lucide-react";
 import { computeProgressPercentFixed } from "../utils/progress";
+// 1. ADDED: Import supabase to resolve URLs
+import { supabase } from "../lib/supabaseClient"; 
 
 const getCleanLogoPath = (path) => path?.replace(/^logos\//, '');
 
@@ -74,6 +75,11 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
     };
   }, [token]);
 
+  // 2. FIXED: Construct the logo URL here to prevent passing broken paths to <img>
+  const logoSrc = token.logo_path 
+    ? supabase.storage.from("logos").getPublicUrl(getCleanLogoPath(token.logo_path)).data.publicUrl 
+    : token.logo;
+
   const safePercent = Math.max(0, Math.min(100, progress.percent || 0));
 
   return (
@@ -92,26 +98,22 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
           }}
           className={`relative h-full rounded-sm bg-[#0b0f19]/40 border border-slate-900 p-3 flex flex-col justify-between transition-colors hover:bg-[#0b0f19]/80 group-hover:border-slate-800`}
         >
-          {/* Main Context Grid Block */}
           <div className="flex gap-3 items-start min-w-0 w-full mb-3">
-            
-            {/* Rigid Identity Square Image Frame */}
             <div className="w-14 h-14 bg-[#030712] border border-slate-900 rounded-none flex items-center justify-center overflow-hidden shrink-0">
-  {token.logo_path ? (
-    <img
-      src={supabase.storage.from("logos").getPublicUrl(getCleanLogoPath(token.logo_path)).data.publicUrl}
-      alt={`${token.name} logo`}
-      className="w-full h-full object-cover"
-      onError={(e) => { e.target.src = '/fallback-icon.png'; }} // Add a fallback
-    />
-  ) : (
-    <span className="text-lg font-black text-slate-500">
-      {token.symbol?.charAt(0).toUpperCase() || "T"}
-    </span>
-  )}
-</div>
+              {logoSrc ? (
+                <img
+                  src={logoSrc}
+                  alt={`${token.name} logo`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              ) : (
+                <span className="text-lg font-black text-slate-500">
+                  {token.symbol?.charAt(0).toUpperCase() || "T"}
+                </span>
+              )}
+            </div>
 
-            {/* Core Identification Text Segment */}
             <div className="min-w-0 flex-1">
               <h3 className="text-xs font-black text-slate-200 uppercase tracking-wider truncate leading-tight">
                 {token.name}
@@ -119,35 +121,20 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide truncate mt-0.5">
                 ${token.symbol ?? "—"}
               </p>
-
-              {/* Functional Social Anchors Network */}
               <div className="flex items-center gap-1 mt-2">
-                <SocialLink
-                  href={token.website}
-                  icon={<Globe size={11} />}
-                  label="Website"
-                />
-                <SocialLink
-                  href={token.twitter}
-                  icon={<Twitter size={11} />}
-                  label="Twitter"
-                />
-                <SocialLink
-                  href={token.telegram}
-                  icon={<Send size={11} />}
-                  label="Telegram"
-                />
+                <SocialLink href={token.website} icon={<Globe size={11} />} label="Website" />
+                <SocialLink href={token.twitter} icon={<Twitter size={11} />} label="Twitter" />
+                <SocialLink href={token.telegram} icon={<Send size={11} />} label="Telegram" />
               </div>
             </div>
           </div>
 
-          {/* Quant Index Metrics Row */}
           <div className="flex flex-wrap items-center gap-1.5 mb-3">
             <MetricGroup label="MCAP" value={displayMarketcap} />
             <MetricGroup label="VOL_24H" value={displayVolume} />
           </div>
 
-          {/* Infrastructure Curve Telemetry Progress Section */}
+          {/* ... Rest of the component (Progress section remains same) */}
           <div className="w-full border-t border-slate-900/60 pt-2 text-[10px]">
             {progress.graduated ? (
               <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest bg-[#030712]/40 border border-slate-900 px-1.5 py-0.5 inline-block rounded-none">
@@ -159,8 +146,6 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
                   <span>CURVE_FILL</span>
                   <span className="text-slate-300 font-mono">{Math.round(safePercent)}%</span>
                 </div>
-
-                {/* Flat Engineering Gauge Track */}
                 <div className="w-full h-1 bg-[#030712] border border-slate-900/40 overflow-hidden rounded-none relative">
                   <motion.div
                     className="h-full opacity-90"
@@ -173,17 +158,6 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
               </div>
             )}
           </div>
-
-          {/* Top-Right Absolute New Signal Badging */}
-          {isNew && (
-            <div 
-              style={{ backgroundColor: '#96d6cd', color: '#030712' }}
-              className="absolute top-0 right-0 text-[8px] font-black uppercase tracking-widest px-1 py-0.5 rounded-none"
-            >
-              NEW_NODE
-            </div>
-          )}
-
         </div>
       </Link>
     </motion.div>
