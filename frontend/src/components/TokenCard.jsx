@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { Globe, Twitter, Send } from "lucide-react";
 import { computeProgressPercentFixed } from "../utils/progress";
 
+const getCleanLogoPath = (path) => path?.replace(/^logos\//, '');
+
 /* -------------------- Telemetry Formatters -------------------- */
 const compactNumberShort = (number) => {
   if (number === null || number === undefined) return "N/A";
@@ -95,18 +97,19 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
             
             {/* Rigid Identity Square Image Frame */}
             <div className="w-14 h-14 bg-[#030712] border border-slate-900 rounded-none flex items-center justify-center overflow-hidden shrink-0">
-              {token.logo_path ? (
-                <img
-                  src={token.logo_path}
-                  alt={`${token.name} logo`}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-lg font-black text-slate-500">
-                  {token.symbol?.charAt(0).toUpperCase() || "T"}
-                </span>
-              )}
-            </div>
+  {token.logo_path ? (
+    <img
+      src={supabase.storage.from("logos").getPublicUrl(getCleanLogoPath(token.logo_path)).data.publicUrl}
+      alt={`${token.name} logo`}
+      className="w-full h-full object-cover"
+      onError={(e) => { e.target.src = '/fallback-icon.png'; }} // Add a fallback
+    />
+  ) : (
+    <span className="text-lg font-black text-slate-500">
+      {token.symbol?.charAt(0).toUpperCase() || "T"}
+    </span>
+  )}
+</div>
 
             {/* Core Identification Text Segment */}
             <div className="min-w-0 flex-1">
