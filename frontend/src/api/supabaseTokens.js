@@ -23,7 +23,6 @@ export async function getPublicUrlSafe(path) {
 export function normalizeToken(row) {
   if (!row) return null;
 
-  // FIX: Supabase joins return an array. We grab the first element if it exists.
   const rawMetrics = Array.isArray(row.token_metrics_latest) 
     ? row.token_metrics_latest[0] 
     : row.token_metrics_latest;
@@ -33,10 +32,11 @@ export function normalizeToken(row) {
   const logo_path = row.logo_path || null;
   const logo = row.logo || row.logo_url || (row.socials?.logo || row.socials?.image) || null;
 
-  // Force values to numbers to ensure UI can render them correctly
+  // Force values to numbers
   const marketcap = Number(metrics.market_cap ?? 0);
   const volume = Number(metrics.volume_24h ?? 0);
   const price = Number(metrics.price ?? 0);
+  const pool_progress = Number(metrics.pool_progress ?? 0); // New field
 
   return {
     address: String(row.address || ""),
@@ -45,9 +45,14 @@ export function normalizeToken(row) {
     symbol: row.symbol || (row.name ? row.name.slice(0, 6).toUpperCase() : "TKN"),
     logo,
     logo_path,
+    // Add social links explicitly from row
+    website: row.website || null,
+    twitter: row.twitter || null,
+    telegram: row.telegram || null,
     category: row.type || row.category || "Other",
     marketcap_usd: isNaN(marketcap) ? 0 : marketcap,
     volume_24h: isNaN(volume) ? 0 : volume,
+    pool_progress: isNaN(pool_progress) ? 0 : pool_progress, // Exported
     price: isNaN(price) ? 0 : price,
     last_updated: metrics.last_updated || row.updated_at || null,
     graduated: Boolean(row.graduated === true || String(row.graduated) === "true"),
@@ -59,15 +64,19 @@ export function normalizeToken(row) {
 
 /** Build base query with filters */
 function buildBaseQuery({ filter, search, owner, excludeGraduated } = {}) {
+  // Added pool_progress to the select statement
   let query = supabase.from("tokens").select(`
     *, 
     token_metrics_latest (
       market_cap, 
       volume_24h, 
       price, 
-      last_updated
+      last_updated,
+      pool_progress
     )
   `, { count: "exact" });
+  
+ 
 
   if (owner && ["MyTokens", "My Tokens", "Creator"].includes(filter)) {
     query = query.eq("creator_wallet", String(owner).toLowerCase());
