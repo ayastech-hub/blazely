@@ -1,11 +1,5 @@
 
 
-<!-- ====================================================================== -->
-<!--  FILE 3 OF 3:  src/components/TokenCard.jsx                              -->
-<!--  Token card — premium editorial restyle                                 -->
-<!--  Logic preserved: progress fetch, supabase storage logo, Link, isNew    -->
-<!-- ====================================================================== -->
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -214,9 +208,3 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
 }
 
 
-
-<!-- ====================================================================== -->
-<!--  END OF FILE                                                             -->
-<!--  Total components: 3 (Welcome, Leaderboard, TokenCard)                   -->
-<!--  Logic: unchanged | UI: aligned to landing page design system            -->
-<!-- ====================================================================== -->
