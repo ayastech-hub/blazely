@@ -1,12 +1,8 @@
 import { supabase } from "../lib/supabaseClient";
 
-/** * Cleans the logo path to ensure it doesn't double-prefix 'logos/'.
- * Use this in your components before passing the path to getPublicUrl.
- */
+/** * Cleans the logo path to ensure it doesn't double-prefix 'logos/'. */
 export function getCleanLogoPath(path) {
   if (!path) return null;
-  // If path is stored as 'logos/filename.png', ensure it's handled correctly
-  // This removes the prefix if it's already there to prevent double-nesting
   return path.replace(/^logos\//, '');
 }
 
@@ -27,10 +23,7 @@ export async function getPublicUrlSafe(path) {
 export function normalizeToken(row) {
   if (!row) return null;
 
-  // We keep the path raw. Do not resolve the URL here to keep this function fast and predictable.
   const logo_path = row.logo_path || null;
-  
-  // Keep existing fallbacks for raw URLs
   const logo = row.logo || row.logo_url || (row.socials?.logo || row.socials?.image) || null;
 
   return {
@@ -38,20 +31,16 @@ export function normalizeToken(row) {
     id: row.id || row.address,
     name: row.name || row.symbol || row.address,
     symbol: row.symbol || (row.name ? row.name.slice(0, 6).toUpperCase() : "TKN"),
-    logo,            // Fallback external URL
-    logo_path,       // The internal storage path
+    logo,
+    logo_path,
     category: row.type || row.category || "Other",
     marketcap_usd: row.marketcap ?? row.market_cap ?? row.marketcap_usd ?? 0,
     volume_24h: row.volume_24h ?? row.volume ?? 0,
     price: row.price ?? 0,
     last_updated: row.last_updated || row.updated_at || null,
     graduated: Boolean(row.graduated === true || String(row.graduated) === "true"),
-    listed: Boolean(
-      row.listed_on_uniswap === true || 
-      String(row.listed_on_uniswap) === "true" || 
-      row.listed === true || 
-      String(row.listed) === "true"
-    ),
+    // Only check the columns that actually exist in your database
+    listed: Boolean(row.listed === true || String(row.listed) === "true"),
     initialMetrics: row.token_metrics_latest || null,
     __raw: row,
   };
@@ -106,21 +95,15 @@ export async function fetchTokensFromSupabase(params = {}) {
 
     let query = buildBaseQuery(params);
 
+    // Apply filter strictly on the column that exists ('listed')
     if (params.listedOnly) {
-      try {
-        query = query.eq("listed_on_uniswap", true);
-        const { data, error, count } = await query.range(from, to);
-        if (error?.code === "42703") throw error;
-        return { data: (data || []).map(normalizeToken), count: count || 0 };
-      } catch {
-        query = buildBaseQuery(params).eq("listed", true);
-        const { data, error, count } = await query.range(from, to);
-        return { data: (data || []).map(normalizeToken), count: count || 0, error };
-      }
+      query = query.eq("listed", true);
     }
 
     const { data, error, count } = await query.range(from, to);
-    return { data: (data || []).map(normalizeToken), count: count || 0, error };
+    if (error) throw error;
+    
+    return { data: (data || []).map(normalizeToken), count: count || 0, error: null };
   } catch (err) {
     console.error("fetchTokensFromSupabase error:", err);
     return { data: [], count: 0, error: err };
