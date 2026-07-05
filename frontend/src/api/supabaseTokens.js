@@ -1,10 +1,12 @@
 import { supabase } from "../lib/supabaseClient";
 
+/** * Cleans the logo path to ensure it doesn't double-prefix 'logos/'. */
 export function getCleanLogoPath(path) {
   if (!path) return null;
   return path.replace(/^logos\//, '');
 }
 
+/** Safely get a public URL from storage path */
 export async function getPublicUrlSafe(path) {
   if (!path) return null;
   try {
@@ -17,22 +19,36 @@ export async function getPublicUrlSafe(path) {
   }
 }
 
+/** Normalize raw token row from Supabase */
 export function normalizeToken(row) {
   if (!row) return null;
-  // Access the joined object.
-  const metrics = row.token_metrics_latest || {};
+
+  // FIX: Supabase joins return an array. We grab the first element if it exists.
+  const rawMetrics = Array.isArray(row.token_metrics_latest) 
+    ? row.token_metrics_latest[0] 
+    : row.token_metrics_latest;
+    
+  const metrics = rawMetrics || {};
   
+  const logo_path = row.logo_path || null;
+  const logo = row.logo || row.logo_url || (row.socials?.logo || row.socials?.image) || null;
+
+  // Force values to numbers to ensure UI can render them correctly
+  const marketcap = Number(metrics.market_cap ?? 0);
+  const volume = Number(metrics.volume_24h ?? 0);
+  const price = Number(metrics.price ?? 0);
+
   return {
     address: String(row.address || ""),
     id: row.id || row.address,
     name: row.name || row.symbol || row.address,
     symbol: row.symbol || (row.name ? row.name.slice(0, 6).toUpperCase() : "TKN"),
-    logo: row.logo || row.logo_url || (row.socials?.logo || row.socials?.image) || null,
-    logo_path: row.logo_path || null,
+    logo,
+    logo_path,
     category: row.type || row.category || "Other",
-    marketcap_usd: metrics.market_cap ?? 0,
-    volume_24h: metrics.volume_24h ?? 0,
-    price: metrics.price ?? 0,
+    marketcap_usd: isNaN(marketcap) ? 0 : marketcap,
+    volume_24h: isNaN(volume) ? 0 : volume,
+    price: isNaN(price) ? 0 : price,
     last_updated: metrics.last_updated || row.updated_at || null,
     graduated: Boolean(row.graduated === true || String(row.graduated) === "true"),
     listed: Boolean(row.listed === true || String(row.listed) === "true"),
@@ -41,8 +57,8 @@ export function normalizeToken(row) {
   };
 }
 
+/** Build base query with filters */
 function buildBaseQuery({ filter, search, owner, excludeGraduated } = {}) {
-  // Select ONLY the join, removing references to market_cap/price in the tokens table
   let query = supabase.from("tokens").select(`
     *, 
     token_metrics_latest (
@@ -73,6 +89,7 @@ function buildBaseQuery({ filter, search, owner, excludeGraduated } = {}) {
   return query;
 }
 
+/** Fetch tokens */
 export async function fetchTokensFromSupabase(params = {}) {
   try {
     const from = (params.page - 1) * params.perPage;
@@ -84,7 +101,6 @@ export async function fetchTokensFromSupabase(params = {}) {
       query = query.eq("graduated", true);
     }
 
-    // Sort by created_at as a fallback, then we sort metrics in JS
     query = query.order("created_at", { ascending: false });
 
     const { data, error, count } = await query.range(from, to);
@@ -92,7 +108,6 @@ export async function fetchTokensFromSupabase(params = {}) {
 
     let normalizedData = (data || []).map(normalizeToken);
 
-    // Sort in JavaScript to avoid "42703: column does not exist" errors
     const sort = (params.sort || "").toLowerCase();
     if (sort === "marketcap") {
       normalizedData.sort((a, b) => b.marketcap_usd - a.marketcap_usd);
@@ -107,6 +122,7 @@ export async function fetchTokensFromSupabase(params = {}) {
   }
 }
 
+/** Fetch a single token */
 export async function fetchTokenByAddress(address) {
   try {
     const { data, error } = await supabase
