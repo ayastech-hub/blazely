@@ -34,7 +34,7 @@ export function normalizeToken(row) {
     logo,
     logo_path,
     category: row.type || row.category || "Other",
-    marketcap_usd: row.marketcap ?? row.market_cap ?? row.marketcap_usd ?? 0,
+    marketcap_usd: row.market_cap ?? row.market_cap ?? row.marketcap_usd ?? 0,
     volume_24h: row.volume_24h ?? row.volume ?? 0,
     price: row.price ?? 0,
     last_updated: row.last_updated || row.updated_at || null,
@@ -47,7 +47,7 @@ export function normalizeToken(row) {
 
 /** Build base query with filters */
 function buildBaseQuery({ filter, search, owner, excludeGraduated, sort } = {}) {
-  let query = supabase.from("tokens").select(`*, marketcap, volume_24h, price, token_metrics_latest(*)`, { count: "exact" });
+  let query = supabase.from("tokens").select(`*, market_cap, volume_24h, price, token_metrics_latest(*)`, { count: "exact" });
 
   if (owner && ["MyTokens", "My Tokens", "Creator"].includes(filter)) {
     query = query.eq("creator_wallet", String(owner).toLowerCase());
