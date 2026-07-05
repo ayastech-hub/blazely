@@ -261,8 +261,9 @@ export default function Home() {
         const logoUrl = t.logo_path
           ? supabase.storage.from("logos").getPublicUrl(t.logo_path).data.publicUrl
           : null;
+console.log(`DEBUG: Token ${t.symbol} URL ->`, logoUrl);
 
-        return {
+         return {
           ...t,
           logoUrl,
           marketcap: marketcapValue,
