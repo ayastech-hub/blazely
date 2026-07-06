@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = createClient(process.env.VITE_SUPABASE_ANON_KEY, process.env.VITE_SUPABASE_ANON_KEY);
 
 // Only include the event you need from the ABI
 const FACTORY_ABI = ["event Launched(address indexed token, string name, string symbol)"];
