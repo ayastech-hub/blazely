@@ -1,34 +1,25 @@
-const express = require('express');
-const { ethers } = require('ethers');
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
-
-const app = express();
-app.use(express.json());
+import { ethers } from 'ethers';
+import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// Define your factory ABI (only the Launch event is needed)
-const FACTORY_ABI = [
-  "event Launched(address indexed token, string name, string symbol)"
-];
+// Only include the event you need from the ABI
+const FACTORY_ABI = ["event Launched(address indexed token, string name, string symbol)"];
 
-const PROVIDERS = {
-  11155111: new ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL)
-};
+export default async function handler(req, res) {
+  // 1. Only allow POST requests
+  if (req.method !== 'POST') return res.status(405).json({ message: "Method not allowed" });
 
-app.post('/api/verify-deployment', async (req, res) => {
   const { txHash, chainId, metadata } = req.body;
 
   try {
-    const provider = PROVIDERS[chainId];
-    if (!provider) throw new Error("Unsupported Chain ID");
-
-    // 1. Wait for transaction to be mined
+    // 2. Connect to the blockchain
+    const provider = new ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
     const receipt = await provider.waitForTransaction(txHash);
-    if (!receipt || receipt.status === 0) throw new Error("Transaction reverted");
+    
+    if (!receipt || receipt.status === 0) throw new Error("Transaction failed on-chain");
 
-    // 2. Parse logs to extract the new token address
+    // 3. Extract the address from the logs
     const iface = new ethers.Interface(FACTORY_ABI);
     let tokenAddress = null;
     
@@ -42,23 +33,20 @@ app.post('/api/verify-deployment', async (req, res) => {
       } catch (e) { continue; }
     }
 
-    if (!tokenAddress) throw new Error("Launch event not found in transaction logs");
+    if (!tokenAddress) throw new Error("Could not find Launch event in transaction");
 
-    // 3. Update/Insert into Database
-    const { data, error } = await supabase.from("tokens").upsert({
+    // 4. Upsert to Supabase
+    const { error } = await supabase.from("tokens").upsert({
       ...metadata,
       address: tokenAddress.toLowerCase(),
       chain_id: chainId,
       updated_at: new Date().toISOString()
-    }).select().single();
+    });
 
     if (error) throw error;
 
-    res.json({ success: true, address: tokenAddress });
+    return res.status(200).json({ success: true, address: tokenAddress });
   } catch (err) {
-    console.error("Verification Error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message });
   }
-});
-
-app.listen(3000, () => console.log('Backend verifying on port 3000'));
+}
