@@ -13,7 +13,6 @@ function sanitizeFilename(name = "") {
 
 /**
  * Upload a logo file to 'logos' bucket and return { path, url }
- * Anyone can upload now (no login required)
  */
 export async function uploadLogo(file) {
   if (!file) return null;
@@ -32,8 +31,7 @@ export async function uploadLogo(file) {
     });
 
   if (uploadError) {
-    uploadError.message = `Logo upload failed: ${uploadError.message || ""}`;
-    throw uploadError;
+    throw new Error(`Logo upload failed: ${uploadError.message}`);
   }
 
   const { data: publicData, error: urlErr } = supabase.storage
@@ -41,17 +39,14 @@ export async function uploadLogo(file) {
     .getPublicUrl(filePath);
 
   if (urlErr) {
-    urlErr.message = `Failed to get public URL for logo: ${
-      urlErr.message || ""
-    }`;
-    throw urlErr;
+    throw new Error(`Failed to get public URL: ${urlErr.message}`);
   }
 
   return { path: filePath, url: publicData?.publicUrl ?? null };
 }
 
 /**
- * createToken - anyone can create token and upload logo now
+ * createToken - Fixed version with strict error handling and schema matching
  */
 export async function createToken(tokenData = {}, logoFile = null) {
   if (!tokenData?.address || !tokenData?.name || !tokenData?.symbol) {
@@ -63,19 +58,17 @@ export async function createToken(tokenData = {}, logoFile = null) {
     ? String(tokenData.creator_wallet).toLowerCase()
     : null;
 
-  // Upload logo if provided
+  // 1. Handle Logo Upload
   let logo_path = null;
   let logo_url = null;
+  
   if (logoFile) {
-    try {
-      const uploaded = await uploadLogo(logoFile);
-      logo_path = uploaded.path;
-      logo_url = uploaded.url;
-    } catch (err) {
-      console.warn("Logo upload failed but continuing:", err.message);
-    }
+    const uploaded = await uploadLogo(logoFile);
+    logo_path = uploaded.path; // Saved as 'logos/12345_name.png'
+    logo_url = uploaded.url;
   }
 
+  // 2. Prepare record (Removed total_supply as it caused a database 400 error)
   const record = {
     address,
     name: tokenData.name,
@@ -85,18 +78,17 @@ export async function createToken(tokenData = {}, logoFile = null) {
     website: tokenData.website || null,
     twitter: tokenData.twitter || null,
     telegram: tokenData.telegram || null,
-    logo_path,
+    logo_path: logo_path, 
     creator_wallet: creatorWallet,
-    creator_uid: null, // anyone can create
+    creator_uid: null,
     chain_id: tokenData.chain_id ?? 1,
-    total_supply: tokenData.total_supply ?? tokenData.supply ?? 0,
-
-    last_updated: new Date().toISOString(),
-    created_at: new Date().toISOString(),
+    // total_supply removed to prevent 'column not found' error
+    
     updated_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
   };
 
-  // Upsert token
+  // 3. Upsert token
   const { data, error } = await supabase
     .from("tokens")
     .upsert(record, { onConflict: "address" })
@@ -104,7 +96,8 @@ export async function createToken(tokenData = {}, logoFile = null) {
     .maybeSingle();
 
   if (error) {
-    console.warn("Token upsert failed but continuing:", error.message);
+    console.error("Supabase upsert error:", error);
+    throw new Error(`Database error: ${error.message}`);
   }
 
   return { ...(data || {}), logo_url };
