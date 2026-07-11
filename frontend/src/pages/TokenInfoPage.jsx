@@ -1,11 +1,12 @@
 /**
  * TokenInfoPage
- * * Implements a fixed-viewport dashboard architecture:
- * - Page-level scrolling is disabled.
- * - Content area uses fixed-height viewports for tabbed panels.
- * - Each panel handles its own internal scrolling.
+ *
+ * Implements a fixed-viewport dashboard architecture:
+ * - Page-level scrolling disabled.
+ * - Content area uses fixed-height viewports.
+ * - Premium scroll-aware floating action button (FAB).
  */
-import React, { useEffect, useLayoutEffect, useState, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -36,7 +37,7 @@ export default function TokenInfoPage() {
   const [showBuySell, setShowBuySell] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
 
-  // Premium FAB scroll-awareness
+  // Corrected Scroll listener with proper cleanup and capturing phase
   useEffect(() => {
     let timeout;
     const handleScroll = () => {
@@ -45,7 +46,7 @@ export default function TokenInfoPage() {
       timeout = setTimeout(() => setIsScrolling(false), 1000);
     };
     window.addEventListener("scroll", handleScroll, true);
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll, true);
   }, []);
 
   useLayoutEffect(() => {
@@ -64,7 +65,6 @@ export default function TokenInfoPage() {
   if (loading && !token) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: C.bg, color: C.mid, fontFamily: C.mono, fontSize: 11 }}>SYNCHRONIZING...</div>;
   if (error || !token) return <div style={{ height: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: C.bg, color: C.sub, fontFamily: C.mono, gap: 8 }}>Token not found.</div>;
 
-  // The Right Panel wrapper logic
   const renderRightPanel = () => (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
       {tab === "Holders" && <HoldersPanel tokenAddress={token.address} circulatingSupply={metrics?.circulating_supply} liquidityPair={token.liquidity_pair} graduated={token.graduated} />}
@@ -78,18 +78,45 @@ export default function TokenInfoPage() {
   return (
     <div style={{ fontFamily: C.sans, background: C.bg, color: C.text, height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       
-      {/* Floating Trade FAB */}
+      {/* Floating Trade FAB - Premium Animated */}
       <motion.button
         onClick={() => setShowBuySell(true)}
+        initial={false}
+        animate={{ width: isScrolling ? 56 : 132 }}
+        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
         style={{
-          position: "fixed", right: 20, bottom: 24, zIndex: 120, height: 56, borderRadius: 999,
-          border: `1px solid ${C.borderHi}`, background: C.teal, color: "#000", fontFamily: C.mono,
-          fontWeight: 800, fontSize: 11, letterSpacing: "0.08em", cursor: "pointer",
-          boxShadow: "0 8px 24px rgba(0,0,0,.35)", display: "flex", alignItems: "center", 
-          justifyContent: "center", gap: 8, padding: isScrolling ? "0 18px" : "0 24px"
+          position: "fixed", 
+          right: 20, 
+          bottom: "calc(env(safe-area-inset-bottom) + 20px)", 
+          zIndex: 1000, 
+          height: 56, 
+          borderRadius: 999,
+          border: `1px solid ${C.borderHi}`, 
+          background: C.teal, 
+          color: "#000", 
+          fontFamily: C.mono,
+          fontWeight: 800, 
+          fontSize: 11, 
+          letterSpacing: "0.08em", 
+          cursor: "pointer",
+          boxShadow: "0 8px 24px rgba(0,0,0,.35)", 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center", 
+          gap: 8,
+          overflow: "hidden"
         }}
       >
-        <span>⬤</span>{!isScrolling && "TRADE"}
+        <span>↗</span>
+        {!isScrolling && (
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            TRADE
+          </motion.span>
+        )}
       </motion.button>
 
       <TokenHeaderBar token={token} metrics={metrics} />
@@ -101,17 +128,13 @@ export default function TokenInfoPage() {
         </div>
       )}
 
-      {/* FIXED VIEWPORT CONTAINER */}
+      {/* Main Content Area - Fixed Viewport */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0, flexDirection: isDesktop ? "row" : "column" }}>
-        
         {isDesktop ? (
           <>
-            {/* Sidebar Trades Panel */}
             <div style={{ width: 420, flexShrink: 0, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
               <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} />
             </div>
-            
-            {/* Main Tabs Panel */}
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
               <div style={{ display: "flex", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
                 {RIGHT_TABS.map((t) => (
@@ -137,7 +160,7 @@ export default function TokenInfoPage() {
 
       <AnimatePresence>
         {showBuySell && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: isDesktop ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowBuySell(false)}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: isDesktop ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowBuySell(false)}>
             <motion.div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: isDesktop ? 400 : 560, background: C.panel, border: `1px solid ${C.borderHi}`, borderRadius: isDesktop ? 10 : "10px 10px 0 0", overflow: "hidden" }}>
               <BuySellPanel token={token} />
             </motion.div>
