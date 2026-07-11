@@ -89,7 +89,7 @@ export default function TokenInfoPage() {
           right: 20, 
           bottom: "calc(env(safe-area-inset-bottom) + 60px)", 
           zIndex: 1000, 
-          height: 56, 
+          height: 40, 
           borderRadius: 999,
           border: `1px solid ${C.borderHi}`, 
           background: C.teal, 
