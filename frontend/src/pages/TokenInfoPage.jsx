@@ -1,38 +1,12 @@
 /**
- * =================================================================================
- * pages/TokenInfoPage.jsx
- * =================================================================================
- * Structure matches the preview design exactly: sticky token header + chart at the top,
- * then either a desktop split-view (trades sidebar + tabbed right panel + sticky buy/sell)
- * or a mobile single-column tabbed layout with a sticky bottom buy/sell bar.
+ * TokenInfoPage
  *
- * WHAT'S DIFFERENT FROM THE PREVIEW: every number on this page is real. No mock data, no
- * random-walk price simulation, no fabricated PnL. See each panel component's own header
- * comment for the specific data source and any honest caveats (bubble map layout algorithm,
- * PnL not being computed, 24h stats being a live query rather than a pre-aggregated column).
- *
- * ALL FETCHING IS CONSOLIDATED: useTokenPageData is the ONE hook that loads token + metrics
- * on mount and keeps them live via realtime — this is the "loads at once" behavior you asked
- * for. Sub-panels (trades, holders, dev tokens, top traders) have their own small hooks
- * because they're genuinely different queries, but none of them re-fetch token metadata that
- * useTokenPageData already has.
- *
- * BUGS FIXED FROM THE OLD TokenInfoPage.jsx (both copies you sent were identical, so this
- * replaces both):
- *   - Selected `market_cap`/`price`/`volume_24h` from the `tokens` table, which don't exist
- *     there in this schema — they live on `token_metrics_latest`. The realtime subscription
- *     was also listening to the wrong table for price updates. Both fixed via
- *     useTokenPageData.
- *   - `BondingCurveProgressSpark` was imported but never rendered anywhere — dead code, no
- *     progress bar ever showed. Now integrated into the desktop sidebar and mobile view.
- *   - `isDesktop` was computed once via `window.matchMedia(...).matches` with no resize
- *     listener, so it never updated after mount (e.g. rotating a tablet). Fixed: a resize
- *     listener updates it live, matching the preview's own approach.
- * =================================================================================
+ * Desktop: Sticky header, Chart, Trades sidebar, Tabbed panel, Floating Trade FAB.
+ * Mobile: Header, Chart, Tabs, Floating Trade FAB.
  */
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useScroll } from "framer-motion";
 
 import { useTokenPageData } from "../hooks/useTokenPageData";
 import { C } from "../utils/designTokens";
@@ -55,17 +29,29 @@ export default function TokenInfoPage() {
   const { address } = useParams();
   const navigate = useNavigate();
   const { token, metrics, loading, error } = useTokenPageData(address);
+  const scrollRef = useRef(null);
+  const [isScrolling, setIsScrolling] = useState(false);
 
   const [tab, setTab] = useState("Trades");
   const [isDesktop, setIsDesktop] = useState(typeof window !== "undefined" ? window.innerWidth >= 960 : true);
   const [showBuySell, setShowBuySell] = useState(false);
 
+  // Scroll detection for premium FAB behavior
+  useEffect(() => {
+    let timeout;
+    const handleScroll = () => {
+      setIsScrolling(true);
+      clearTimeout(timeout);
+      timeout = setTimeout(() => setIsScrolling(false), 1000);
+    };
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
   }, [address]);
 
-  // Fixed: the old page computed this once via matchMedia and never updated it. This keeps
-  // it live across resizes/rotations, matching the preview's own resize-listener approach.
   useEffect(() => {
     const check = () => setIsDesktop(window.innerWidth >= 960);
     check();
@@ -104,96 +90,29 @@ export default function TokenInfoPage() {
     </>
   );
 
-  const styleGlobal = <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>;
-
-  // ── DESKTOP LAYOUT ──
-  if (isDesktop) {
-    return (
-      <div style={{ fontFamily: C.sans, background: C.bg, color: C.text, height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        {styleGlobal}
-        <TokenHeaderBar token={token} metrics={metrics} />
-        <ChartSection tokenAddress={token.address} livePrice={priceUsd} />
-
-        {!token.graduated && (
-          <div style={{ padding: "8px 14px", background: C.panel, borderBottom: `1px solid ${C.border}` }}>
-            <BondingCurveProgress percent={metrics?.pool_progress || 0} graduated={token.graduated} height={5} />
-          </div>
-        )}
-
-        <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
-          <div style={{ width: 420, flexShrink: 0, display: "flex", flexDirection: "column", borderRight: `1px solid ${C.border}`, background: C.bg, overflow: "hidden" }}>
-            <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} />
-          </div>
-
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", background: C.bg, overflow: "hidden", minWidth: 0 }}>
-            <div style={{ display: "flex", overflowX: "auto", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-              {RIGHT_TABS.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    whiteSpace: "nowrap",
-                    padding: "9px 13px",
-                    fontSize: 10,
-                    fontWeight: tab === t ? 700 : 500,
-                    color: tab === t ? C.bright : C.mid,
-                    borderBottom: tab === t ? `2px solid ${C.teal}` : "2px solid transparent",
-                    cursor: "pointer",
-                    fontFamily: C.mono,
-                    letterSpacing: "0.04em",
-                  }}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-            <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>{rightPanel}</div>
-
-            <div style={{ flexShrink: 0, borderTop: `1px solid ${C.border}`, background: C.panel }}>
-              <div style={{ display: "flex" }}>
-                <button
-                  onClick={() => setShowBuySell(true)}
-                  style={{ flex: 1, padding: "13px 0", background: C.tealDim, border: "none", color: C.teal, fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", cursor: "pointer", fontFamily: C.mono }}
-                >
-                  TRADE
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <AnimatePresence>
-          {showBuySell && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
-              onClick={() => setShowBuySell(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                onClick={(e) => e.stopPropagation()}
-                style={{ width: "100%", maxWidth: 400, background: C.panel, border: `1px solid ${C.borderHi}`, borderRadius: 10, overflow: "hidden" }}
-              >
-                <BuySellPanel token={token} />
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    );
-  }
-
-  // ── MOBILE LAYOUT ──
   return (
-    <div style={{ fontFamily: C.sans, background: C.bg, color: C.text, height: "100dvh", display: "flex", flexDirection: "column", maxWidth: 560, margin: "0 auto", position: "relative", overflow: "hidden" }}>
-      {styleGlobal}
+    <div ref={scrollRef} style={{ fontFamily: C.sans, background: C.bg, color: C.text, height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
+      
+      {/* Floating Trade FAB */}
+      <motion.button
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setShowBuySell(true)}
+        style={{
+          position: "fixed", right: 20, bottom: 24, zIndex: 120, height: 56, borderRadius: 999,
+          border: `1px solid ${C.borderHi}`, background: C.teal, color: "#000", fontFamily: C.mono,
+          fontWeight: 800, fontSize: 11, letterSpacing: "0.08em", cursor: "pointer",
+          boxShadow: "0 8px 24px rgba(0,0,0,.35)", display: "flex", alignItems: "center", 
+          justifyContent: "center", gap: 8, padding: isScrolling ? "0 18px" : "0 24px"
+        }}
+      >
+        <span>⬤</span>
+        {!isScrolling && "TRADE"}
+      </motion.button>
+
       <TokenHeaderBar token={token} metrics={metrics} />
       <ChartSection tokenAddress={token.address} livePrice={priceUsd} />
 
@@ -203,61 +122,49 @@ export default function TokenInfoPage() {
         </div>
       )}
 
-      <div style={{ display: "flex", overflowX: "auto", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-        {MOBILE_TABS.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={{
-              background: "none",
-              border: "none",
-              whiteSpace: "nowrap",
-              padding: "9px 12px",
-              fontSize: 10,
-              fontWeight: tab === t ? 700 : 500,
-              color: tab === t ? C.bright : C.mid,
-              borderBottom: tab === t ? `2px solid ${C.teal}` : "2px solid transparent",
-              cursor: "pointer",
-              flexShrink: 0,
-              fontFamily: C.mono,
-              letterSpacing: "0.04em",
-            }}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-        {tab === "Trades" && <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} />}
-        {tab !== "Trades" && rightPanel}
-      </div>
-
-      <div style={{ flexShrink: 0, position: "sticky", bottom: 0, borderTop: `1px solid ${C.border}`, background: C.panel }}>
-        <button
-          onClick={() => setShowBuySell(true)}
-          style={{ width: "100%", padding: "13px 0", background: C.tealDim, border: "none", color: C.teal, fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", cursor: "pointer", fontFamily: C.mono }}
-        >
-          TRADE
-        </button>
+      {/* Main Content Area */}
+      <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0, flexDirection: isDesktop ? "row" : "column" }}>
+        {isDesktop ? (
+          <>
+            <div style={{ width: 420, flexShrink: 0, borderRight: `1px solid ${C.border}`, overflow: "hidden" }}>
+              <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} />
+            </div>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <div style={{ display: "flex", overflowX: "auto", background: C.panel, borderBottom: `1px solid ${C.border}` }}>
+                {RIGHT_TABS.map((t) => (
+                  <button key={t} onClick={() => setTab(t)} style={{ background: "none", border: "none", padding: "9px 13px", fontSize: 10, fontWeight: tab === t ? 700 : 500, color: tab === t ? C.bright : C.mid, borderBottom: tab === t ? `2px solid ${C.teal}` : "2px solid transparent", cursor: "pointer", fontFamily: C.mono }}>{t}</button>
+                ))}
+              </div>
+              <div style={{ flex: 1, overflow: "hidden" }}>{rightPanel}</div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ display: "flex", overflowX: "auto", background: C.panel, borderBottom: `1px solid ${C.border}` }}>
+              {MOBILE_TABS.map((t) => (
+                <button key={t} onClick={() => setTab(t)} style={{ background: "none", border: "none", padding: "9px 12px", fontSize: 10, fontWeight: tab === t ? 700 : 500, color: tab === t ? C.bright : C.mid, borderBottom: tab === t ? `2px solid ${C.teal}` : "2px solid transparent", cursor: "pointer", flexShrink: 0, fontFamily: C.mono }}>{t}</button>
+              ))}
+            </div>
+            <div style={{ flex: 1, overflow: "hidden" }}>
+              {tab === "Trades" ? <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} /> : rightPanel}
+            </div>
+          </>
+        )}
       </div>
 
       <AnimatePresence>
         {showBuySell && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: isDesktop ? "center" : "flex-end", justifyContent: "center" }}
             onClick={() => setShowBuySell(false)}
           >
             <motion.div
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 40, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 28 }}
+              initial={{ y: isDesktop ? 0 : 40, scale: isDesktop ? 0.95 : 1, opacity: 0 }}
+              animate={{ y: 0, scale: 1, opacity: 1 }}
+              exit={{ y: isDesktop ? 0 : 40, scale: isDesktop ? 0.95 : 1, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              style={{ width: "100%", maxWidth: 560, background: C.panel, border: `1px solid ${C.borderHi}`, borderRadius: "10px 10px 0 0", overflow: "hidden" }}
+              style={{ width: "100%", maxWidth: isDesktop ? 400 : 560, background: C.panel, border: `1px solid ${C.borderHi}`, borderRadius: isDesktop ? 10 : "10px 10px 0 0", overflow: "hidden" }}
             >
               <BuySellPanel token={token} />
             </motion.div>
