@@ -87,7 +87,7 @@ export default function TokenInfoPage() {
         style={{
           position: "fixed", 
           right: 20, 
-          bottom: "calc(env(safe-area-inset-bottom) + 20px)", 
+          bottom: "calc(env(safe-area-inset-bottom) + 40px)", 
           zIndex: 1000, 
           height: 56, 
           borderRadius: 999,
