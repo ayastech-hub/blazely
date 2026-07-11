@@ -46,7 +46,6 @@ import BubbleMap from "../components/tokenpage/BubbleMap";
 import InfoPanel from "../components/tokenpage/InfoPanel";
 import CommentsPanel from "../components/tokenpage/CommentsPanel";
 import BuySellPanel from "../components/tokenpage/BuySellPanel";
-import StatsBar from "../components/tokenpage/StatsBar";
 import BondingCurveProgress from "../components/BondingCurveProgress";
 
 const RIGHT_TABS = ["Holders", "Dev Tokens", "Bubble Map", "Info", "Comments"];
@@ -110,7 +109,7 @@ export default function TokenInfoPage() {
   // ── DESKTOP LAYOUT ──
   if (isDesktop) {
     return (
-      <div style={{ fontFamily: C.sans, background: C.bg, color: C.text, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <div style={{ fontFamily: C.sans, background: C.bg, color: C.text, height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {styleGlobal}
         <TokenHeaderBar token={token} metrics={metrics} />
         <ChartSection tokenAddress={token.address} livePrice={priceUsd} />
@@ -193,7 +192,7 @@ export default function TokenInfoPage() {
 
   // ── MOBILE LAYOUT ──
   return (
-    <div style={{ fontFamily: C.sans, background: C.bg, color: C.text, minHeight: "100vh", display: "flex", flexDirection: "column", maxWidth: 560, margin: "0 auto", position: "relative" }}>
+    <div style={{ fontFamily: C.sans, background: C.bg, color: C.text, height: "100dvh", display: "flex", flexDirection: "column", maxWidth: 560, margin: "0 auto", position: "relative", overflow: "hidden" }}>
       {styleGlobal}
       <TokenHeaderBar token={token} metrics={metrics} />
       <ChartSection tokenAddress={token.address} livePrice={priceUsd} />
@@ -233,8 +232,6 @@ export default function TokenInfoPage() {
         {tab === "Trades" && <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} />}
         {tab !== "Trades" && rightPanel}
       </div>
-
-      <StatsBar tokenAddress={token.address} />
 
       <div style={{ flexShrink: 0, position: "sticky", bottom: 0, borderTop: `1px solid ${C.border}`, background: C.panel }}>
         <button
