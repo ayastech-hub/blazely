@@ -1,10 +1,7 @@
-
-
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Globe, Send, AtSign, ChevronRight } from "lucide-react";
-import { computeProgressPercentFixed } from "../utils/progress";
+import { Globe, Send, AtSign } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 
 /** Helper to clean path and prevent double-nesting 'logos/' */
@@ -64,28 +61,8 @@ function MetricGroup({ label, value }) {
 
 /* -------------------- Core Component -------------------- */
 export default function TokenCard({ token, index = 0, isNew = false }) {
-  const [progress, setProgress] = useState({ graduated: false, percent: 0 });
   const displayMarketcap = token.marketcap_usd || 0;
   const displayVolume = token.volume_24h || 0;
-  
-  // Use the pool_progress from the joined metrics
-  const poolProgress = token.pool_progress || 0;
-
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchProgress() {
-      // If DB value is 0, we can still fall back to the utility calculation
-      const result = await computeProgressPercentFixed(token);
-      if (!cancelled) setProgress(result || { graduated: false, percent: 0 });
-    }
-    fetchProgress();
-    return () => {
-      cancelled = true;
-    };
-  }, [token]);
-
-  // Use the progress percentage from DB or the calculation utility
-  const safePercent = Math.max(0, Math.min(100, poolProgress > 0 ? poolProgress : progress.percent || 0));
 
   // Resolve logo source dynamically
   const logoSrc = token.logo_path
@@ -127,7 +104,6 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider truncate mt-0.5" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                 ${token.symbol ?? "—"}
               </p>
-              {/* Social anchors now using top-level properties from normalized token */}
               <div className="flex items-center gap-1.5 mt-2.5">
                 <SocialLink href={token.website} icon={<Globe size={11} />} label="Website" />
                 <SocialLink href={token.twitter} icon={<AtSign size={11} />} label="Twitter" />
@@ -143,7 +119,7 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
 
           {/* Progress Section */}
           <div className="w-full border-t border-slate-800/50 pt-3">
-            {progress.graduated || token.graduated ? (
+            {token.graduated ? (
               <div className="text-[9px] font-bold uppercase tracking-widest bg-teal/10 border border-teal/30 text-teal px-2.5 py-1 inline-block rounded-lg" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                 STATUS: GRADUATED
               </div>
@@ -151,17 +127,8 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
               <div className="w-full">
                 <div className="flex items-center justify-between font-bold text-[9px] text-slate-500 uppercase tracking-wider mb-1.5" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                   <span>CURVE_FILL</span>
-                  <span className="text-slate-300 tabular-nums">{Math.round(safePercent)}%</span>
                 </div>
-                <div className="w-full h-1.5 bg-[#030712] border border-slate-800/50 overflow-hidden rounded-full relative">
-                  <motion.div
-                    className="h-full rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${safePercent}%` }}
-                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    style={{ background: "linear-gradient(90deg, rgba(150,214,205,0.6) 0%, #5eead4 100%)" }}
-                  />
-                </div>
+                <div className="w-full h-1.5 bg-[#030712] border border-slate-800/50 overflow-hidden rounded-full relative" />
               </div>
             )}
           </div>
@@ -170,7 +137,3 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
     </motion.div>
   );
 }
-
-
-
-
