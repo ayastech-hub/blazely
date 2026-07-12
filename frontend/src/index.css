@@ -7,47 +7,40 @@
    ========================================================================== */
 :root {
   /* Institutional Base Layers */
-  --bg-main: #030712;         /* Deep rich dark canvas */
-  --bg-card: rgba(11, 15, 25, 0.4); /* #0b0f19/40 - crisp layered windowing */
-  --bg-deck: rgba(14, 20, 36, 0.8); /* Order matching engine container */
-  --border-slate: rgba(30, 41, 59, 0.4); /* Ultra-thin geometric borders */
+  --bg-main: #030712;         
+  --bg-card: rgba(11, 15, 25, 0.4); 
+  --bg-deck: rgba(14, 20, 36, 0.8); 
+  --border-slate: rgba(30, 41, 59, 0.4); 
   
   /* Primary Identity Accent Token */
-  --brand-primary: #96d6cd;   /* Requested Mint Core */
+  --brand-primary: #96d6cd;   
   --brand-primary-rgb: 150, 214, 205;
   
   /* Auxiliary Structural Tones */
-  --text-muted: #64748b;      /* Terminal description metadata */
-  --accent-purple: #a855f7;   /* Supplementary matrix arrays */
+  --text-muted: #64748b;      
+  --accent-purple: #a855f7;   
 }
 
 /* ==========================================================================
    🌌 Global Reset & Environmental Overrides
    ========================================================================== */
 html,
-body,
-#root {
+body {
   height: 100%;
   width: 100%;
   margin: 0;
   padding: 0;
   background-color: var(--bg-main);
-  color: #f1f5f9; /* slate-100 built for dark readability */
-  
-  /* Premium Trading Typography Matrix */
-  font-family: 
-    "JetBrains Mono", 
-    Inter, 
-    ui-monospace, 
-    SFMono-Regular, 
-    Menlo, 
-    Monaco, 
-    Consolas, 
-    monospace;
-
+  color: #f1f5f9;
+  font-family: "JetBrains Mono", Inter, ui-monospace, monospace;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+}
+
+#root {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Custom Asset Text Selection Overrides */
@@ -56,22 +49,14 @@ body,
   color: var(--brand-primary);
 }
 
-/* Unified Frame Vector Orientation */
-#root > div {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
 /* ==========================================================================
    📐 Geometric Terminal Structure Layouts
    ========================================================================== */
 
-/* The Enterprise Container Card - Upgraded from blob shapes to sharp frames */
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border-slate);
-  border-radius: 0.75rem; /* Clean 12px metric edge lines */
+  border-radius: 0.75rem;
   padding: 1.25rem;
   backdrop-filter: blur(12px);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -81,7 +66,6 @@ body,
   border-color: rgba(var(--brand-primary-rgb), 0.25);
 }
 
-/* Institutional Navigation Dock */
 .navbar {
   background: rgba(3, 7, 18, 0.85);
   border-bottom: 1px solid var(--border-slate);
@@ -91,11 +75,10 @@ body,
   z-index: 50;
 }
 
-/* High Performance Main Deck View Grid Constraints */
 main {
-  flex: 1;
+  flex: 1; /* This will grow only as much as needed */
   width: 100%;
-  max-width: 100rem; /* Expanded to max-w-[1600px] to optimize high resolution viewports */
+  max-width: 100rem;
   margin: 0 auto;
   padding-left: 1rem;
   padding-right: 1rem;
@@ -108,74 +91,32 @@ main {
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  tracking-wider: 0.05em;
   padding: 0.625rem 1.25rem;
-  border-radius: 0.375rem; /* Precise 6px edge radius matching terminal forms */
+  border-radius: 0.375rem;
   background: #030712;
   border: 1px solid var(--border-slate);
   color: #94a3b8;
-  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
-}
-
-.glass-button:hover:not(:disabled) {
-  border-color: var(--brand-primary);
-  color: #030712;
-  background-color: var(--brand-primary);
-  box-shadow: 0 0 14px rgba(var(--brand-primary-rgb), 0.2);
-}
-
-.glass-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* Input Fields & Textareas Core Focus Halo Reset */
-input, textarea, select {
-  outline: none !important;
-}
-input:focus, textarea:focus, select:focus {
-  border-color: rgba(var(--brand-primary-rgb), 0.5) !important;
 }
 
 /* ==========================================================================
    🧭 Micro-engineered System Scrollbars
    ========================================================================== */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #030712;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #1e293b; /* slate-800 anchor lines */
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--brand-primary-rgb), 0.4); /* Highlight path on target interface action */
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #030712; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
 
 /* ==========================================================================
-   🎛️ Data Integrity Utilities (Numeric Filtering Resets)
+   📱 Responsive Adaptive Adjustments
    ========================================================================== */
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-input[type="number"] {
-  -moz-appearance: textfield;
-}
-
-/* Responsive Adaptive Adjustments */
 @media (max-width: 640px) {
   .card {
     padding: 1rem;
     border-radius: 0.5rem;
+  }
+  
+  /* Reduced bottom padding to hug content on mobile */
+  main {
+    padding-bottom: 1rem;
   }
 }
