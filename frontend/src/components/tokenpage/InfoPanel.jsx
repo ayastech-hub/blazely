@@ -2,13 +2,26 @@ import React from "react";
 import { C } from "../../utils/designTokens";
 import { Icon } from "./Icons";
 import { formatWei, shortenAddress, timeAgo } from "../../utils/format";
+import { usePrices } from "../../hooks/usePrices";
+import { ethToUsd } from "../../utils/priceConversion";
 
 const TOTAL_SUPPLY = 1_000_000_000; // fixed by the contract (BlazelyLaunchpad.TOTAL_SUPPLY)
 
 export default function InfoPanel({ token, metrics }) {
+
+  const { ethUsd } = usePrices();
+
   if (!token) return null;
 
   const ageLabel = token.created_at ? timeAgo(token.created_at) + " ago" : "—";
+const vaultEth = Number(
+  formatWei(metrics?.vault_balance_wei, 4)
+);
+
+const vaultUsd = ethToUsd(
+  vaultEth,
+  ethUsd
+);
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "16px 18px" }}>
@@ -31,7 +44,15 @@ export default function InfoPanel({ token, metrics }) {
           { l: "Age", v: ageLabel },
           { l: "Total Supply", v: `${(TOTAL_SUPPLY / 1_000_000).toFixed(0)}M` },
           { l: "Circulating (curve)", v: `${(Number(metrics?.circulating_supply || 0) / 1e18 / 1_000_000).toFixed(2)}M` },
-          { l: "Vault", v: `${formatWei(metrics?.vault_balance_wei, 4)} ETH` },
+          {
+  l: "Vault",
+  v:
+    vaultUsd != null
+      ? `$${vaultUsd.toLocaleString(undefined, {
+          maximumFractionDigits: 2,
+        })}`
+      : `${vaultEth} ETH`,
+},
           { l: "Status", v: token.graduated ? "Graduated" : `${(metrics?.pool_progress || 0).toFixed(1)}% to graduation` },
         ].map((r) => (
           <div
