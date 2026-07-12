@@ -3,16 +3,17 @@
  *
  * Fixed-supply logic: We use a constant 1B total supply (1e9 * 1e18) to calculate
  * ownership percentages. This ensures consistency and prevents percentage 
- * fluctuations caused by indexer lag on circulating supply metrics.
+ * fluctuations caused by indexer lag.
  */
 import React from "react";
 import { C } from "../../utils/designTokens";
 import { useTokenHolders } from "../../hooks/useTokenHolders";
 
 const LAUNCHPAD_ADDRESS = (import.meta.env.VITE_LAUNCHPAD_ADDRESS || "").toLowerCase();
+const BURN_ADDRESS = "0x000000000000000000000000000000000000dead";
 const TOTAL_SUPPLY = 1_000_000_000n * 10n ** 18n;
 
-export default function HoldersPanel({ tokenAddress, liquidityPair, graduated }) {
+export default function HoldersPanel({ tokenAddress, creatorWallet, liquidityPair, graduated }) {
   const { holders, loading } = useTokenHolders(tokenAddress, 50);
 
   if (loading) {
@@ -22,23 +23,25 @@ export default function HoldersPanel({ tokenAddress, liquidityPair, graduated })
     return <div style={{ padding: 20, textAlign: "center", color: C.mid, fontSize: 10, fontFamily: C.mono }}>No holders yet.</div>;
   }
 
-  const colHdr = {
-    display: "grid",
-    gridTemplateColumns: "26px 1fr 66px",
-    padding: "5px 14px",
-    background: C.panel,
-    borderBottom: `1px solid ${C.border}`,
-    fontSize: 9,
-    color: C.mid,
-    fontWeight: 700,
-    fontFamily: C.mono,
-    letterSpacing: "0.07em",
-    flexShrink: 0,
+  const getTagStyle = (tag) => {
+    const isBurn = tag === "BURNED";
+    const isDev = tag === "DEV";
+    return {
+      fontSize: 8,
+      fontWeight: 700,
+      letterSpacing: "0.08em",
+      color: isBurn ? "#ff4d4d" : isDev ? "#f59e0b" : C.teal,
+      background: isBurn ? "rgba(255, 77, 77, 0.1)" : isDev ? "rgba(245, 158, 11, 0.1)" : C.tealDim,
+      border: `1px solid ${isBurn ? "#ff4d4d" : isDev ? "#f59e0b" : C.teal}`,
+      borderRadius: 3,
+      padding: "2px 5px",
+      fontFamily: C.mono,
+    };
   };
 
   return (
     <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      <div style={colHdr}>
+      <div style={{ display: "grid", gridTemplateColumns: "26px 1fr 66px", padding: "5px 14px", background: C.panel, borderBottom: `1px solid ${C.border}`, fontSize: 9, color: C.mid, fontWeight: 700, fontFamily: C.mono, letterSpacing: "0.07em", flexShrink: 0 }}>
         <span>#</span>
         <span>HOLDER</span>
         <span style={{ textAlign: "right" }}>%</span>
@@ -46,12 +49,15 @@ export default function HoldersPanel({ tokenAddress, liquidityPair, graduated })
       <div style={{ overflowY: "auto", flex: 1 }}>
         {holders.map((h, i) => {
           const balanceBig = BigInt(h.balance || "0");
-          // Calculate percentage against the fixed 1B cap
           const pct = Number((balanceBig * 10000n) / TOTAL_SUPPLY) / 100;
 
-          const isLaunchpad = h.wallet_address.toLowerCase() === LAUNCHPAD_ADDRESS;
-          const isPair = graduated && liquidityPair && h.wallet_address.toLowerCase() === liquidityPair.toLowerCase();
-          const tag = isLaunchpad ? "CURVE" : isPair ? "LP" : null;
+          const addr = h.wallet_address.toLowerCase();
+          const isLaunchpad = addr === LAUNCHPAD_ADDRESS;
+          const isBurn = addr === BURN_ADDRESS;
+          const isDev = creatorWallet && addr === creatorWallet.toLowerCase();
+          const isPair = graduated && liquidityPair && addr === liquidityPair.toLowerCase();
+          
+          const tag = isLaunchpad ? "CURVE" : isBurn ? "BURNED" : isDev ? "DEV" : isPair ? "LP" : null;
 
           return (
             <div
@@ -71,23 +77,7 @@ export default function HoldersPanel({ tokenAddress, liquidityPair, graduated })
                   <span style={{ fontSize: 10, color: C.sub, fontFamily: C.mono }}>
                     {h.wallet_address.slice(0, 6)}...{h.wallet_address.slice(-4)}
                   </span>
-                  {tag && (
-                    <span
-                      style={{
-                        fontSize: 8,
-                        fontWeight: 700,
-                        letterSpacing: "0.08em",
-                        color: C.teal,
-                        background: C.tealDim,
-                        border: `1px solid ${C.teal}`,
-                        borderRadius: 3,
-                        padding: "2px 5px",
-                        fontFamily: C.mono,
-                      }}
-                    >
-                      {tag}
-                    </span>
-                  )}
+                  {tag && <span style={getTagStyle(tag)}>{tag}</span>}
                 </div>
                 <div
                   style={{
