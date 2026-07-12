@@ -4,6 +4,7 @@ import { C } from "../../utils/designTokens";
 import { Icon } from "./Icons";
 import { useDevTokens } from "../../hooks/useDevTokens";
 import { formatCompact, formatWei, shortenAddress } from "../../utils/format";
+import { tokenPriceUsdFromMetrics } from "../../utils/priceConversion";
 
 function CopyBtn({ text }) {
   const [ok, setOk] = React.useState(false);
@@ -32,20 +33,7 @@ export default function DevTokensPanel({ creatorWallet, currentTokenAddress }) {
         <CopyBtn text={creatorWallet} />
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 70px 70px",
-          padding: "5px 14px",
-          background: C.panel,
-          borderBottom: `1px solid ${C.border}`,
-          fontSize: 9,
-          color: C.mid,
-          fontWeight: 700,
-          fontFamily: C.mono,
-          letterSpacing: "0.07em",
-        }}
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 70px", padding: "5px 14px", background: C.panel, borderBottom: `1px solid ${C.border}`, fontSize: 9, color: C.mid, fontWeight: 700, fontFamily: C.mono, letterSpacing: "0.07em" }}>
         <span>TOKEN</span>
         <span style={{ textAlign: "right" }}>MC</span>
         <span style={{ textAlign: "right" }}>VAULT</span>
@@ -54,64 +42,37 @@ export default function DevTokensPanel({ creatorWallet, currentTokenAddress }) {
       <div style={{ overflowY: "auto", flex: 1 }}>
         {loading && <div style={{ padding: 20, textAlign: "center", color: C.mid, fontSize: 10, fontFamily: C.mono }}>Loading...</div>}
         {!loading && tokens.length === 0 && (
-          <div style={{ padding: 20, textAlign: "center", color: C.mid, fontSize: 10, fontFamily: C.mono }}>
-            No other tokens from this creator.
-          </div>
+          <div style={{ padding: 20, textAlign: "center", color: C.mid, fontSize: 10, fontFamily: C.mono }}>No other tokens from this creator.</div>
         )}
-        {tokens.map((t) => (
-          <Link
-            key={t.address}
-            to={`/token/${t.address}`}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 70px 70px",
-              padding: "11px 14px",
-              borderBottom: `1px solid ${C.border}`,
-              alignItems: "center",
-              textDecoration: "none",
-              color: "inherit",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-              <div
-                style={{
-                  width: 18,
-                  height: 18,
-                  borderRadius: 3,
-                  flexShrink: 0,
-                  background: "linear-gradient(135deg,#0d1320,#030712)",
-                  border: `1px solid ${C.borderHi}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontFamily: C.mono,
-                  fontSize: 7,
-                  fontWeight: 700,
-                  color: C.teal,
-                }}
-              >
-                {t.symbol?.slice(0, 2)}
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 10, color: C.bright, fontWeight: 600, fontFamily: C.mono, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {t.name}
+        {tokens.map((t) => {
+          // Calculate Market Cap: Convert wei to human-readable format
+          // If t.marketCap is in wei, we divide by 10^18
+          const mcWei = BigInt(t.marketCap || "0");
+          const mcUsd = Number(mcWei) / 1e18; // Normalized to 1.0 units
+          
+          return (
+            <Link
+              key={t.address}
+              to={`/token/${t.address}`}
+              style={{ display: "grid", gridTemplateColumns: "1fr 70px 70px", padding: "11px 14px", borderBottom: `1px solid ${C.border}`, alignItems: "center", textDecoration: "none", color: "inherit" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                <div style={{ width: 18, height: 18, borderRadius: 3, flexShrink: 0, background: "linear-gradient(135deg,#0d1320,#030712)", border: `1px solid ${C.borderHi}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: C.mono, fontSize: 7, fontWeight: 700, color: C.teal }}>
+                  {t.symbol?.slice(0, 2)}
                 </div>
-                {t.isCurrent && (
-                  <span style={{ fontSize: 8, fontWeight: 700, color: C.teal, background: C.tealDim, border: `1px solid ${C.teal}`, borderRadius: 3, padding: "1px 4px", fontFamily: C.mono }}>
-                    LIVE
-                  </span>
-                )}
-                {t.graduated && !t.isCurrent && (
-                  <span style={{ fontSize: 8, color: C.mid, fontFamily: C.mono }}>graduated</span>
-                )}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 10, color: C.bright, fontWeight: 600, fontFamily: C.mono, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+                  {t.isCurrent && <span style={{ fontSize: 8, fontWeight: 700, color: C.teal, background: C.tealDim, border: `1px solid ${C.teal}`, borderRadius: 3, padding: "1px 4px", fontFamily: C.mono }}>LIVE</span>}
+                  {t.graduated && !t.isCurrent && <span style={{ fontSize: 8, color: C.mid, fontFamily: C.mono }}>graduated</span>}
+                </div>
               </div>
-            </div>
-            <span style={{ textAlign: "right", fontSize: 10, color: C.bright, fontFamily: C.mono, fontWeight: 600 }}>
-              {formatCompact(t.marketCap, true)}
-            </span>
-            <span style={{ textAlign: "right", fontSize: 10, color: C.sub, fontFamily: C.mono }}>{formatWei(t.vaultEth, 2)}</span>
-          </Link>
-        ))}
+              <span style={{ textAlign: "right", fontSize: 10, color: C.bright, fontFamily: C.mono, fontWeight: 600 }}>
+                ${formatCompact(mcUsd, true)}
+              </span>
+              <span style={{ textAlign: "right", fontSize: 10, color: C.sub, fontFamily: C.mono }}>{formatWei(t.vaultEth, 2)}</span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
