@@ -20,6 +20,8 @@ import InfoPanel from "../components/tokenpage/InfoPanel";
 import CommentsPanel from "../components/tokenpage/CommentsPanel";
 import BuySellPanel from "../components/tokenpage/BuySellPanel";
 import BondingCurveProgress from "../components/BondingCurveProgress";
+import { tokenPriceUsdFromMetrics } from "../utils/priceConversion";
+
 
 const RIGHT_TABS = ["Holders", "Dev Tokens", "Bubble Map", "Info", "Comments"];
 const MOBILE_TABS = ["Trades", ...RIGHT_TABS];
