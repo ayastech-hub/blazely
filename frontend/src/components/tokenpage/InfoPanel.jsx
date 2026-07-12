@@ -1,7 +1,7 @@
 import React from "react";
 import { C } from "../../utils/designTokens";
 import { Icon } from "./Icons";
-import { formatWei, shortenAddress, timeAgo } from "../../utils/format";
+import { formatWei, shortenAddress, timeAgo, formatCompact } from "../../utils/format";
 import { usePrices } from "../../hooks/usePrices";
 import { ethToUsd } from "../../utils/priceConversion";
 
@@ -14,14 +14,14 @@ export default function InfoPanel({ token, metrics }) {
   if (!token) return null;
 
   const ageLabel = token.created_at ? timeAgo(token.created_at) + " ago" : "—";
-const vaultEth = Number(
-  formatWei(metrics?.vault_balance_wei, 4)
-);
+  const vaultEth = Number(
+    formatWei(metrics?.vault_balance_wei, 4)
+  );
 
-const vaultUsd = ethToUsd(
-  vaultEth,
-  ethUsd
-);
+  const vaultUsd = ethToUsd(
+    vaultEth,
+    ethUsd
+  );
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "16px 18px" }}>
@@ -42,17 +42,17 @@ const vaultUsd = ethToUsd(
           { l: "Name", v: token.name },
           { l: "Creator", v: shortenAddress(token.creator_wallet) },
           { l: "Age", v: ageLabel },
-          { l: "Total Supply", v: `${(TOTAL_SUPPLY / 1_000_000).toFixed(0)}M` },
-          { l: "Circulating (curve)", v: `${(Number(metrics?.circulating_supply || 0) / 1e18 / 1_000_000).toFixed(2)}M` },
+          { l: "Total Supply", v: formatCompact(TOTAL_SUPPLY) },
+          { l: "Circulating (curve)", v: formatCompact(Number(metrics?.circulating_supply || 0) / 1e18) },
           {
-  l: "Vault",
-  v:
-    vaultUsd != null
-      ? `$${vaultUsd.toLocaleString(undefined, {
-          maximumFractionDigits: 2,
-        })}`
-      : `${vaultEth} ETH`,
-},
+            l: "Vault",
+            v:
+              vaultUsd != null
+                ? `$${vaultUsd.toLocaleString(undefined, {
+                    maximumFractionDigits: 2,
+                  })}`
+                : `${vaultEth} ETH`,
+          },
           { l: "Status", v: token.graduated ? "Graduated" : `${(metrics?.pool_progress || 0).toFixed(1)}% to graduation` },
         ].map((r) => (
           <div
