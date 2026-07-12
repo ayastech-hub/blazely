@@ -1,10 +1,6 @@
 // src/utils/designforprofile.js
-//
-// Single source of truth for color values across the app. Every component
-// should import { C } from here instead of hardcoding hex values in JSX.
-// This mirrors the token set established during the Token Info Page rebuild.
 
-export const C
+export const C = {
   // surfaces
   bg: "#030712",
   panel: "#0b0f19",
@@ -22,10 +18,10 @@ export const C
   tealBorder: "rgba(150, 214, 205, 0.18)",
 
   // text
-  bright: "#e2e8f0", // headings, primary values
-  mid: "#94a3b8",    // secondary text, active labels
-  sub: "#64748b",    // muted labels, metadata
-  faint: "#475569",  // disabled / placeholder-level text
+  bright: "#e2e8f0",
+  mid: "#94a3b8",
+  sub: "#64748b",
+  faint: "#475569",
 
   // status
   rose: "#fb7185",
