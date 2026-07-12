@@ -100,7 +100,7 @@ export function WalletProvider({ children }) {
 
   // Network warning
   useEffect(() => {
-    if (isConnected && chainId !== base.id) {
+    if (isConnected && chainId !== sepolia.id) {
       console.warn("⚠️ Not on sepolia network — please switch in wallet.");
     }
   }, [isConnected, chainId]);
