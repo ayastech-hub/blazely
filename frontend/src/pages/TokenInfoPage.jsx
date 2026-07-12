@@ -1,10 +1,7 @@
 /**
  * TokenInfoPage
- *
- * Implements a fixed-viewport dashboard architecture:
- * - Page-level scrolling disabled.
- * - Content area uses fixed-height viewports.
- * - Premium scroll-aware floating action button (FAB).
+ * * Updated: Fixed-viewport architecture with internal scrolling 
+ * and edge-to-edge content constraint.
  */
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -29,7 +26,6 @@ const MOBILE_TABS = ["Trades", ...RIGHT_TABS];
 
 export default function TokenInfoPage() {
   const { address } = useParams();
-  const navigate = useNavigate();
   const { token, metrics, loading, error } = useTokenPageData(address);
   
   const [tab, setTab] = useState("Trades");
@@ -37,7 +33,6 @@ export default function TokenInfoPage() {
   const [showBuySell, setShowBuySell] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
 
-  // Corrected Scroll listener with proper cleanup and capturing phase
   useEffect(() => {
     let timeout;
     const handleScroll = () => {
@@ -66,7 +61,7 @@ export default function TokenInfoPage() {
   if (error || !token) return <div style={{ height: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: C.bg, color: C.sub, fontFamily: C.mono, gap: 8 }}>Token not found.</div>;
 
   const renderRightPanel = () => (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", minHeight: 0 }}>
       {tab === "Holders" && <HoldersPanel tokenAddress={token.address} circulatingSupply={metrics?.circulating_supply} liquidityPair={token.liquidity_pair} graduated={token.graduated} />}
       {tab === "Dev Tokens" && <DevTokensPanel creatorWallet={token.creator_wallet} currentTokenAddress={token.address} />}
       {tab === "Bubble Map" && <BubbleMap tokenAddress={token.address} circulatingSupply={metrics?.circulating_supply} />}
@@ -78,7 +73,6 @@ export default function TokenInfoPage() {
   return (
     <div style={{ fontFamily: C.sans, background: C.bg, color: C.text, height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       
-      {/* Floating Trade FAB - Premium Animated */}
       <motion.button
         onClick={() => setShowBuySell(true)}
         initial={false}
@@ -108,15 +102,7 @@ export default function TokenInfoPage() {
         }}
       >
         <span>↗</span>
-        {!isScrolling && (
-          <motion.span
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            TRADE
-          </motion.span>
-        )}
+        {!isScrolling && <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>TRADE</motion.span>}
       </motion.button>
 
       <TokenHeaderBar token={token} metrics={metrics} />
@@ -128,11 +114,10 @@ export default function TokenInfoPage() {
         </div>
       )}
 
-      {/* Main Content Area - Fixed Viewport */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0, flexDirection: isDesktop ? "row" : "column" }}>
         {isDesktop ? (
           <>
-            <div style={{ width: 420, flexShrink: 0, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div style={{ width: 420, flexShrink: 0, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", overflowY: "auto" }}>
               <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} />
             </div>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -145,16 +130,16 @@ export default function TokenInfoPage() {
             </div>
           </>
         ) : (
-          <>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
             <div style={{ display: "flex", overflowX: "auto", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
               {MOBILE_TABS.map((t) => (
                 <button key={t} onClick={() => setTab(t)} style={{ background: "none", border: "none", padding: "9px 12px", fontSize: 10, fontWeight: tab === t ? 700 : 500, color: tab === t ? C.bright : C.mid, borderBottom: tab === t ? `2px solid ${C.teal}` : "2px solid transparent", cursor: "pointer", flexShrink: 0, fontFamily: C.mono }}>{t}</button>
               ))}
             </div>
-            <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", minHeight: 0 }}>
               {tab === "Trades" ? <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} /> : renderRightPanel()}
             </div>
-          </>
+          </div>
         )}
       </div>
 
