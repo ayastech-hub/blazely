@@ -2,7 +2,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, Edit3, Eye } from "lucide-react";
-import { C } from "../utils/designTokens";
+import { C } from "../utils/designforprofile.js";
 import { shortenAddress, formatCompact } from "../utils/format";
 
 const CreatedTokensTab = ({
