@@ -6,7 +6,7 @@ import React, {
   useRef,
 } from "react";
 import { useAccount, useWalletClient, useChainId } from "wagmi";
-import { base } from "wagmi/chains";
+import { sepolia } from "wagmi/chains";
 import { supabase } from "../lib/supabaseClient";
 import { BrowserProvider } from "ethers";
 
@@ -101,7 +101,7 @@ export function WalletProvider({ children }) {
   // Network warning
   useEffect(() => {
     if (isConnected && chainId !== base.id) {
-      console.warn("⚠️ Not on Base network — please switch in wallet.");
+      console.warn("⚠️ Not on sepolia network — please switch in wallet.");
     }
   }, [isConnected, chainId]);
 
