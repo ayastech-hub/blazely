@@ -1,16 +1,15 @@
 /**
  * hooks/useDevTokens.js
- * "Dev Tokens" panel data: every other token the same creator wallet has launched, joined
- * with their current metrics. Real query against `tokens` + `token_metrics_latest` —
- * nothing here was fabricated, this is exactly what the preview's mock DEV_TOKENS array was
- * standing in for.
+ * "Dev Tokens" panel data: now uses usePrices() for consistent USD conversion.
  */
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { usePrices } from "./usePrices";
 
 export function useDevTokens(creatorWallet, currentTokenAddress) {
   const [tokens, setTokens] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { ethUsd } = usePrices();
 
   useEffect(() => {
     if (!creatorWallet) return;
@@ -39,12 +38,21 @@ export function useDevTokens(creatorWallet, currentTokenAddress) {
 
       const metricsByAddr = new Map((metricsRows || []).map((m) => [m.address, m]));
 
-      const merged = (tokenRows || []).map((t) => ({
-        ...t,
-        isCurrent: t.address.toLowerCase() === currentTokenAddress?.toLowerCase(),
-        marketCap: metricsByAddr.get(t.address)?.market_cap ?? 0,
-        vaultEth: metricsByAddr.get(t.address)?.vault_balance_wei ?? 0,
-      }));
+      const merged = (tokenRows || []).map((t) => {
+        const metrics = metricsByAddr.get(t.address);
+        
+        const marketCapEth = Number(metrics?.market_cap || 0) / 1e18;
+        const vaultEth = Number(BigInt(metrics?.vault_balance_wei || "0")) / 1e18;
+
+        return {
+          ...t,
+          isCurrent: t.address.toLowerCase() === currentTokenAddress?.toLowerCase(),
+          marketCapEth,
+          marketCapUsd: ethUsd != null ? marketCapEth * ethUsd : null,
+          vaultEth,
+          vaultUsd: ethUsd != null ? vaultEth * ethUsd : null,
+        };
+      });
 
       setTokens(merged);
       setLoading(false);
@@ -54,7 +62,7 @@ export function useDevTokens(creatorWallet, currentTokenAddress) {
     return () => {
       cancelled = true;
     };
-  }, [creatorWallet, currentTokenAddress]);
+  }, [creatorWallet, currentTokenAddress, ethUsd]);
 
   return { tokens, loading };
 }
