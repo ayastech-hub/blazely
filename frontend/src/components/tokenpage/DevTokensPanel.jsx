@@ -65,7 +65,7 @@ export default function DevTokensPanel({ creatorWallet, currentTokenAddress }) {
             </div>
             {/* Using the pre-calculated USD values from the hook */}
             <span style={{ textAlign: "right", fontSize: 10, color: C.bright, fontFamily: C.mono, fontWeight: 600 }}>
-              {t.marketCapUsd != null ? `$${formatCompact(t.marketCapUsd, true)}` : "—"}
+              {t.marketCapUsd != null ? `${formatCompact(t.marketCapUsd, true)}` : "—"}
             </span>
             <span style={{ textAlign: "right", fontSize: 10, color: C.sub, fontFamily: C.mono }}>
               {t.vaultUsd != null ? `$${formatCompact(t.vaultUsd, true)}` : "—"}
