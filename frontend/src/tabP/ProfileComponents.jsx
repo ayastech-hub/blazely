@@ -1,4 +1,4 @@
-// src/components/ProfileComponents.jsx
+// src/tabp/ProfileComponents.jsx
 import React from "react";
 import { Check, Search, Edit3 } from "lucide-react";
 
