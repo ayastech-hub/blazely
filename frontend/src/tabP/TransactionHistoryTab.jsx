@@ -1,9 +1,8 @@
-// src/tabP/TransactionHistoryTab.jsx
 import React from "react";
 import { History, RefreshCw, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { C } from "../utils/designforprofile.js";
-import { shortenAddress, formatTokenAmount, timeAgo, explorerTxUrl } from "../utils/format";
+import { shortenAddress, formatCompact, timeAgo, explorerTxUrl } from "../utils/format";
 
 const TransactionHistoryTab = ({
   transactions = [],
@@ -14,6 +13,14 @@ const TransactionHistoryTab = ({
   onRefresh = () => {},
   address = null,
 }) => {
+  // Helper to maintain the previous display logic for token amounts
+  const formatTokenDisplay = (amount) => {
+    const n = Number(amount);
+    if (amount == null || Number.isNaN(n)) return "—";
+    if (Math.abs(n) >= 1000) return formatCompact(n);
+    return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  };
+
   return (
     <div
       className="font-mono text-[11px] p-4 rounded-none min-h-[400px] flex flex-col justify-between"
@@ -101,7 +108,7 @@ const TransactionHistoryTab = ({
                       </span>
                     </td>
                     <td className="py-2.5 px-2 text-right" style={{ color: C.bright }}>
-                      {formatTokenAmount(r.token_amount)}
+                      {formatTokenDisplay(r.token_amount)}
                     </td>
                     <td className="py-2.5 px-2 text-right" style={{ color: C.bright }}>
                       {r.eth_amount != null ? Number(r.eth_amount).toLocaleString(undefined, { maximumFractionDigits: 6 }) : "—"}
