@@ -65,7 +65,8 @@ export default function TokenInfoPage() {
 
   const renderRightPanel = () => (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", minHeight: 0 }}>
-      {tab === "Holders" && <HoldersPanel tokenAddress={token.address} circulatingSupply={metrics?.circulating_supply} liquidityPair={token.liquidity_pair} graduated={token.graduated} />}
+      {tab === "Holders" && <HoldersPanel tokenAddress={token.address}
+creatorWallet={token.creator_wallet}  circulatingSupply={metrics?.circulating_supply} liquidityPair={token.liquidity_pair} graduated={token.graduated} />}
       {tab === "Dev Tokens" && <DevTokensPanel creatorWallet={token.creator_wallet} currentTokenAddress={token.address} />}
       {tab === "Bubble Map" && <BubbleMap tokenAddress={token.address} circulatingSupply={metrics?.circulating_supply} />}
       {tab === "Info" && <InfoPanel token={token} metrics={metrics} />}
