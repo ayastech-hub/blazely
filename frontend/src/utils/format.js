@@ -48,18 +48,24 @@ export function formatUsdPrice(price) {
   }
   return `$${num.toFixed(6)}`;
 }
-
-/** Compact number formatting (1.2K, 3.4M, etc.) shared by market cap / volume displays. */
+/** Compact number formatting (1.2K, 3.4M, 1.2B, etc.) shared by market cap / volume displays. */
 export function formatCompact(num, isCurrency = false) {
   if (num === null || num === undefined) return isCurrency ? "$0" : "0";
   const n = Number(num);
   if (isNaN(n)) return "—";
   const sign = isCurrency ? "$" : "";
+  
   if (Math.abs(n) < 1000) return `${sign}${n.toFixed(2)}`;
+  
   const units = ["", "K", "M", "B", "T"];
+  // Log10(1,000,000,000) is 9, divided by 3 is 3, which maps to "B" in the units array
   const i = Math.min(units.length - 1, Math.floor(Math.log10(Math.abs(n)) / 3));
-  return `${sign}${(n / 10 ** (i * 3)).toFixed(2)}${units[i]}`;
+  
+  // Clean up: use Number.parseFloat to remove unnecessary trailing zeros if desired, 
+  // or keep toFixed(2) for consistency.
+  return `${sign}${(n / 10 ** (i * 3)).toFixed(2).replace(/\.00$/, "")}${units[i]}`;
 }
+
 
 /** Formats a wei-denominated bigint/string as a human ETH amount without pulling in
  *  ethers just for display (mirrors indexer/telegram-platform's own format.js helper). */
