@@ -1,9 +1,8 @@
-// src/tabP/PortfolioAssetsTab.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { TrendingUp } from "lucide-react";
 import { C } from "../utils/designforprofile.js";
-import { formatTokenAmount, formatUsdPrice, formatUsd } from "../utils/format";
+import { formatCompact, formatUsdPrice, formatUsd } from "../utils/format";
 
 const PortfolioAssetsTab = ({
   data = [],
@@ -21,6 +20,15 @@ const PortfolioAssetsTab = ({
           (t.name || "").toLowerCase().includes(searchTerm.toLowerCase())
       )
     : [];
+
+  // Helper to maintain the "TokenAmount" display logic using the new formatCompact
+  const displayTokenBalance = (balance) => {
+    const n = Number(balance);
+    if (balance == null || Number.isNaN(n)) return "—";
+    // If large, use compact (e.g., 1.2K); otherwise, show standard number
+    if (Math.abs(n) >= 1000) return formatCompact(n);
+    return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  };
 
   return (
     <div className="font-mono text-[11px]">
@@ -77,7 +85,7 @@ const PortfolioAssetsTab = ({
 
               <div className="text-left min-w-0">
                 <span className="text-xs font-bold tracking-wider block truncate" style={{ color: C.bright }}>
-                  {formatTokenAmount(token.balance)}
+                  {displayTokenBalance(token.balance)}
                 </span>
                 <span className="text-[9px] font-bold block truncate uppercase" style={{ color: C.sub }}>
                   {token.price_usd != null ? formatUsdPrice(token.price_usd) : "Price unavailable"}
