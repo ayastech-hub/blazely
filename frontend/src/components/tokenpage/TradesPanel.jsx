@@ -57,7 +57,8 @@ function TopTradersTable({ tokenAddress }) {
         <span style={{ textAlign: "right" }}>BOUGHT</span>
         <span style={{ textAlign: "right" }}>VOLUME</span>
       </div>
-      <div style={{ overflowY: "auto", flex: 1 }}>
+      {/* Added paddingBottom to stick to button */}
+      <div style={{ overflowY: "auto", flex: 1, paddingBottom: "80px" }}>
         {traders.map((t) => (
           <div
             key={t.wallet}
@@ -76,7 +77,7 @@ function TopTradersTable({ tokenAddress }) {
         ))}
       </div>
       <div style={{ padding: "6px 14px", fontSize: 8, color: C.dim, fontFamily: C.mono, borderTop: `1px solid ${C.border}` }}>
-        Ranked by trading volume — PnL isn't computed yet (needs a cost-basis decision; see project docs).
+        Ranked by trading volume — PnL isn't computed yet (needs a cost-basis decision).
       </div>
     </div>
   );
@@ -143,7 +144,7 @@ export default function TradesPanel({ tokenAddress, creatorWallet }) {
       {subtab === "Trades" && (
         <>
           {(txFilter.txType !== "All" || txFilter.usdMin || txFilter.usdMax) && (
-            <div style={{ display: "flex", gap: 5, padding: "5px 14px", background: C.panel2, borderBottom: `1px solid ${C.border}`, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 5, padding: "5px 14px", background: C.panel2, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
               {txFilter.txType !== "All" && (
                 <span style={{ background: C.tealDim, border: `1px solid ${C.teal}`, borderRadius: 20, padding: "2px 9px", fontSize: 8, color: C.teal, display: "flex", alignItems: "center", gap: 4, fontFamily: C.mono }}>
                   {txFilter.txType}
@@ -159,7 +160,8 @@ export default function TradesPanel({ tokenAddress, creatorWallet }) {
             <span>TRADER</span>
             <span>TX HASH</span>
           </div>
-          <div style={{ overflowY: "auto", flex: 1 }}>
+          {/* Added paddingBottom to stick to button */}
+          <div style={{ overflowY: "auto", flex: 1, paddingBottom: "80px" }}>
             {loading && <div style={{ padding: 20, textAlign: "center", color: C.mid, fontSize: 10, fontFamily: C.mono }}>Loading trades...</div>}
             <AnimatePresence mode="popLayout">
               {visibleTrades.map((t) => {
