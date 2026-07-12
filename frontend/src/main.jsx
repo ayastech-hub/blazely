@@ -15,18 +15,18 @@ const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <ConnectKitProvider customTheme={ckTheme} mode="dark">
-          <WalletProvider>
-            <RefreshProvider>
-              <BrowserRouter>
-                <App />
-              </BrowserRouter>
-            </RefreshProvider>
-          </WalletProvider>
-        </ConnectKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <QueryClientProvider client={queryClient}>
+  <WagmiProvider config={config}>
+    <ConnectKitProvider customTheme={ckTheme} mode="dark">
+      <WalletProvider>
+        <RefreshProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </RefreshProvider>
+      </WalletProvider>
+    </ConnectKitProvider>
+  </WagmiProvider>
+</QueryClientProvider>
   </React.StrictMode>
 );
