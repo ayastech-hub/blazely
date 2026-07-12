@@ -24,7 +24,7 @@ export const C = {
   amberDim: "rgba(251,191,36,0.10)",
   dim: "#334155",
   mid: "#475569",
-  sub: "#64748b",
+  sub: "#cbd5e1",
   text: "#cbd5e1",
   bright: "#e2e8f0",
   mono: "'JetBrains Mono','Fira Mono','Cascadia Code','Consolas',monospace",
