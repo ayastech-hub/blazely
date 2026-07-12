@@ -1,18 +1,18 @@
 /**
  * components/tokenpage/HoldersPanel.jsx
  *
- * One thing worth understanding about this data, not a bug: pre-graduation, the #1 "holder"
- * is almost always the launchpad contract itself (it holds all unsold + sold-back curve
- * inventory) — that's correct and expected, not an error. This panel labels that row
- * explicitly rather than showing a mysterious wallet address for what's actually the curve.
+ * Fixed-supply logic: We use a constant 1B total supply (1e9 * 1e18) to calculate
+ * ownership percentages. This ensures consistency and prevents percentage 
+ * fluctuations caused by indexer lag on circulating supply metrics.
  */
 import React from "react";
 import { C } from "../../utils/designTokens";
 import { useTokenHolders } from "../../hooks/useTokenHolders";
 
 const LAUNCHPAD_ADDRESS = (import.meta.env.VITE_LAUNCHPAD_ADDRESS || "").toLowerCase();
+const TOTAL_SUPPLY = 1_000_000_000n * 10n ** 18n;
 
-export default function HoldersPanel({ tokenAddress, circulatingSupply, liquidityPair, graduated }) {
+export default function HoldersPanel({ tokenAddress, liquidityPair, graduated }) {
   const { holders, loading } = useTokenHolders(tokenAddress, 50);
 
   if (loading) {
@@ -45,14 +45,9 @@ export default function HoldersPanel({ tokenAddress, circulatingSupply, liquidit
       </div>
       <div style={{ overflowY: "auto", flex: 1 }}>
         {holders.map((h, i) => {
-          // Robust math: handle null/undefined/zero supply explicitly
           const balanceBig = BigInt(h.balance || "0");
-          const supplyBig = circulatingSupply ? BigInt(circulatingSupply) : 0n;
-
-          // Prevent division by zero and logical impossibilities (>100%)
-          const pct = (supplyBig > 0n && balanceBig <= supplyBig) 
-            ? Number((balanceBig * 10000n) / supplyBig) / 100 
-            : (balanceBig > 0n && supplyBig > 0n ? 100.00 : 0.00);
+          // Calculate percentage against the fixed 1B cap
+          const pct = Number((balanceBig * 10000n) / TOTAL_SUPPLY) / 100;
 
           const isLaunchpad = h.wallet_address.toLowerCase() === LAUNCHPAD_ADDRESS;
           const isPair = graduated && liquidityPair && h.wallet_address.toLowerCase() === liquidityPair.toLowerCase();
@@ -99,7 +94,6 @@ export default function HoldersPanel({ tokenAddress, circulatingSupply, liquidit
                     height: 2,
                     borderRadius: 1,
                     background: `linear-gradient(to right,${C.teal},transparent)`,
-                    // Hard cap the UI bar width at 100%
                     width: `${Math.min(pct, 100)}%`,
                     opacity: 0.5,
                   }}
