@@ -1,6 +1,9 @@
-// src/components/CreatedTokensTab.jsx
+// src/tabP/CreatedTokensTab.jsx
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Sparkles, Edit3, Eye } from "lucide-react";
+import { C } from "../utils/designTokens";
+import { shortenAddress, formatCompact } from "../utils/format";
 
 const CreatedTokensTab = ({
   data = [],
@@ -11,100 +14,94 @@ const CreatedTokensTab = ({
   DashboardCard,
   isPublicView = false,
 }) => {
-  const shortAddress = (a = "") => a && a.length > 10 ? `${a.slice(0, 6)}...${a.slice(-4)}` : a;
-
-  const navigateToToken = (addr) => {
-    try {
-      if (typeof window !== "undefined" && (window.__NEXT_DATA__ || window.next)) {
-        window.location.href = `/token/${addr}`;
-        return;
-      }
-      if (typeof window !== "undefined" && window.history && typeof window.history.pushState === "function") {
-        window.history.pushState({}, "", `/token/${addr}`);
-        window.dispatchEvent(new PopStateEvent("popstate"));
-        return;
-      }
-      window.location.href = `/token/${addr}`;
-    } catch {
-      window.location.href = `/token/${addr}`;
-    }
-  };
+  const navigate = useNavigate();
 
   return (
     <div className="font-mono text-[11px]">
       <DashboardCard
-        title="SYS_CREATED_TOKENS"
+        title="Tokens created"
         icon={Sparkles}
-        iconBgColor="border-slate-900 text-slate-500"
         count={Array.isArray(data) ? data.length : 0}
         isLoading={loading}
         data={data}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        listClassName="space-y-2 max-h-[650px] overflow-y-auto pr-1"
+        searchPlaceholder="Search by name or symbol..."
         emptyState={
-          <div className="flex flex-col items-center justify-center py-8 border border-slate-900 bg-[#0b0f19]/20">
-            <Sparkles size={16} className="text-slate-700 mb-1" />
-            <span className="text-[10px] text-slate-600 uppercase tracking-wider">NULL_SET // NO_TOKENS_FOUND</span>
+          <div className="flex flex-col items-center justify-center py-8">
+            <Sparkles size={16} className="mb-1" style={{ color: C.faint }} />
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: C.sub }}>
+              No tokens yet
+            </span>
           </div>
         }
         renderItem={(token) => (
-          <div key={token.address} className="p-3 bg-[#0b0f19]/40 border border-slate-900 rounded-none transition-none">
+          <div
+            key={token.address}
+            className="p-3 rounded-none"
+            style={{ backgroundColor: C.panelSoft, border: `1px solid ${C.border}` }}
+          >
             <div className="flex items-center justify-between gap-3">
-              
-              {/* Identity Routing Engine Endpoint Anchor */}
-              <a
-                href={`/token/${token.address}`}
-                onClick={(e) => { e.preventDefault(); navigateToToken(token.address); }}
-                className="flex items-center gap-3 min-w-0 flex-1 group"
+              <button
+                onClick={() => navigate(`/token/${token.address}`)}
+                className="flex items-center gap-3 min-w-0 flex-1 group text-left"
               >
-                <div className="w-10 h-10 bg-[#030712] border border-slate-900 flex items-center justify-center shrink-0 overflow-hidden rounded-none">
+                <div
+                  className="w-10 h-10 flex items-center justify-center shrink-0 overflow-hidden rounded-none"
+                  style={{ backgroundColor: C.bg, border: `1px solid ${C.border}` }}
+                >
                   {token.logo ? (
-                    <img src={token.logo} alt={token.symbol} className="w-full h-full object-cover rounded-none" />
+                    <img src={token.logo} alt={token.symbol} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="font-bold text-slate-500 text-xs">{(token.symbol || "T").charAt(0).toUpperCase()}</span>
+                    <span className="font-bold text-xs" style={{ color: C.sub }}>
+                      {(token.symbol || "T").charAt(0).toUpperCase()}
+                    </span>
                   )}
                 </div>
 
                 <div className="min-w-0 space-y-0.5">
-                  <h4 className="font-black text-slate-200 uppercase tracking-wide truncate text-xs group-hover:text-[#96d6cd] transition-colors">
-                    {token.symbol || "UNKNOWN_ID"}
+                  <h4
+                    className="font-black uppercase tracking-wide truncate text-xs transition-colors"
+                    style={{ color: C.bright }}
+                  >
+                    {token.symbol || "Unnamed token"}
                   </h4>
-                  <p className="text-[10px] text-slate-500 font-mono tracking-normal truncate">
-                    {shortAddress(token.address)}
+                  <p className="text-[10px] font-mono tracking-normal truncate" style={{ color: C.sub }}>
+                    {shortenAddress(token.address)}
                   </p>
                 </div>
-              </a>
+              </button>
 
-              {/* Token Capitalization Tracking Index Module */}
               <div className="hidden md:flex flex-col items-end justify-center min-w-[100px]">
-                <span className="text-xs font-black text-slate-300 tracking-wider">
-                  ${(token.marketcap_usd || 0).toLocaleString(undefined, { notation: "compact", maximumFractionDigits: 2 })}
+                <span className="text-xs font-black tracking-wider" style={{ color: C.bright }}>
+                  {token.market_cap != null ? `${formatCompact(Number(token.market_cap))} ETH` : "—"}
                 </span>
-                <span className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">MARKET_CAP</span>
+                <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: C.sub }}>
+                  Market cap
+                </span>
               </div>
 
-              {/* Action Trigger Handlers Panel */}
               <div className="flex items-center gap-1 shrink-0">
                 {!isPublicView && (
                   <button
-                    onClick={(e) => { e.preventDefault(); openUpdateModal(token); }}
-                    className="p-1.5 border border-slate-900 bg-[#030712] text-slate-500 hover:text-slate-300 rounded-none transition-none"
-                    title="Edit token metadata configuration"
+                    onClick={() => openUpdateModal(token)}
+                    className="p-1.5 rounded-none transition-colors"
+                    style={{ backgroundColor: C.bg, border: `1px solid ${C.border}`, color: C.sub }}
+                    title="Edit token details"
                   >
                     <Edit3 size={12} />
                   </button>
                 )}
 
                 <button
-                  onClick={(e) => { e.preventDefault(); navigateToToken(token.address); }}
-                  className="p-1.5 border border-slate-900 bg-[#030712] text-slate-500 hover:text-slate-300 rounded-none transition-none"
-                  title="Open viewport matrix"
+                  onClick={() => navigate(`/token/${token.address}`)}
+                  className="p-1.5 rounded-none transition-colors"
+                  style={{ backgroundColor: C.bg, border: `1px solid ${C.border}`, color: C.sub }}
+                  title="View token"
                 >
                   <Eye size={12} />
                 </button>
               </div>
-
             </div>
           </div>
         )}
