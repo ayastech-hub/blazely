@@ -84,6 +84,12 @@ export function formatWei(weiValue, decimals = 4) {
     return "—";
   }
 }
+/** Whole-dollar USD amount, e.g. position value */
+export function formatUsd(value) {
+  const n = Number(value);
+  if (value == null || Number.isNaN(n)) return "—";
+  return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
 export function timeAgo(isoDate, nowMs = Date.now()) {
   if (!isoDate) return "—";
