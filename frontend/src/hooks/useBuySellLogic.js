@@ -232,7 +232,7 @@ export function useBuySellLogic(token) {
         functionName: "buy",
         args: [token.address, minTokensOut, deadline()],
         value,
-        gas: SAFE_GAS_LIMIT,
+        
       });
     } catch (error) {
       console.error("Error preparing buy tx:", error);
@@ -253,7 +253,7 @@ export function useBuySellLogic(token) {
         abi: LAUNCHPAD_ABI_FULL,
         functionName: "sell",
         args: [token.address, amountToSell, minEthOut, deadline()],
-        gas: SAFE_GAS_LIMIT,
+        
       });
     } catch (error) {
       console.error("Error preparing sell tx:", error);
