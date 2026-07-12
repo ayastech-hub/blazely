@@ -45,11 +45,14 @@ export default function HoldersPanel({ tokenAddress, circulatingSupply, liquidit
       </div>
       <div style={{ overflowY: "auto", flex: 1 }}>
         {holders.map((h, i) => {
-          // Use BigInt for exact math to prevent precision loss with large token balances
+          // Robust math: handle null/undefined/zero supply explicitly
           const balanceBig = BigInt(h.balance || "0");
-          const supplyBig = BigInt(circulatingSupply || "1");
-          // Calculate percentage using integer math, then convert to float for display
-          const pct = Number((balanceBig * 10000n) / supplyBig) / 100;
+          const supplyBig = circulatingSupply ? BigInt(circulatingSupply) : 0n;
+
+          // Prevent division by zero and logical impossibilities (>100%)
+          const pct = (supplyBig > 0n && balanceBig <= supplyBig) 
+            ? Number((balanceBig * 10000n) / supplyBig) / 100 
+            : (balanceBig > 0n && supplyBig > 0n ? 100.00 : 0.00);
 
           const isLaunchpad = h.wallet_address.toLowerCase() === LAUNCHPAD_ADDRESS;
           const isPair = graduated && liquidityPair && h.wallet_address.toLowerCase() === liquidityPair.toLowerCase();
@@ -96,13 +99,15 @@ export default function HoldersPanel({ tokenAddress, circulatingSupply, liquidit
                     height: 2,
                     borderRadius: 1,
                     background: `linear-gradient(to right,${C.teal},transparent)`,
-                    // Use Math.min(pct, 100) to ensure the bar never exceeds 100% width
+                    // Hard cap the UI bar width at 100%
                     width: `${Math.min(pct, 100)}%`,
                     opacity: 0.5,
                   }}
                 />
               </div>
-              <span style={{ textAlign: "right", fontSize: 11, fontWeight: 700, color: C.bright, fontFamily: C.mono }}>{pct.toFixed(2)}%</span>
+              <span style={{ textAlign: "right", fontSize: 11, fontWeight: 700, color: C.bright, fontFamily: C.mono }}>
+                {pct.toFixed(2)}%
+              </span>
             </div>
           );
         })}
