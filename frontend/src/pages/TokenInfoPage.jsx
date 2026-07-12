@@ -55,7 +55,8 @@ export default function TokenInfoPage() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const priceUsd = metrics?.price_usd != null ? Number(metrics.price_usd) / 1e8 : null;
+  const priceUsd =
+ tokenPriceUsdFromMetrics(metrics?.price_usd);
 
   if (loading && !token) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: C.bg, color: C.mid, fontFamily: C.mono, fontSize: 11 }}>SYNCHRONIZING...</div>;
   if (error || !token) return <div style={{ height: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: C.bg, color: C.sub, fontFamily: C.mono, gap: 8 }}>Token not found.</div>;
