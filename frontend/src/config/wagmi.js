@@ -28,7 +28,7 @@ export const config = createConfig({
     coinbaseWallet({ appName: "Launchpad" }),
   ],
   transports: {
-    [sepolia.id]: http("https://rpc.sepolia.org"),
+    [sepolia.id]: http("https://eth-sepolia.g.alchemy.com/v2/gTZNVB90WEFl6tc17CotK"),
   },
   ssr: false,
 });
