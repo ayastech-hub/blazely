@@ -2,23 +2,40 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Globe, Send, AtSign } from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
+import { getPublicUrlSafe } from "../api/supabaseTokens";
 
 /** Helper to clean path and prevent double-nesting 'logos/' */
 const getCleanLogoPath = (path) => path?.replace(/^logos\//, "");
 
 /* -------------------- Telemetry Formatters -------------------- */
-const compactNumberShort = (number) => {
-  if (number === null || number === undefined) return "N/A";
-  if (Number.isNaN(Number(number))) return "N/A";
+function compactNumberShort(number, currency = "USD") {
+  if (number == null) return "N/A";
+
   const n = Number(number);
-  if (Math.abs(n) < 1000) return `$${Math.round(n)}`;
+
+  if (Number.isNaN(n)) return "N/A";
+
   const suffixes = ["", "K", "M", "B", "T"];
+
+  if (Math.abs(n) < 1000) {
+    return currency === "USD"
+      ? `$${Math.round(n)}`
+      : `${n.toFixed(2)} ETH`;
+  }
+
   const i = Math.floor(Math.log10(Math.abs(n)) / 3);
+
   let value = (n / Math.pow(1000, i)).toFixed(1);
-  if (value.endsWith(".0")) value = value.slice(0, -2);
-  return `$${value}${suffixes[i]}`;
-};
+
+  if (value.endsWith(".0")) {
+    value=value.slice(0,-2);
+  }
+
+
+  return currency === "USD"
+    ? `$${value}${suffixes[i]}`
+    : `${value}${suffixes[i]} ETH`;
+}
 
 const cardVariants = {
   hidden: { opacity: 0, y: 8, filter: "blur(6px)" },
@@ -47,23 +64,26 @@ function SocialLink({ href, icon, label }) {
   );
 }
 
-function MetricGroup({ label, value }) {
+function MetricGroup({ label, value, currency }) {
   return (
     <div
       className="flex items-center gap-1.5 bg-[#030712]/60 border border-slate-800/60 px-2.5 py-1 rounded-lg text-[10px]"
       style={{ fontFamily: "'JetBrains Mono', monospace" }}
     >
       <span className="text-slate-500 uppercase font-bold tracking-wider">{label}</span>
-      <span className="text-slate-200 font-bold tabular-nums">{compactNumberShort(value)}</span>
+      <span>
+ {compactNumberShort(value,currency)}
+</span>
     </div>
   );
 }
 
 /* -------------------- Core Component -------------------- */
 export default function TokenCard({ token, index = 0, isNew = false }) {
-  const displayMarketcap = token.marketcap_usd || 0;
-  const displayVolume = token.volume_24h || 0;
+  const displayMarketcap = token.marketcap_eth || 0;
+const displayVolume = token.volume_eth || 0;
 
+const displayPrice = token.price_usd;
   // Resolve logo source dynamically
   const logoSrc = token.logo_path
     ? supabase.storage.from("logos").getPublicUrl(getCleanLogoPath(token.logo_path)).data.publicUrl
@@ -94,6 +114,14 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
                 <span className="text-xl font-light text-slate-500" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
                   {token.symbol?.charAt(0).toUpperCase() || "T"}
                 </span>
+{displayPrice != null && (
+<p
+ className="text-[10px] text-teal font-bold mt-1"
+ style={{fontFamily:"'JetBrains Mono', monospace"}}
+>
+ ${displayPrice.toFixed(8)}
+</p>
+)}
               )}
             </div>
 
@@ -113,8 +141,17 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 mb-4">
-            <MetricGroup label="MCAP" value={displayMarketcap} />
-            <MetricGroup label="VOL" value={displayVolume} />
+  <MetricGroup
+ label="MCAP"
+ value={displayMarketcap}
+ currency="ETH"
+/>
+
+<MetricGroup
+ label="VOL"
+ value={displayVolume}
+ currency="ETH"
+/>
           </div>
 
           {/* Progress Section */}
@@ -128,7 +165,14 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
                 <div className="flex items-center justify-between font-bold text-[9px] text-slate-500 uppercase tracking-wider mb-1.5" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                   <span>CURVE_FILL</span>
                 </div>
-                <div className="w-full h-1.5 bg-[#030712] border border-slate-800/50 overflow-hidden rounded-full relative" />
+      <div className="w-full h-1.5 bg-[#030712] border border-slate-800/50 overflow-hidden rounded-full relative">
+ <div
+   className="h-full bg-teal rounded-full"
+   style={{
+     width:`${Math.min(token.pool_progress || 0,100)}%`
+   }}
+ />
+</div>
               </div>
             )}
           </div>
