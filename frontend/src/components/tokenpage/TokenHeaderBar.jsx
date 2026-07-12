@@ -4,6 +4,8 @@ import { Icon } from "./Icons";
 import AnimatedNumber from "./AnimatedNumber";
 import { formatCompact, formatWei, resolveLogoUrl, shortenAddress, timeAgo } from "../../utils/format";
 import { supabase } from "../../lib/supabaseClient";
+import { usePrices } from "../../hooks/usePrices";
+import { ethToUsd, tokenPriceUsdFromMetrics } from "../../utils/priceConversion";
 
 function CopyBtn({ text }) {
   const [ok, setOk] = useState(false);
@@ -42,7 +44,13 @@ function InfoPopup({ onClose, metrics, token }) {
       >
         <div style={{ fontSize: 8, color: C.mid, letterSpacing: "0.12em", marginBottom: 10 }}>TOKEN INFO</div>
         {[
-          { l: "Price", v: `$${Number(metrics?.price_usd ? metrics.price_usd / 1e8 : 0).toFixed(8)}` },
+          {
+  l: "Price",
+  v:
+    tokenPriceUsdFromMetrics(metrics?.price_usd) != null
+      ? `$${tokenPriceUsdFromMetrics(metrics?.price_usd).toFixed(8)}`
+      : "—",
+},
           { l: "Vault", v: `${formatWei(metrics?.vault_balance_wei, 3)} ETH` },
           { l: "Progress", v: token?.graduated ? "Graduated" : `${(metrics?.pool_progress || 0).toFixed(1)}%` },
           { l: "Holders", v: `${metrics?.holder_count ?? 0}` },
@@ -59,12 +67,19 @@ function InfoPopup({ onClose, metrics, token }) {
 
 export default function TokenHeaderBar({ token, metrics }) {
   const [showInfo, setShowInfo] = useState(false);
+
+  const { ethUsd, isStale } = usePrices();
   const logoUrl = resolveLogoUrl(token, supabase);
   const shortCA = shortenAddress(token?.address, 6);
   // market_cap on token_metrics_latest is wei-denominated ETH (price * circulating supply),
   // NOT USD — there's no market_cap_usd field in this schema. Labeling this with a $ sign
   // would misrepresent an ETH amount as a dollar amount, so this displays "X.XX ETH" instead.
   const marketCapEth = Number(formatWei(metrics?.market_cap, 6)) || 0;
+
+const marketCapUsd = ethToUsd(
+  marketCapEth,
+  ethUsd
+);
 
   return (
     <div style={{ background: C.panel, borderBottom: `1px solid ${C.border}`, position: "relative" }}>
@@ -142,7 +157,14 @@ export default function TokenHeaderBar({ token, metrics }) {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
           <button onClick={() => setShowInfo((v) => !v)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 3, padding: 0 }}>
             <span style={{ fontFamily: C.mono, fontSize: 15, fontWeight: 700, color: C.bright, letterSpacing: "-0.5px" }}>
-              <AnimatedNumber value={marketCapEth} format={(v) => `${formatCompact(v)} ETH`} />
+              <AnimatedNumber
+  value={marketCapUsd ?? marketCapEth}
+  format={(v) =>
+    marketCapUsd != null
+      ? `$${formatCompact(v)}`
+      : `${formatCompact(v)} ETH`
+  }
+/>
             </span>
             <span style={{ fontSize: 9, color: C.mid }}>{showInfo ? "▲" : "▾"}</span>
           </button>
