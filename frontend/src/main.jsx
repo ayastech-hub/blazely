@@ -19,7 +19,7 @@ const queryClient = new QueryClient();
 const config = createConfig({
   chains: [sepolia],
   transports: {
-    [sepolia.id]: http("https://sepolia.infura.io/v3/YOUR_INFURA_KEY"),
+    [sepolia.id]: http("https://eth-sepolia.g.alchemy.com/v2/gTZNVB90WEFl6tc17CotK"),
     // or: http("https://rpc.sepolia.org")
   },
 });
