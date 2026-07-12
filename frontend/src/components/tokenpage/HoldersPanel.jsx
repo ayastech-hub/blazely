@@ -22,8 +22,6 @@ export default function HoldersPanel({ tokenAddress, circulatingSupply, liquidit
     return <div style={{ padding: 20, textAlign: "center", color: C.mid, fontSize: 10, fontFamily: C.mono }}>No holders yet.</div>;
   }
 
-  const supply = Number(circulatingSupply) || null;
-
   const colHdr = {
     display: "grid",
     gridTemplateColumns: "26px 1fr 66px",
@@ -47,7 +45,12 @@ export default function HoldersPanel({ tokenAddress, circulatingSupply, liquidit
       </div>
       <div style={{ overflowY: "auto", flex: 1 }}>
         {holders.map((h, i) => {
-          const pct = supply ? (Number(h.balance) / supply) * 100 : 0;
+          // Use BigInt for exact math to prevent precision loss with large token balances
+          const balanceBig = BigInt(h.balance || "0");
+          const supplyBig = BigInt(circulatingSupply || "1");
+          // Calculate percentage using integer math, then convert to float for display
+          const pct = Number((balanceBig * 10000n) / supplyBig) / 100;
+
           const isLaunchpad = h.wallet_address.toLowerCase() === LAUNCHPAD_ADDRESS;
           const isPair = graduated && liquidityPair && h.wallet_address.toLowerCase() === liquidityPair.toLowerCase();
           const tag = isLaunchpad ? "CURVE" : isPair ? "LP" : null;
@@ -93,7 +96,8 @@ export default function HoldersPanel({ tokenAddress, circulatingSupply, liquidit
                     height: 2,
                     borderRadius: 1,
                     background: `linear-gradient(to right,${C.teal},transparent)`,
-                    width: `${Math.min(pct * 2, 100)}%`,
+                    // Use Math.min(pct, 100) to ensure the bar never exceeds 100% width
+                    width: `${Math.min(pct, 100)}%`,
                     opacity: 0.5,
                   }}
                 />
