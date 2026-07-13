@@ -1,8 +1,9 @@
+// src/tabP/PortfolioAssetsTab.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { TrendingUp } from "lucide-react";
-import { C } from "../utils/designforprofile.js";
-import { formatCompact, formatUsdPrice, formatUsd } from "../utils/format";
+import { C } from "../utils/designForProfile";
+import { formatTokenAmount, formatUsdPrice, formatUsd, formatPercent } from "../utils/format";
 
 const PortfolioAssetsTab = ({
   data = [],
@@ -21,90 +22,82 @@ const PortfolioAssetsTab = ({
       )
     : [];
 
-  // Helper to maintain the "TokenAmount" display logic using the new formatCompact
-  const displayTokenBalance = (balance) => {
-    const n = Number(balance);
-    if (balance == null || Number.isNaN(n)) return "—";
-    // If large, use compact (e.g., 1.2K); otherwise, show standard number
-    if (Math.abs(n) >= 1000) return formatCompact(n);
-    return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
-  };
-
   return (
-    <div className="font-mono text-[11px]">
-      <DashboardCard
-        title="Your holdings"
-        icon={TrendingUp}
-        count={filteredData.length}
-        isLoading={loading}
-        data={filteredData}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        searchPlaceholder="Search by name or symbol..."
-        emptyState={
-          <div className="flex flex-col items-center justify-center py-8">
-            <TrendingUp size={16} className="mb-1" style={{ color: C.faint }} />
-            <span className="text-[10px] uppercase tracking-wider" style={{ color: C.sub }}>
-              No tokens in your portfolio yet
-            </span>
-          </div>
-        }
-        renderItem={(token) => (
-          <div
+    <DashboardCard
+      title="Your holdings"
+      subtitle="Tokens you currently hold"
+      icon={TrendingUp}
+      count={filteredData.length}
+      isLoading={loading}
+      data={filteredData}
+      searchTerm={searchTerm}
+      onSearchChange={setSearchTerm}
+      searchPlaceholder="Search by name or symbol..."
+      emptyState={
+        <div className="flex flex-col items-center justify-center py-8 gap-2">
+          <TrendingUp size={20} style={{ color: C.faint }} />
+          <span className="text-sm" style={{ color: C.sub }}>
+            No tokens in your portfolio yet
+          </span>
+        </div>
+      }
+      renderItem={(token) => {
+        const changeLabel = formatPercent(token.change_24h);
+        const changeColor =
+          token.change_24h > 0 ? C.green : token.change_24h < 0 ? C.rose : C.sub;
+
+        return (
+          <button
             key={token.token_address}
-            className="rounded-none"
-            style={{ backgroundColor: C.panelSoft, border: `1px solid ${C.border}` }}
+            onClick={() => navigate(`/token/${token.token_address}`)}
+            className="grid grid-cols-3 items-center gap-3 p-3.5 rounded-xl w-full text-left transition-colors hover:bg-white/[0.02]"
+            style={{ backgroundColor: C.panel, border: `1px solid ${C.borderSoft}` }}
           >
-            <button
-              onClick={() => navigate(`/token/${token.token_address}`)}
-              className="grid grid-cols-3 items-center gap-3 p-3 group w-full text-left"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div
-                  className="w-10 h-10 flex items-center justify-center shrink-0 overflow-hidden rounded-none"
-                  style={{ backgroundColor: C.bg, border: `1px solid ${C.border}` }}
-                >
-                  {token.logo ? (
-                    <img src={token.logo} alt={token.symbol} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="font-bold text-xs" style={{ color: C.sub }}>
-                      {(token.symbol || "T").charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-
-                <div className="min-w-0 space-y-0.5">
-                  <h4 className="font-black uppercase tracking-wide truncate text-xs" style={{ color: C.bright }}>
-                    {token.symbol}
-                  </h4>
-                  <p className="text-[10px] font-mono tracking-normal truncate" style={{ color: C.sub }}>
-                    {token.name || "—"}
-                  </p>
-                </div>
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className="w-11 h-11 flex items-center justify-center shrink-0 overflow-hidden rounded-full"
+                style={{ backgroundColor: C.bg, border: `1px solid ${C.borderSoft}` }}
+              >
+                {token.logo ? (
+                  <img src={token.logo} alt={token.symbol} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="font-semibold text-sm" style={{ color: C.sub }}>
+                    {(token.symbol || "T").charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
 
-              <div className="text-left min-w-0">
-                <span className="text-xs font-bold tracking-wider block truncate" style={{ color: C.bright }}>
-                  {displayTokenBalance(token.balance)}
-                </span>
-                <span className="text-[9px] font-bold block truncate uppercase" style={{ color: C.sub }}>
-                  {token.price_usd != null ? formatUsdPrice(token.price_usd) : "Price unavailable"}
-                </span>
+              <div className="min-w-0 space-y-0.5">
+                <h4 className="font-semibold truncate text-sm" style={{ color: C.bright }}>
+                  {token.symbol}
+                </h4>
+                <p className="text-xs font-mono truncate" style={{ color: C.sub }}>
+                  {token.name || "—"}
+                </p>
               </div>
+            </div>
 
-              <div className="text-right min-w-0">
-                <span className="text-xs font-black tracking-wider block truncate" style={{ color: C.bright }}>
-                  {token.value_usd != null ? formatUsd(token.value_usd) : "—"}
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-wide block" style={{ color: C.faint }}>
-                  24h change not available yet
-                </span>
-              </div>
-            </button>
-          </div>
-        )}
-      />
-    </div>
+            <div className="text-left min-w-0">
+              <span className="text-sm font-medium tabular-nums block truncate" style={{ color: C.bright }}>
+                {formatTokenAmount(token.balance)}
+              </span>
+              <span className="text-xs block truncate" style={{ color: C.sub }}>
+                {token.price_usd != null ? formatUsdPrice(token.price_usd) : "Price unavailable"}
+              </span>
+            </div>
+
+            <div className="text-right min-w-0">
+              <span className="text-sm font-semibold tabular-nums block truncate" style={{ color: C.bright }}>
+                {token.value_usd != null ? formatUsd(token.value_usd) : "—"}
+              </span>
+              <span className="text-xs font-medium block" style={{ color: changeLabel ? changeColor : C.faint }}>
+                {changeLabel || "24h change unavailable"}
+              </span>
+            </div>
+          </button>
+        );
+      }}
+    />
   );
 };
 
