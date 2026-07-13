@@ -5,7 +5,7 @@ import { C } from "../utils/designForProfile";
 
 export const SocialMetrics = ({ followingCount = 0, watchlistCount = 0 }) => {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <div
         className="flex items-center gap-2 px-3 py-1.5 rounded-full"
         style={{ backgroundColor: C.panel, border: `1px solid ${C.borderSoft}` }}
