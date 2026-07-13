@@ -6,7 +6,7 @@ import { User, TrendingUp, Sparkles, History, Check, Copy, ArrowUpRight, Users, 
 
 import { usePublicProfileData } from "../hooks/usePublicProfileData";
 import { C } from "../utils/designForProfile";
-import { shortenAddress, explorerAddressUrl, formatUsd } from "../utils/format";
+import { shortenAddress, explorerAddressUrl, formatUsd } from "../utils/formatProfile";
 
 import CreatedTokensTab from "../tabP/CreatedTokensTab";
 import PortfolioAssetsTab from "../tabP/PortfolioAssetsTab";
