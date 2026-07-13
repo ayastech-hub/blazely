@@ -1,34 +1,29 @@
-/**
- * =================================================================================
- * utils/format.js
- * =================================================================================
- * Every formatter that was previously copy-pasted (with slightly different bugs each
- * time) across TokenHeader.jsx, TopHolders.jsx, RecentTransactions.jsx, and SocialLinks.jsx
- * now lives here once. Also centralizes the block-explorer base URL, which was
- * INCONSISTENT across the old files (some hardcoded basescan.org, one hardcoded
- * sepolia.etherscan.io) — pick ONE via env var and use it everywhere.
- * =================================================================================
- */
+// src/utils/format.js
 
-// Set this to match whichever chain you're actually deployed on. Every old file guessed
-// differently — this is the one place it's decided now.
+// Configuration: Matches whichever chain you're deployed on.
 export const EXPLORER_BASE_URL = import.meta.env.VITE_EXPLORER_BASE_URL || "https://sepolia.etherscan.io";
 
-export function explorerAddressUrl(address) {
-  return `${EXPLORER_BASE_URL}/address/${address}`;
-}
-
-export function explorerTxUrl(txHash) {
-  return `${EXPLORER_BASE_URL}/tx/${txHash}`;
-}
-
+/** "0xAbCd...1234" */
 export function shortenAddress(addr = "", chars = 4) {
   if (!addr || addr.length < chars * 2 + 3) return addr || "—";
   return `${addr.slice(0, chars + 2)}...${addr.slice(-chars)}`;
 }
 
-/** Formats a USD price with the "leading zeros" compact notation for very small prices
- *  (e.g. new bonding-curve tokens priced at $0.0000003). */
+/** Compact number formatting (1.2K, 3.4M, 1.2B, etc.) */
+export function formatCompact(num, isCurrency = false) {
+  if (num === null || num === undefined) return isCurrency ? "$0" : "0";
+  const n = Number(num);
+  if (isNaN(n)) return "—";
+  const sign = isCurrency ? "$" : "";
+  
+  if (Math.abs(n) < 1000) return `${sign}${n.toFixed(2)}`;
+  
+  const units = ["", "K", "M", "B", "T"];
+  const i = Math.min(units.length - 1, Math.floor(Math.log10(Math.abs(n)) / 3));
+  return `${sign}${(n / 10 ** (i * 3)).toFixed(2).replace(/\.00$/, "")}${units[i]}`;
+}
+
+/** Formats a USD price with "leading zeros" compact notation for very small prices */
 export function formatUsdPrice(price) {
   if (price === null || price === undefined) return "—";
   const num = Number(price);
@@ -48,27 +43,38 @@ export function formatUsdPrice(price) {
   }
   return `$${num.toFixed(6)}`;
 }
-/** Compact number formatting (1.2K, 3.4M, 1.2B, etc.) shared by market cap / volume displays. */
-export function formatCompact(num, isCurrency = false) {
-  if (num === null || num === undefined) return isCurrency ? "$0" : "0";
-  const n = Number(num);
-  if (isNaN(n)) return "—";
-  const sign = isCurrency ? "$" : "";
-  
-  if (Math.abs(n) < 1000) return `${sign}${n.toFixed(2)}`;
-  
-  const units = ["", "K", "M", "B", "T"];
-  // Log10(1,000,000,000) is 9, divided by 3 is 3, which maps to "B" in the units array
-  const i = Math.min(units.length - 1, Math.floor(Math.log10(Math.abs(n)) / 3));
-  
-  // Clean up: use Number.parseFloat to remove unnecessary trailing zeros if desired, 
-  // or keep toFixed(2) for consistency.
-  return `${sign}${(n / 10 ** (i * 3)).toFixed(2).replace(/\.00$/, "")}${units[i]}`;
+
+/** Whole-dollar USD amount */
+export function formatUsd(value) {
+  const n = Number(value);
+  if (value == null || Number.isNaN(n)) return "—";
+  return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+/** Decimals-aware conversion of raw integer amount (BigInt math) */
+export function formatUnits(rawValue, decimals = 18, { maxFractionDigits = 6 } = {}) {
+  if (rawValue == null || rawValue === "") return "—";
+  try {
+    const raw = String(rawValue).trim();
+    const negative = raw.startsWith("-");
+    const digitsOnly = negative ? raw.slice(1) : raw;
+    if (!/^\d+$/.test(digitsOnly)) {
+      const n = Number(rawValue);
+      return Number.isNaN(n) ? "—" : n.toLocaleString(undefined, { maximumFractionDigits: maxFractionDigits });
+    }
+    const asBigInt = BigInt(digitsOnly);
+    const base = 10n ** BigInt(decimals);
+    const whole = asBigInt / base;
+    const frac = asBigInt % base;
+    const asNumber = Number(whole) + Number(frac) / Number(base);
+    const signed = negative ? -asNumber : asNumber;
+    return signed.toLocaleString(undefined, { maximumFractionDigits: maxFractionDigits });
+  } catch {
+    return "—";
+  }
+}
 
-/** Formats a wei-denominated bigint/string as a human ETH amount without pulling in
- *  ethers just for display (mirrors indexer/telegram-platform's own format.js helper). */
+/** Wei (18-decimal) text/bigint amount -> human ETH string */
 export function formatWei(weiValue, decimals = 4) {
   if (weiValue === null || weiValue === undefined) return "—";
   try {
@@ -84,13 +90,25 @@ export function formatWei(weiValue, decimals = 4) {
     return "—";
   }
 }
-/** Whole-dollar USD amount, e.g. position value */
-export function formatUsd(value) {
+
+/** Already-decimal-adjusted token amount -> compact display */
+export function formatTokenAmount(value) {
   const n = Number(value);
   if (value == null || Number.isNaN(n)) return "—";
-  return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (Math.abs(n) >= 1000) return formatCompact(n);
+  return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
 }
 
+/** Signed percentage: "+3.42%" / "-1.05%" */
+export function formatPercent(value) {
+  if (value == null) return null;
+  const n = Number(value);
+  if (Number.isNaN(n)) return null;
+  const sign = n > 0 ? "+" : "";
+  return `${sign}${n.toFixed(2)}%`;
+}
+
+/** ISO or Postgres timestamp -> "3m", "2h", "5d" */
 export function timeAgo(isoDate, nowMs = Date.now()) {
   if (!isoDate) return "—";
   let standardized = String(isoDate).replace(" ", "T");
@@ -105,11 +123,15 @@ export function timeAgo(isoDate, nowMs = Date.now()) {
   return `${Math.floor(seconds / 86400)}d`;
 }
 
-/** Resolves a display logo URL, preferring the already-public `logo_url` written by the
- *  token-creation backend, and only falling back to reconstructing a Storage public URL
- *  from `logo_path` for legacy rows. Bucket name MUST match what the backend actually
- *  uploads to (`token-logos` — see backend/token-creation-listener.js), not the old,
- *  incorrect `"logos"` bucket name this used to reference. */
+export function explorerAddressUrl(address) {
+  return `${EXPLORER_BASE_URL}/address/${address}`;
+}
+
+export function explorerTxUrl(txHash) {
+  return `${EXPLORER_BASE_URL}/tx/${txHash}`;
+}
+
+/** Resolves logo URL (prefers logo_url, falls back to logo_path) */
 export function resolveLogoUrl(token, supabaseClient) {
   if (!token) return "/fallback-logo.png";
   if (token.logo_url) return token.logo_url;
