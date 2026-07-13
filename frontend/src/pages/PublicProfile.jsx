@@ -80,7 +80,7 @@ const PublicProfile = ({ walletAddress }) => {
       (t.symbol || "").toLowerCase().includes(portfolioSearch.toLowerCase())
   );
 
-  if (!viewingWallet) {
+    if (!viewingWallet) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: C.bg }}>
         <div
