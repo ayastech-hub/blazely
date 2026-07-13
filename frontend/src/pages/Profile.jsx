@@ -7,7 +7,7 @@ import { ConnectKitButton } from "connectkit";
 
 import { useProfileData } from "../hooks/useProfileData";
 import { C } from "../utils/designForProfile";
-import { shortenAddress, explorerAddressUrl, formatUsd } from "../utils/format";
+import { shortenAddress, explorerAddressUrl, formatUsd } from "../utils/formatProfile";
 
 import CreatedTokensTab from "../tabP/CreatedTokensTab";
 import PortfolioAssetsTab from "../tabP/PortfolioAssetsTab";
@@ -268,9 +268,9 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="flex items-stretch gap-3">
+            <div className="flex flex-wrap items-stretch gap-3">
               <div
-                className="px-4 py-3 rounded-xl min-w-[130px]"
+                className="px-4 py-3 rounded-xl flex-1 min-w-[140px] sm:flex-none"
                 style={{ backgroundColor: C.panel, border: `1px solid ${C.borderSoft}` }}
               >
                 <div className="flex items-center gap-1.5 mb-1">
@@ -287,7 +287,7 @@ const Profile = () => {
                 </span>
               </div>
               <div
-                className="px-4 py-3 rounded-xl min-w-[130px]"
+                className="px-4 py-3 rounded-xl flex-1 min-w-[140px] sm:flex-none"
                 style={{ backgroundColor: C.panel, border: `1px solid ${C.borderSoft}` }}
               >
                 <div className="flex items-center gap-1.5 mb-1">
@@ -302,7 +302,7 @@ const Profile = () => {
               </div>
               <button
                 onClick={() => setIsEditProfileOpen(true)}
-                className="px-4 rounded-xl text-sm font-medium flex items-center gap-2 transition-colors hover:bg-white/5 shrink-0"
+                className="px-4 py-3 sm:py-0 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors hover:bg-white/5 flex-1 min-w-[140px] sm:flex-none sm:min-w-0"
                 style={{ backgroundColor: C.panel, border: `1px solid ${C.borderSoft}`, color: C.mid }}
               >
                 <Edit3 size={14} />
