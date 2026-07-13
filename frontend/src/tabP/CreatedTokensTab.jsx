@@ -3,7 +3,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, Edit3, ArrowUpRight } from "lucide-react";
 import { C } from "../utils/designForProfile";
-import { shortenAddress, formatCompact } from "../utils/format";
+import { shortenAddress, formatCompact } from "../utils/formatProfile";
 
 const CreatedTokensTab = ({
   data = [],
