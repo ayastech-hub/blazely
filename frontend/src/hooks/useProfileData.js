@@ -1,100 +1,20 @@
 // src/hooks/useProfileData.js
-// src/hooks/useProfileData.js
 //
-// Single consolidated data source for the Profile page, mirroring the
-// Token Info Page's useTokenPageData.js pattern: one hook, parallel fetch
-// on mount, live via Supabase Realtime where relevant, one shape every
-// child component reads from as props. No child component fetches its
-// own copy of data this hook already owns.
+// Single consolidated data source for the connected user's own Profile
+// page. Built on the shared query functions in profileQueries.js. Owns all
+// write actions (unfollow, watchlist removal, updating user/token rows)
+// since those only make sense for the wallet's own profile.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import * as supabaseClient from "../lib/supabaseClient";
-import { resolveLogoUrl } from "../utils/format";
-
-const supabase = supabaseClient.supabase ?? supabaseClient.default ?? supabaseClient;
-
-const TX_PAGE_SIZE = 25;
-
-async function ensureUserRow(wallet) {
-  const { data, error } = await supabase
-    .from("users")
-    .upsert({ wallet }, { onConflict: "wallet" })
-    .select()
-    .maybeSingle();
-  if (error) throw error;
-  return data;
-}
-
-async function fetchCreatedTokens(wallet) {
-  const { data: tokens, error } = await supabase
-    .from("tokens")
-    .select("*")
-    .eq("creator_wallet", wallet)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  if (!tokens?.length) return [];
-
-  const addresses = tokens.map((t) => t.address);
-  const { data: metrics } = await supabase
-    .from("token_metrics_latest")
-    .select("address, price, price_usd, market_cap, volume_total, holder_count")
-    .in("address", addresses);
-
-  const metricsByAddress = new Map((metrics || []).map((m) => [m.address, m]));
-
-  return tokens.map((t) => {
-    const m = metricsByAddress.get(t.address);
-    return {
-      ...t,
-      logo: t.logo_path ? resolveLogoUrl(supabase, t.logo_path) : t.logo_url || null,
-      price_usd: m?.price_usd ?? null,
-      market_cap: m?.market_cap ?? null,
-      holder_count: m?.holder_count ?? t.holder_count ?? null,
-    };
-  });
-}
-
-async function fetchPortfolio(wallet) {
-  const { data: holdings, error } = await supabase
-    .from("token_holder_balances")
-    .select("token_address, balance")
-    .eq("wallet_address", wallet)
-    .gt("balance", 0);
-  if (error) throw error;
-  if (!holdings?.length) return [];
-
-  const addresses = holdings.map((h) => h.token_address);
-
-  const [{ data: tokens }, { data: metrics }, { data: changeRows }] = await Promise.all([
-    supabase.from("tokens").select("address, name, symbol, logo_path, logo_url").in("address", addresses),
-    supabase.from("token_metrics_latest").select("address, price_usd").in("address", addresses),
-    // Real 24h change now comes from token_metrics_with_change — no fabricated values.
-    supabase.from("token_metrics_with_change").select("token_address, change24h").in("token_address", addresses),
-  ]);
-
-  const tokensByAddress = new Map((tokens || []).map((t) => [t.address, t]));
-  const metricsByAddress = new Map((metrics || []).map((m) => [m.address, m]));
-  const changeByAddress = new Map((changeRows || []).map((c) => [c.token_address, c.change24h]));
-
-  return holdings
-    .map((h) => {
-      const token = tokensByAddress.get(h.token_address);
-      const priceUsd = metricsByAddress.get(h.token_address)?.price_usd ?? null;
-      const balance = Number(h.balance) || 0;
-      const valueUsd = priceUsd != null ? balance * Number(priceUsd) : null;
-      return {
-        token_address: h.token_address,
-        name: token?.name || "Unknown token",
-        symbol: token?.symbol || "—",
-        logo: token?.logo_path ? resolveLogoUrl(supabase, token.logo_path) : token?.logo_url || null,
-        balance,
-        price_usd: priceUsd,
-        value_usd: valueUsd,
-        change_24h: changeByAddress.has(h.token_address) ? changeByAddress.get(h.token_address) : null,
-      };
-    })
-    .sort((a, b) => (b.value_usd ?? 0) - (a.value_usd ?? 0));
-}
+import {
+  supabase,
+  TX_PAGE_SIZE,
+  ensureUserRow,
+  fetchCreatedTokens,
+  fetchPortfolio,
+  fetchTransactionsPage,
+} from "./profileQueries";
+import { resolveLogoUrl } from "../utils/formatProfile";
 
 // NOTE: user_follow's real column is `followed_wallet`, not `following_wallet`.
 async function fetchFollowing(wallet) {
@@ -123,32 +43,6 @@ async function fetchWatchlist(wallet) {
     .eq("user_wallet", wallet);
   if (error) throw error;
   return data || [];
-}
-
-async function fetchTransactionsPage(wallet, from) {
-  const { data, error } = await supabase
-    .from("transactions")
-    .select("tx_hash, token_address, user_address, type, token_amount, eth_amount, usd_value, created_at")
-    .eq("user_address", wallet)
-    .order("created_at", { ascending: false })
-    .range(from, from + TX_PAGE_SIZE - 1);
-  if (error) throw error;
-  const rows = data || [];
-  if (!rows.length) return rows;
-
-  // token_amount / eth_amount are stored as `text` (raw integer strings) to
-  // avoid precision loss on wei-scale values — resolve each token's decimals
-  // so the UI can convert correctly instead of guessing 18 for everything.
-  const addresses = [...new Set(rows.map((r) => r.token_address))];
-  const { data: tokenRows } = await supabase.from("tokens").select("address, symbol, decimals").in("address", addresses);
-  const decimalsByAddress = new Map((tokenRows || []).map((t) => [t.address, t.decimals ?? 18]));
-  const symbolByAddress = new Map((tokenRows || []).map((t) => [t.address, t.symbol]));
-
-  return rows.map((r) => ({
-    ...r,
-    token_decimals: decimalsByAddress.get(r.token_address) ?? 18,
-    token_symbol: symbolByAddress.get(r.token_address) || null,
-  }));
 }
 
 export function useProfileData(address) {
@@ -232,13 +126,10 @@ export function useProfileData(address) {
         { event: "INSERT", schema: "public", table: "transactions", filter: `user_address=eq.${wallet}` },
         async (payload) => {
           const row = payload.new;
-          const { data: tokenRow } = await supabase.from("tokens").select("decimals, symbol").eq("address", row.token_address).maybeSingle();
+          const { data: tokenRow } = await supabase.from("tokens").select("symbol").eq("address", row.token_address).maybeSingle();
           setTransactions((prev) => {
             if (prev.some((r) => r.tx_hash === row.tx_hash)) return prev;
-            return [
-              { ...row, token_decimals: tokenRow?.decimals ?? 18, token_symbol: tokenRow?.symbol ?? null },
-              ...prev,
-            ];
+            return [{ ...row, token_symbol: tokenRow?.symbol ?? null }, ...prev];
           });
         }
       )
