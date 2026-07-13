@@ -3,7 +3,7 @@ import React from "react";
 import { History, RefreshCw, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { C } from "../utils/designForProfile";
-import { shortenAddress, formatUnits, formatUsd, timeAgo, explorerTxUrl } from "../utils/format";
+import { shortenAddress, formatUnits, timeAgo, explorerTxUrl } from "../utils/formatProfile";
 
 const TransactionHistoryTab = ({
   transactions = [],
@@ -66,65 +66,68 @@ const TransactionHistoryTab = ({
           </div>
         ) : (
           <div className="overflow-y-auto max-h-[440px] pr-1 -mr-1">
-            <table className="w-full text-left table-auto border-collapse">
-              <thead
-                className="text-[11px] uppercase tracking-wide font-medium sticky top-0 z-10 border-b"
-                style={{ color: C.sub, backgroundColor: C.panelSoft, borderColor: C.borderSoft }}
-              >
-                <tr>
-                  <th className="py-2.5 px-2">Token</th>
-                  <th className="py-2.5 px-2">Type</th>
-                  <th className="py-2.5 px-2 text-right">Amount</th>
-                  <th className="py-2.5 px-2 text-right">Value</th>
-                  <th className="py-2.5 px-2">Tx</th>
-                  <th className="py-2.5 px-2 text-right">When</th>
-                </tr>
-              </thead>
-              <tbody style={{ color: C.mid }}>
-                {transactions.map((r) => (
-                  <tr key={r.tx_hash} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-3 px-2">
-                      <Link to={`/token/${r.token_address}`} className="font-medium text-sm" style={{ color: C.mid }}>
-                        {r.token_symbol || shortenAddress(r.token_address)}
-                      </Link>
-                    </td>
-                    <td className="py-3 px-2">
-                      <span
-                        className="px-2 py-0.5 text-[11px] font-medium rounded-full"
-                        style={
-                          r.type?.toLowerCase() === "buy"
-                            ? { backgroundColor: C.greenDim, color: C.green }
-                            : { backgroundColor: C.roseDim, color: C.rose }
-                        }
-                      >
-                        {r.type}
-                      </span>
-                    </td>
-                    <td className="py-3 px-2 text-right text-sm tabular-nums" style={{ color: C.bright }}>
-                      {formatUnits(r.token_amount, r.token_decimals ?? 18)}
-                    </td>
-                    <td className="py-3 px-2 text-right text-sm tabular-nums" style={{ color: C.bright }}>
-                      {r.usd_value != null ? formatUsd(r.usd_value) : `${formatUnits(r.eth_amount, 18)} ETH`}
-                    </td>
-                    <td className="py-3 px-2">
-                      <a
-                        href={explorerTxUrl(r.tx_hash)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-sm"
-                        style={{ color: C.sub }}
-                      >
-                        {shortenAddress(r.tx_hash)}
-                        <ArrowUpRight size={11} />
-                      </a>
-                    </td>
-                    <td className="py-3 px-2 text-right text-sm" style={{ color: C.sub }}>
-                      {timeAgo(r.created_at)}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px] text-left table-auto border-collapse">
+                <thead
+                  className="text-[11px] uppercase tracking-wide font-medium sticky top-0 z-10 border-b"
+                  style={{ color: C.sub, backgroundColor: C.panelSoft, borderColor: C.borderSoft }}
+                >
+                  <tr>
+                    <th className="py-2.5 px-2">Token</th>
+                    <th className="py-2.5 px-2">Type</th>
+                    <th className="py-2.5 px-2 text-right">Amount</th>
+                    <th className="py-2.5 px-2 text-right">Value</th>
+                    <th className="py-2.5 px-2">Tx</th>
+                    <th className="py-2.5 px-2 text-right">When</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody style={{ color: C.mid }}>
+                  {transactions.map((r) => (
+                    <tr key={r.tx_hash} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3 px-2">
+                        <Link to={`/token/${r.token_address}`} className="font-medium text-sm" style={{ color: C.mid }}>
+                          {r.token_symbol || shortenAddress(r.token_address)}
+                        </Link>
+                      </td>
+                      <td className="py-3 px-2">
+                        <span
+                          className="px-2 py-0.5 text-[11px] font-medium rounded-full"
+                          style={
+                            r.type?.toLowerCase() === "buy"
+                              ? { backgroundColor: C.greenDim, color: C.green }
+                              : { backgroundColor: C.roseDim, color: C.rose }
+                          }
+                        >
+                          {r.type}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 text-right text-sm tabular-nums" style={{ color: C.bright }}>
+                        {formatUnits(r.token_amount, 18)}
+                      </td>
+                      <td className="py-3 px-2 text-right text-sm tabular-nums" style={{ color: C.bright }}>
+                        {/* usd_value is never populated by the indexer today — ETH is the reliable value here. */}
+                        {formatUnits(r.eth_amount, 18)} ETH
+                      </td>
+                      <td className="py-3 px-2">
+                        <a
+                          href={explorerTxUrl(r.tx_hash)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-sm"
+                          style={{ color: C.sub }}
+                        >
+                          {shortenAddress(r.tx_hash)}
+                          <ArrowUpRight size={11} />
+                        </a>
+                      </td>
+                      <td className="py-3 px-2 text-right text-sm" style={{ color: C.sub }}>
+                        {timeAgo(r.created_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             <div className="flex items-center justify-center pt-5 shrink-0">
               {hasMore ? (
