@@ -10,7 +10,7 @@ import Bridge from "./pages/Bridge";
 import Leaderboard from "./pages/Leaderboard";
 import Profile from "./pages/Profile";
 import Locking from "./pages/Locking";
-import PublicProfile from "./components/PublicProfile";
+import PublicProfile from "./pages/PublicProfile";
 import Welcome from "./pages/Welcome";
 import { MaintenanceGuard } from "./components/MaintenanceGuard";
 
