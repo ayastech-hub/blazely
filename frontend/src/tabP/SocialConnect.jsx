@@ -1,7 +1,7 @@
 // src/tabP/SocialConnect.jsx
 import React, { useState, useEffect } from "react";
-import { Twitter, Send, Globe, Link2 } from "lucide-react";
-import { C } from "../utils/designforprofile.js";
+import { Twitter, Send, Globe } from "lucide-react";
+import { C } from "../utils/designForProfile";
 
 const FIELDS = [
   { key: "twitter", label: "Twitter / X", icon: Twitter, placeholder: "yourhandle" },
@@ -43,25 +43,12 @@ export const SocialConnect = ({ userRow, onUpdate, loading }) => {
   };
 
   return (
-    <div
-      className="mt-4 p-4 rounded-lg space-y-3 max-w-xl font-mono"
-      style={{ backgroundColor: C.panelAlt, border: `1px solid ${C.border}` }}
-    >
-      <div className="flex items-center gap-1.5 border-b pb-2" style={{ borderColor: C.border }}>
-        <Link2 size={12} style={{ color: C.teal }} />
-        <span className="text-[10px] font-bold tracking-wider uppercase" style={{ color: C.bright }}>
-          Social links
-        </span>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         {FIELDS.map((field) => (
-          <div key={field.key} className="flex flex-col gap-1">
-            <label
-              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide"
-              style={{ color: C.sub }}
-            >
-              <field.icon size={11} style={{ color: C.faint }} />
+          <div key={field.key} className="flex flex-col gap-1.5">
+            <label className="flex items-center gap-1.5 text-xs font-medium" style={{ color: C.sub }}>
+              <field.icon size={13} style={{ color: C.faint }} />
               {field.label}
             </label>
             <input
@@ -70,8 +57,8 @@ export const SocialConnect = ({ userRow, onUpdate, loading }) => {
               placeholder={field.placeholder}
               disabled={loading || saving}
               onChange={(e) => handleChange(field.key, e.target.value)}
-              className="px-2 py-1.5 text-xs rounded focus:outline-none"
-              style={{ backgroundColor: C.bg, border: `1px solid ${C.border}`, color: C.bright }}
+              className="px-3 py-2 text-sm rounded-lg focus:outline-none transition-colors"
+              style={{ backgroundColor: C.bg, border: `1px solid ${C.borderSoft}`, color: C.bright }}
             />
           </div>
         ))}
@@ -81,10 +68,10 @@ export const SocialConnect = ({ userRow, onUpdate, loading }) => {
         type="button"
         disabled={!dirty || loading || saving}
         onClick={handleSave}
-        className="w-full text-[10px] font-bold py-2 rounded transition-all uppercase tracking-wider disabled:opacity-40"
-        style={{ backgroundColor: dirty ? C.teal : C.panel, color: dirty ? C.bg : C.sub, border: `1px solid ${C.border}` }}
+        className="w-full text-sm font-medium py-2.5 rounded-lg transition-all disabled:opacity-40"
+        style={{ backgroundColor: dirty ? C.teal : C.panel, color: dirty ? C.bg : C.sub, border: `1px solid ${C.borderSoft}` }}
       >
-        {saving ? "Saving..." : "Save"}
+        {saving ? "Saving..." : "Save social links"}
       </button>
     </div>
   );
