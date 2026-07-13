@@ -3,7 +3,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { TrendingUp } from "lucide-react";
 import { C } from "../utils/designForProfile";
-import { formatTokenAmount, formatUsdPrice, formatUsd, formatPercent } from "../utils/format";
+import { formatTokenAmount, formatUsdPrice, formatUsd, formatPercent } from "../utils/formatProfile";
 
 const PortfolioAssetsTab = ({
   data = [],
@@ -50,7 +50,7 @@ const PortfolioAssetsTab = ({
           <button
             key={token.token_address}
             onClick={() => navigate(`/token/${token.token_address}`)}
-            className="grid grid-cols-3 items-center gap-3 p-3.5 rounded-xl w-full text-left transition-colors hover:bg-white/[0.02]"
+            className="flex flex-col sm:grid sm:grid-cols-3 items-stretch sm:items-center gap-2.5 sm:gap-3 p-3.5 rounded-xl w-full text-left transition-colors hover:bg-white/[0.02]"
             style={{ backgroundColor: C.panel, border: `1px solid ${C.borderSoft}` }}
           >
             <div className="flex items-center gap-3 min-w-0">
@@ -77,21 +77,21 @@ const PortfolioAssetsTab = ({
               </div>
             </div>
 
-            <div className="text-left min-w-0">
-              <span className="text-sm font-medium tabular-nums block truncate" style={{ color: C.bright }}>
+            <div className="flex sm:block items-center justify-between sm:justify-normal min-w-0 pl-[56px] sm:pl-0">
+              <span className="text-sm font-medium tabular-nums truncate" style={{ color: C.bright }}>
                 {formatTokenAmount(token.balance)}
               </span>
-              <span className="text-xs block truncate" style={{ color: C.sub }}>
+              <span className="text-xs truncate" style={{ color: C.sub }}>
                 {token.price_usd != null ? formatUsdPrice(token.price_usd) : "Price unavailable"}
               </span>
             </div>
 
-            <div className="text-right min-w-0">
-              <span className="text-sm font-semibold tabular-nums block truncate" style={{ color: C.bright }}>
+            <div className="flex sm:block items-center justify-between sm:justify-normal sm:text-right min-w-0 pl-[56px] sm:pl-0">
+              <span className="text-sm font-semibold tabular-nums truncate" style={{ color: C.bright }}>
                 {token.value_usd != null ? formatUsd(token.value_usd) : "—"}
               </span>
-              <span className="text-xs font-medium block" style={{ color: changeLabel ? changeColor : C.faint }}>
-                {changeLabel || "24h change unavailable"}
+              <span className="text-xs font-medium" style={{ color: changeLabel ? changeColor : C.faint }}>
+                {changeLabel || "24h unavailable"}
               </span>
             </div>
           </button>
