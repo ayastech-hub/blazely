@@ -6,7 +6,7 @@ import { getPublicUrlSafe } from "../api/supabaseTokens";
 
 /* -------------------- Telemetry Formatters -------------------- */
 
-function compactNumberShort(number, currency = "USD") {
+export function compactNumberShort(number, currency = "USD") {
   if (number == null) return "N/A";
 
   const n = Number(number);
@@ -28,7 +28,7 @@ function compactNumberShort(number, currency = "USD") {
   return currency === "USD" ? `$${value}${suffixes[i]}` : `${value}${suffixes[i]} ETH`;
 }
 
-const cardVariants = {
+export const cardVariants = {
   hidden: { opacity: 0, y: 8, filter: "blur(6px)" },
   visible: (i) => ({
     opacity: 1,
@@ -45,17 +45,42 @@ const cardVariants = {
 // Shake is expressed as a short, damped horizontal wobble — driven by
 // framer-motion's `animate` prop so it composes cleanly with the
 // entrance/hover transforms instead of fighting a CSS keyframe class.
-const shakeKeyframes = {
+export const shakeKeyframes = {
   x: [0, -3, 3, -3, 3, -1.5, 1.5, 0],
   transition: { duration: 0.45, ease: "easeInOut" },
 };
+
+/* -------------------- Shared logo resolution -------------------- */
+
+// Resolves a token's storage-backed logo path to a public URL. Shared by
+// the grid card and the list-table row so both stay in sync with a single
+// implementation.
+export function useResolvedLogo(token) {
+  const [logoSrc, setLogoSrc] = useState(token.logo || null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadLogo() {
+      if (!token.logo_path) return;
+      const url = await getPublicUrlSafe(token.logo_path);
+      if (mounted && url) setLogoSrc(url);
+    }
+
+    loadLogo();
+    return () => {
+      mounted = false;
+    };
+  }, [token.logo_path]);
+
+  return logoSrc;
+}
 
 /* -------------------- Glass primitives -------------------- */
 
 // Shared "liquid glass" shell: translucent frosted surface, a soft
 // specular highlight riding the top edge, and a faint ambient bloom.
-// Kept as a single source so grid/list variants never drift apart visually.
-function GlassSurface({ children, className = "", isNew, glowTint }) {
+export function GlassSurface({ children, className = "", isNew, glowTint }) {
   return (
     <div
       className={`relative overflow-hidden border transition-all duration-500 ${
@@ -69,7 +94,6 @@ function GlassSurface({ children, className = "", isNew, glowTint }) {
           : undefined,
       }}
     >
-      {/* top specular highlight — the "glass" glint */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
       <div className="pointer-events-none absolute -top-10 left-4 right-4 h-20 rounded-full bg-white/[0.05] blur-2xl" />
       <div className="relative z-10 h-full">{children}</div>
@@ -77,7 +101,33 @@ function GlassSurface({ children, className = "", isNew, glowTint }) {
   );
 }
 
-function SocialLink({ href, icon, label }) {
+export function TokenLogo({ token, logoSrc, size = "w-14 h-14", textSize = "text-xl" }) {
+  return (
+    <div
+      className={`${size} bg-black/40 border border-white/[0.08] rounded-xl flex items-center justify-center overflow-hidden shrink-0 backdrop-blur-md`}
+    >
+      {logoSrc ? (
+        <img
+          src={logoSrc}
+          alt={token.name}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+      ) : (
+        <span
+          className={`${textSize} font-light text-slate-500`}
+          style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+        >
+          {token.symbol?.charAt(0).toUpperCase() || "T"}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export function SocialLink({ href, icon, label }) {
   if (!href) return null;
   return (
     <a
@@ -93,7 +143,17 @@ function SocialLink({ href, icon, label }) {
   );
 }
 
-function MetricGroup({ label, value, currency }) {
+export function SocialLinks({ token }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <SocialLink href={token.website} icon={<Globe size={11} />} label="Website" />
+      <SocialLink href={token.twitter} icon={<AtSign size={11} />} label="Twitter" />
+      <SocialLink href={token.telegram} icon={<Send size={11} />} label="Telegram" />
+    </div>
+  );
+}
+
+export function MetricGroup({ label, value, currency }) {
   return (
     <div
       className="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.07] backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px]"
@@ -107,23 +167,20 @@ function MetricGroup({ label, value, currency }) {
   );
 }
 
-// UI-only placeholder chip for timeframe change. No data wiring yet —
+// UI-only placeholder for a timeframe change value. No data wiring yet —
 // intentionally rendered as a neutral dash until the metric is available.
-function ChangeChip({ label }) {
+export function ChangeValue({ className = "" }) {
   return (
-    <div
-      className="flex flex-col items-center justify-center gap-0.5 min-w-[46px] px-1.5 py-1 rounded-md bg-white/[0.03] border border-white/[0.06]"
+    <span
+      className={`text-[11px] text-slate-500 font-bold tabular-nums ${className}`}
       style={{ fontFamily: "'JetBrains Mono', monospace" }}
     >
-      <span className="text-[8px] text-slate-600 uppercase tracking-wider font-bold">
-        {label}
-      </span>
-      <span className="text-[10px] text-slate-500 font-bold tabular-nums">—</span>
-    </div>
+      —
+    </span>
   );
 }
 
-function CurveOrStatus({ token }) {
+export function CurveOrStatus({ token }) {
   if (token.graduated) {
     return (
       <div
@@ -156,128 +213,15 @@ function CurveOrStatus({ token }) {
   );
 }
 
-/* -------------------- Core Component -------------------- */
+/* -------------------- Core Component (grid card) -------------------- */
 
-export default function TokenCard({ token, index = 0, isNew = false, view = "grid" }) {
-  const [logoSrc, setLogoSrc] = useState(token.logo || null);
+export default function TokenCard({ token, index = 0, isNew = false }) {
+  const logoSrc = useResolvedLogo(token);
 
   const displayMarketcap = token.market_cap_eth ?? token.marketcap_eth ?? 0;
   const displayVolume = token.volume_eth ?? 0;
   const displayPrice = token.price_usd ?? null;
 
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadLogo() {
-      if (!token.logo_path) return;
-      const url = await getPublicUrlSafe(token.logo_path);
-      if (mounted && url) setLogoSrc(url);
-    }
-
-    loadLogo();
-    return () => {
-      mounted = false;
-    };
-  }, [token.logo_path]);
-
-  const Logo = ({ size = "w-14 h-14", textSize = "text-xl" }) => (
-    <div
-      className={`${size} bg-black/40 border border-white/[0.08] rounded-xl flex items-center justify-center overflow-hidden shrink-0 backdrop-blur-md`}
-    >
-      {logoSrc ? (
-        <img
-          src={logoSrc}
-          alt={token.name}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-          }}
-        />
-      ) : (
-        <span
-          className={`${textSize} font-light text-slate-500`}
-          style={{ fontFamily: "'Fraunces', Georgia, serif" }}
-        >
-          {token.symbol?.charAt(0).toUpperCase() || "T"}
-        </span>
-      )}
-    </div>
-  );
-
-  const Socials = () => (
-    <div className="flex items-center gap-1.5">
-      <SocialLink href={token.website} icon={<Globe size={11} />} label="Website" />
-      <SocialLink href={token.twitter} icon={<AtSign size={11} />} label="Twitter" />
-      <SocialLink href={token.telegram} icon={<Send size={11} />} label="Telegram" />
-    </div>
-  );
-
-  /* -------------------- List variant -------------------- */
-  if (view === "list") {
-    return (
-      <motion.div
-        variants={cardVariants}
-        initial="hidden"
-        animate={isNew ? { ...shakeKeyframes, opacity: 1, y: 0, filter: "blur(0px)" } : "visible"}
-        custom={index}
-        className="w-full"
-      >
-        <Link to={`/token/${token.address}`} className="block group">
-          <GlassSurface
-            isNew={isNew}
-            glowTint={isNew ? "rgba(150,214,205,0.08)" : undefined}
-            className="rounded-2xl px-4 py-3 flex items-center gap-4"
-          >
-            <Logo size="w-10 h-10" textSize="text-sm" />
-
-            <div className="min-w-0 w-[180px] shrink-0">
-              <h3
-                className="text-sm font-medium text-slate-200 truncate group-hover:text-white transition-colors"
-                style={{ fontFamily: "'Fraunces', Georgia, serif" }}
-              >
-                {token.name}
-              </h3>
-              <p
-                className="text-[10px] text-slate-500 font-bold uppercase tracking-wider truncate"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-              >
-                ${token.symbol ?? "—"}
-              </p>
-            </div>
-
-            <div
-              className="w-24 shrink-0 text-[11px] text-teal font-bold tabular-nums hidden sm:block"
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            >
-              {displayPrice !== null ? `$${Number(displayPrice).toFixed(8)}` : "—"}
-            </div>
-
-            <div className="hidden md:flex items-center gap-1.5 shrink-0">
-              <ChangeChip label="5M" />
-              <ChangeChip label="1H" />
-              <ChangeChip label="6H" />
-              <ChangeChip label="24H" />
-            </div>
-
-            <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-              <MetricGroup label="MCAP" value={displayMarketcap} currency="ETH" />
-              <MetricGroup label="VOL" value={displayVolume} currency="ETH" />
-            </div>
-
-            <div className="w-32 shrink-0 hidden lg:block">
-              <CurveOrStatus token={token} />
-            </div>
-
-            <div className="hidden xl:block shrink-0">
-              <Socials />
-            </div>
-          </GlassSurface>
-        </Link>
-      </motion.div>
-    );
-  }
-
-  /* -------------------- Grid variant (default) -------------------- */
   return (
     <motion.div
       variants={cardVariants}
@@ -294,7 +238,7 @@ export default function TokenCard({ token, index = 0, isNew = false, view = "gri
         >
           {/* Identity */}
           <div className="flex gap-3 items-start min-w-0 w-full mb-4">
-            <Logo />
+            <TokenLogo token={token} logoSrc={logoSrc} />
 
             <div className="min-w-0 flex-1">
               <h3
@@ -321,7 +265,7 @@ export default function TokenCard({ token, index = 0, isNew = false, view = "gri
               )}
 
               <div className="mt-2.5">
-                <Socials />
+                <SocialLinks token={token} />
               </div>
             </div>
           </div>
