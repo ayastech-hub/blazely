@@ -6,8 +6,6 @@ import { supabase } from "../lib/supabaseClient";
  * ---------------
  * Owns the entire "live feed" concern for the token list:
  *   - Supabase Realtime subscription on the `transactions` table (INSERT)
- *   - a one-time backfill fetch of the latest transaction as a baseline,
- *     so nothing that lands between page load and subscribe is lost
  *   - trade batching (150ms window) to avoid render storms
  *   - patching live price / last-trade data onto the token list
  *   - "mover" behavior: on a fresh buy, the token pulses (shake) — and is
@@ -15,10 +13,9 @@ import { supabase } from "../lib/supabaseClient";
  *     (the platform default). Any other sort is a deliberate user choice
  *     to stop the list moving underneath them, so we never reorder then.
  *
- * This replaces the previous bespoke WebSocket implementation. Realtime on
- * `transactions` is the same mechanism the Telegram Transaction Bot already
- * relies on, so the frontend and the bots now agree on one source of truth
- * instead of running two separate delivery paths for the same event.
+ * Realtime on `transactions` is the same mechanism the Telegram Transaction
+ * Bot already relies on, so the frontend and the bots agree on one source
+ * of truth instead of running two separate delivery paths for one event.
  *
  * @param {Object} params
  * @param {Array}  params.initialTokens - current page of tokens from the API/query layer
@@ -185,10 +182,8 @@ export function useTokenMovers({
       scheduleFlush();
     };
 
-    // Baseline: grab the latest existing transaction so we know where
-    // "new" starts. We don't replay history into the buffer — we just
-    // use it to confirm the connection sees real data — then subscribe
-    // for everything that lands from here forward.
+    // Best-effort warm-up ping so we know the table is reachable; not
+    // used to replay history, just a sanity check on connection setup.
     (async () => {
       try {
         await supabase
@@ -197,7 +192,7 @@ export function useTokenMovers({
           .order("id", { ascending: false })
           .limit(1);
       } catch {
-        // non-fatal — baseline fetch is a best-effort warm-up only
+        // non-fatal
       }
     })();
 
