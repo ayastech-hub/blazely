@@ -218,32 +218,33 @@ export default function Home() {
       <div className="pt-10 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full flex-1">
         <TrendingTokens />
 
-        <FilterBar
-          onSortChange={(s) => {
-            setSort(s);
-            setCurrentPage(1);
-            loadTokens(1, { sort: s, searchTerm, listedOnly });
-          }}
-          onSearchChange={(q) => {
-            setSearchTerm(q);
-            setCurrentPage(1);
-            loadTokens(1, { searchTerm: q, sort, listedOnly });
-          }}
-          onRefresh={() => loadTokens(currentPage)}
-          onListedToggle={(val) => {
-            const vb = Boolean(val);
-            setListedOnly(vb);
-            setCurrentPage(1);
-            loadTokens(1, { listedOnly: vb, sort, searchTerm });
-          }}
-          onPauseToggle={(v) => setPausedAll(v)}
-          onViewChange={setView}
-          initialSort={sort}
-          searchTerm={searchTerm}
-          listedOnly={listedOnly}
-          isPaused={pausedAll}
-          view={view}
-        />
+       <FilterBar
+  onSortChange={(s) => {
+    setSort(s);
+    setCurrentPage(1);
+    loadTokens(1, { sort: s, searchTerm, listedOnly });
+  }}
+  onSearchChange={(q) => {
+    setSearchTerm(q);
+    setCurrentPage(1);
+    loadTokens(1, { searchTerm: q, sort, listedOnly });
+  }}
+  onRefresh={() => loadTokens(currentPage)}
+  onListedToggle={(val) => {
+    const vb = Boolean(val);
+    setListedOnly(vb);
+    setCurrentPage(1);
+    loadTokens(1, { listedOnly: vb, sort, searchTerm });
+  }}
+  onPauseToggle={(v) => setPausedAll(v)}
+  onViewModeChange={setView}   {/* was onViewChange */}
+  initialSort={sort}
+  searchTerm={searchTerm}
+  listedOnly={listedOnly}
+  isPaused={pausedAll}
+  viewMode={view}              {/* was view */}
+/>
+         
 
         <div className="flex items-center gap-3 mb-4 mt-8 pb-2 border-b border-white/[0.08]">
           <div className="w-1.5 h-3.5 rounded-sm" style={{ backgroundColor: "#96d6cd" }} />
