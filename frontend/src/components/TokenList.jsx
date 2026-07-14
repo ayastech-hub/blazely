@@ -34,7 +34,9 @@ function TableHeader() {
       style={{ fontFamily: "'JetBrains Mono', monospace" }}
     >
       {LIST_COLUMNS.map((col) => (
-        <div key={col.key} className={col.className}>{col.label}</div>
+        <div key={col.key} className={col.className}>
+          {col.label}
+        </div>
       ))}
     </div>
   );
@@ -60,33 +62,62 @@ function TokenRow({ token, index, isNew }) {
         <div className="flex-1 min-w-0 flex items-center gap-3">
           <TokenLogo token={token} logoSrc={logoSrc} size="w-9 h-9" textSize="text-sm" />
           <div className="min-w-0">
-            <h3 className="text-sm font-medium text-slate-200 truncate group-hover:text-white transition-colors" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+            <h3
+              className="text-sm font-medium text-slate-200 truncate group-hover:text-white transition-colors"
+              style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+            >
               {token.name}
             </h3>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider truncate" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            <p
+              className="text-[10px] text-slate-500 font-bold uppercase tracking-wider truncate"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}
+            >
               ${token.symbol ?? "—"}
             </p>
           </div>
         </div>
 
-        <div className="hidden sm:flex w-24 shrink-0 justify-end text-teal text-[11px] font-bold tabular-nums" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <div
+          className="hidden sm:flex w-24 shrink-0 justify-end text-teal text-[11px] font-bold tabular-nums"
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        >
           {displayPrice !== null ? `$${Number(displayPrice).toFixed(8)}` : "—"}
         </div>
 
-        <div className="hidden md:flex w-12 shrink-0 justify-end"><ChangeValue /></div>
-        <div className="hidden md:flex w-12 shrink-0 justify-end"><ChangeValue /></div>
-        <div className="hidden md:flex w-12 shrink-0 justify-end"><ChangeValue /></div>
-        <div className="hidden md:flex w-12 shrink-0 justify-end"><ChangeValue /></div>
+        <div className="hidden md:flex w-12 shrink-0 justify-end">
+          <ChangeValue />
+        </div>
+        <div className="hidden md:flex w-12 shrink-0 justify-end">
+          <ChangeValue />
+        </div>
+        <div className="hidden md:flex w-12 shrink-0 justify-end">
+          <ChangeValue />
+        </div>
+        <div className="hidden md:flex w-12 shrink-0 justify-end">
+          <ChangeValue />
+        </div>
 
-        <div className="hidden lg:flex w-24 shrink-0 justify-end text-slate-300 text-[11px] font-bold tabular-nums" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <div
+          className="hidden lg:flex w-24 shrink-0 justify-end text-slate-300 text-[11px] font-bold tabular-nums"
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        >
           {compactNumberShort(displayMarketcap, "ETH")}
         </div>
-        <div className="hidden lg:flex w-24 shrink-0 justify-end text-slate-300 text-[11px] font-bold tabular-nums" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <div
+          className="hidden lg:flex w-24 shrink-0 justify-end text-slate-300 text-[11px] font-bold tabular-nums"
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        >
           {compactNumberShort(displayVolume, "ETH")}
         </div>
 
-        <div className="hidden xl:flex w-36 shrink-0"><CurveOrStatus token={token} /></div>
-        <div className="hidden xl:flex w-24 shrink-0 justify-end" onClick={(e) => e.stopPropagation()}>
+        <div className="hidden xl:flex w-36 shrink-0">
+          <CurveOrStatus token={token} />
+        </div>
+
+        <div
+          className="hidden xl:flex w-24 shrink-0 justify-end"
+          onClick={(e) => e.stopPropagation()}
+        >
           <SocialLinks token={token} />
         </div>
       </Link>
@@ -100,7 +131,12 @@ function TokenTable({ data }) {
       <TableHeader />
       <div>
         {data.map((token, index) => (
-          <TokenRow key={token.address || token.id || index} token={token} index={index} isNew={token.isNew} />
+          <TokenRow
+            key={token.address || token.id || index}
+            token={token}
+            index={index}
+            isNew={token.isNew}
+          />
         ))}
       </div>
     </GlassSurface>
@@ -127,5 +163,6 @@ export default function TokenList({ data = [], view = "grid" }) {
       </div>
     );
   }
+
   return view === "list" ? <TokenTable data={data} /> : <TokenGrid data={data} />;
 }
