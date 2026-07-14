@@ -237,13 +237,14 @@ export default function Home() {
     loadTokens(1, { listedOnly: vb, sort, searchTerm });
   }}
   onPauseToggle={(v) => setPausedAll(v)}
-  onViewModeChange={setView}   {/* was onViewChange */}
+  onViewModeChange={setView}
   initialSort={sort}
   searchTerm={searchTerm}
   listedOnly={listedOnly}
   isPaused={pausedAll}
-  viewMode={view}              {/* was view */}
+  viewMode={view}
 />
+    
          
 
         <div className="flex items-center gap-3 mb-4 mt-8 pb-2 border-b border-white/[0.08]">
