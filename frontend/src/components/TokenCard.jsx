@@ -30,21 +30,28 @@ export const cardVariants = {
   }),
 };
 
+// Shake is expressed as a short, damped horizontal wobble — driven by
+// framer-motion's `animate` prop so it composes cleanly with the
+// entrance/hover transforms instead of fighting a CSS keyframe class.
 export const shakeKeyframes = {
   x: [0, -3, 3, -3, 3, -1.5, 1.5, 0],
   transition: { duration: 0.45, ease: "easeInOut" },
 };
+
+/* -------------------- Shared logo resolution -------------------- */
 
 export function useResolvedLogo(token) {
   const [logoSrc, setLogoSrc] = useState(token.logo || null);
 
   useEffect(() => {
     let mounted = true;
+
     async function loadLogo() {
       if (!token.logo_path) return;
       const url = await getPublicUrlSafe(token.logo_path);
       if (mounted && url) setLogoSrc(url);
     }
+
     loadLogo();
     return () => {
       mounted = false;
@@ -53,6 +60,8 @@ export function useResolvedLogo(token) {
 
   return logoSrc;
 }
+
+/* -------------------- Glass primitives -------------------- */
 
 export function GlassSurface({ children, className = "", isNew, glowTint }) {
   return (
@@ -77,7 +86,9 @@ export function GlassSurface({ children, className = "", isNew, glowTint }) {
 
 export function TokenLogo({ token, logoSrc, size = "w-14 h-14", textSize = "text-xl" }) {
   return (
-    <div className={`${size} bg-black/40 border border-white/[0.08] rounded-xl flex items-center justify-center overflow-hidden shrink-0 backdrop-blur-md`}>
+    <div
+      className={`${size} bg-black/40 border border-white/[0.08] rounded-xl flex items-center justify-center overflow-hidden shrink-0 backdrop-blur-md`}
+    >
       {logoSrc ? (
         <img
           src={logoSrc}
@@ -88,7 +99,10 @@ export function TokenLogo({ token, logoSrc, size = "w-14 h-14", textSize = "text
           }}
         />
       ) : (
-        <span className={`${textSize} font-light text-slate-500`} style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+        <span
+          className={`${textSize} font-light text-slate-500`}
+          style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+        >
           {token.symbol?.charAt(0).toUpperCase() || "T"}
         </span>
       )}
@@ -99,7 +113,7 @@ export function TokenLogo({ token, logoSrc, size = "w-14 h-14", textSize = "text
 export function SocialLink({ href, icon, label }) {
   if (!href) return null;
   return (
-    
+    <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
@@ -124,16 +138,26 @@ export function SocialLinks({ token }) {
 
 export function MetricGroup({ label, value, currency }) {
   return (
-    <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.07] backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+    <div
+      className="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.07] backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px]"
+      style={{ fontFamily: "'JetBrains Mono', monospace" }}
+    >
       <span className="text-slate-500 uppercase font-bold tracking-wider">{label}</span>
-      <span className="text-slate-200 font-bold tabular-nums">{compactNumberShort(value, currency)}</span>
+      <span className="text-slate-200 font-bold tabular-nums">
+        {compactNumberShort(value, currency)}
+      </span>
     </div>
   );
 }
 
+// UI-only placeholder for a timeframe change value. No data wiring yet —
+// intentionally rendered as a neutral dash until the metric is available.
 export function ChangeValue({ className = "" }) {
   return (
-    <span className={`text-[11px] text-slate-500 font-bold tabular-nums ${className}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+    <span
+      className={`text-[11px] text-slate-500 font-bold tabular-nums ${className}`}
+      style={{ fontFamily: "'JetBrains Mono', monospace" }}
+    >
       —
     </span>
   );
@@ -142,7 +166,10 @@ export function ChangeValue({ className = "" }) {
 export function CurveOrStatus({ token }) {
   if (token.graduated) {
     return (
-      <div className="text-[9px] font-bold uppercase tracking-widest bg-teal/10 border border-teal/30 text-teal px-2.5 py-1 inline-block rounded-lg backdrop-blur-md" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+      <div
+        className="text-[9px] font-bold uppercase tracking-widest bg-teal/10 border border-teal/30 text-teal px-2.5 py-1 inline-block rounded-lg backdrop-blur-md"
+        style={{ fontFamily: "'JetBrains Mono', monospace" }}
+      >
         STATUS: GRADUATED
       </div>
     );
@@ -152,12 +179,18 @@ export function CurveOrStatus({ token }) {
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between font-bold text-[9px] text-slate-500 uppercase tracking-wider mb-1.5" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+      <div
+        className="flex items-center justify-between font-bold text-[9px] text-slate-500 uppercase tracking-wider mb-1.5"
+        style={{ fontFamily: "'JetBrains Mono', monospace" }}
+      >
         <span>CURVE_FILL</span>
         <span>{progress.toFixed(1)}%</span>
       </div>
       <div className="w-full h-1.5 bg-black/40 border border-white/[0.06] overflow-hidden rounded-full">
-        <div className="h-full bg-teal rounded-full shadow-[0_0_8px_rgba(150,214,205,0.5)]" style={{ width: `${progress}%` }} />
+        <div
+          className="h-full bg-teal rounded-full shadow-[0_0_8px_rgba(150,214,205,0.5)]"
+          style={{ width: `${progress}%` }}
+        />
       </div>
     </div>
   );
@@ -188,18 +221,31 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
         >
           <div className="flex gap-3 items-start min-w-0 w-full mb-4">
             <TokenLogo token={token} logoSrc={logoSrc} />
+
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-medium text-slate-200 truncate group-hover:text-white transition-colors leading-tight" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+              <h3
+                className="text-sm font-medium text-slate-200 truncate group-hover:text-white transition-colors leading-tight"
+                style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+              >
                 {token.name}
               </h3>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider truncate mt-0.5" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+
+              <p
+                className="text-[10px] text-slate-500 font-bold uppercase tracking-wider truncate mt-0.5"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              >
                 ${token.symbol ?? "—"}
               </p>
+
               {displayPrice !== null && (
-                <p className="text-[10px] text-teal font-bold mt-1" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                <p
+                  className="text-[10px] text-teal font-bold mt-1"
+                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                >
                   ${Number(displayPrice).toFixed(8)}
                 </p>
               )}
+
               <div className="mt-2.5">
                 <SocialLinks token={token} />
               </div>
