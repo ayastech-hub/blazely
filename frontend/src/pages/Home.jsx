@@ -1,20 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { supabase } from "../lib/supabaseClient";
+import React, { useState, useEffect } from "react";
 import FilterBar from "../components/FilterBar";
 import AIChatSupport from "../components/AIChatSupport";
 import TradeAlertsMarquee from "../components/TradeAlertsMarquee";
 import TrendingTokens from "../components/TrendingTokens";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Twitter,
-  Send,
-  BookOpen,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { buyEmitter } from "../utils/buyEmitter";
+import { ChevronLeft, ChevronRight, Twitter, Send, BookOpen } from "lucide-react";
 import TokenList from "../components/TokenList";
 import { fetchTokensFromSupabase } from "../api/supabaseTokens";
+import { useTokenMovers } from "../hooks/useTokenMovers";
 
 const TOKENS_PER_PAGE = 12;
 
@@ -53,12 +45,12 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
           aria-label="Previous page"
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className="px-3 py-1 rounded bg-slate-900 border border-slate-800 text-slate-400 text-xs font-bold uppercase disabled:opacity-30"
+          className="px-3 py-1 rounded bg-white/[0.04] border border-white/[0.08] text-slate-400 text-xs font-bold uppercase disabled:opacity-30"
         >
           <ChevronLeft className="w-3.5 h-3.5 inline-block" />
         </button>
 
-        <div className="text-[11px] font-mono text-slate-400 px-2.5 py-1 rounded bg-[#0b0f19]/40 border border-slate-900">
+        <div className="text-[11px] font-mono text-slate-400 px-2.5 py-1 rounded bg-white/[0.03] border border-white/[0.08]">
           PAGE <span className="font-bold text-[#96d6cd] px-0.5">{currentPage}</span> / {totalPages}
         </div>
 
@@ -66,7 +58,7 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
           aria-label="Next page"
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className="px-3 py-1 rounded bg-slate-900 border border-slate-800 text-slate-400 text-xs font-bold uppercase disabled:opacity-30"
+          className="px-3 py-1 rounded bg-white/[0.04] border border-white/[0.08] text-slate-400 text-xs font-bold uppercase disabled:opacity-30"
         >
           <ChevronRight className="w-3.5 h-3.5 inline-block" />
         </button>
@@ -81,7 +73,7 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
         aria-label="Previous page"
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="flex items-center justify-center w-7 h-7 rounded bg-slate-900 border border-slate-800 text-slate-400 disabled:opacity-30 transition-all hover:text-slate-200"
+        className="flex items-center justify-center w-7 h-7 rounded bg-white/[0.04] border border-white/[0.08] text-slate-400 disabled:opacity-30 transition-all hover:text-slate-200"
       >
         <ChevronLeft className="w-3.5 h-3.5" />
       </button>
@@ -93,22 +85,19 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
             aria-current={p === currentPage ? "page" : undefined}
             onClick={() => onPageChange(p)}
             style={{
-              backgroundColor: p === currentPage ? '#96d6cd' : '',
-              borderColor: p === currentPage ? '#96d6cd' : ''
+              backgroundColor: p === currentPage ? "#96d6cd" : "",
+              borderColor: p === currentPage ? "#96d6cd" : "",
             }}
             className={`w-7 h-7 rounded text-[11px] font-mono font-bold transition-all border ${
               p === currentPage
                 ? "text-[#030712] shadow-sm"
-                : "bg-slate-900/40 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                : "bg-white/[0.03] border-white/[0.08] text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]"
             }`}
           >
-            {String(p).padStart(2, '0')}
+            {String(p).padStart(2, "0")}
           </button>
         ) : (
-          <span
-            key={`${p}-${idx}`}
-            className="w-5 text-center font-mono text-slate-600 text-xs"
-          >
+          <span key={`${p}-${idx}`} className="w-5 text-center font-mono text-slate-600 text-xs">
             ...
           </span>
         )
@@ -118,7 +107,7 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
         aria-label="Next page"
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className="flex items-center justify-center w-7 h-7 rounded bg-slate-900 border border-slate-800 text-slate-400 disabled:opacity-30 transition-all hover:text-slate-200"
+        className="flex items-center justify-center w-7 h-7 rounded bg-white/[0.04] border border-white/[0.08] text-slate-400 disabled:opacity-30 transition-all hover:text-slate-200"
       >
         <ChevronRight className="w-3.5 h-3.5" />
       </button>
@@ -127,25 +116,23 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
 };
 
 const Footer = () => (
-  <footer className="mt-16 border-t border-slate-900 bg-[#0b0f19]/30 backdrop-blur-sm">
+  <footer className="mt-16 border-t border-white/[0.08] bg-white/[0.015] backdrop-blur-sm">
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
       <div className="flex items-center gap-3">
-        <div className="text-xs font-black uppercase tracking-widest" style={{ color: '#96d6cd' }}>
+        <div className="text-xs font-black uppercase tracking-widest" style={{ color: "#96d6cd" }}>
           Blazely
         </div>
-        <p className="text-[10px] font-mono text-slate-600">
-          &copy; {new Date().getFullYear()} CORE
-        </p>
+        <p className="text-[10px] font-mono text-slate-600">&copy; {new Date().getFullYear()} CORE</p>
       </div>
 
       <div className="flex items-center gap-1">
-        <a href="#" aria-label="Twitter" className="p-2 rounded text-slate-500 hover:text-[#96d6cd] hover:bg-slate-900/60 transition-colors">
+        <a href="#" aria-label="Twitter" className="p-2 rounded text-slate-500 hover:text-[#96d6cd] hover:bg-white/[0.06] transition-colors">
           <Twitter size={14} />
         </a>
-        <a href="#" aria-label="Telegram" className="p-2 rounded text-slate-500 hover:text-[#96d6cd] hover:bg-slate-900/60 transition-colors">
+        <a href="#" aria-label="Telegram" className="p-2 rounded text-slate-500 hover:text-[#96d6cd] hover:bg-white/[0.06] transition-colors">
           <Send size={14} />
         </a>
-        <a href="#" aria-label="Docs" className="p-2 rounded text-slate-500 hover:text-slate-200 hover:bg-slate-900/60 transition-colors">
+        <a href="#" aria-label="Docs" className="p-2 rounded text-slate-500 hover:text-slate-200 hover:bg-white/[0.06] transition-colors">
           <BookOpen size={14} />
         </a>
       </div>
@@ -168,11 +155,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [pausedAll, setPausedAll] = useState(false);
-  const pausedAllRef = useRef(pausedAll);
-
-  useEffect(() => {
-    pausedAllRef.current = pausedAll;
-  }, [pausedAll]);
+  const [view, setView] = useState("grid");
 
   const loadTokens = async (page = 1, overrides = {}) => {
     setLoading(true);
@@ -206,178 +189,19 @@ export default function Home() {
 
   useEffect(() => {
     loadTokens(currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
-  const tokensRef = useRef([]);
-  useEffect(() => {
-    tokensRef.current = tokens;
-  }, [tokens]);
-
-  useEffect(() => {
-    const BATCH_WINDOW_MS = 150;
-    const HEARTBEAT_INTERVAL_MS = 20_000;
-    let reconnectBackoff = 1000;
-    const MAX_BACKOFF = 30_000;
-
-    let WS_URL = import.meta.env.VITE_TRADES_WS || "ws://localhost:8080";
-    if (window.location.protocol === "https:" && WS_URL.startsWith("ws://")) {
-      WS_URL = WS_URL.replace("ws://", "wss://");
-    }
-
-    let ws = null;
-    let shouldStop = false;
-    const buffer = new Map();
-    let flushTimer = null;
-    let heartbeatTimer = null;
-    let lastPong = Date.now();
-
-    const updateTokensRef = (val) => (tokensRef.current = val);
-    const setTokensOnce = (updater) => {
-      setTokens((prev) => {
-        const next = typeof updater === "function" ? updater(prev) : updater;
-        updateTokensRef(next);
-        return next;
-      });
-    };
-
-    const flushBuffer = () => {
-      if (!buffer.size) return;
-      const updates = Array.from(buffer.values());
-      buffer.clear();
-      if (flushTimer) {
-        clearTimeout(flushTimer);
-        flushTimer = null;
-      }
-
-      requestAnimationFrame(() => {
-        const current = tokensRef.current || [];
-        if (!current.length) return;
-
-        const idxMap = new Map(current.map((t) => [String(t.address).toLowerCase(), t]));
-        const newArr = [...current];
-        const toFront = [];
-
-        for (const p of updates) {
-          const addr = (p.token || p.address || "").toLowerCase();
-          if (!addr) continue;
-          const existing = idxMap.get(addr);
-          if (!existing) continue;
-
-          const currentIdx = newArr.findIndex((t) => String(t.address).toLowerCase() === addr);
-          if (currentIdx === -1) continue;
-
-          const patched = { ...newArr[currentIdx] };
-          if (p.price != null) patched.price = p.price;
-          if (p.last_trade_at) patched.last_trade_at = p.last_trade_at;
-          patched._last_trade = { tx_hash: p.tx_hash, eth: p.eth, token_amount: p.token_amount };
-
-          newArr[currentIdx] = patched;
-          if (p.type === "buy" || p.isBuy) toFront.push({ addr, token: patched });
-        }
-
-        if (pausedAllRef.current) {
-          setTokensOnce(newArr);
-          return;
-        }
-
-        if (sort === "Last Trade") {
-          for (let i = toFront.length - 1; i >= 0; i--) {
-            const { addr } = toFront[i];
-            const pos = newArr.findIndex((t) => (t.address || "").toLowerCase() === addr);
-            if (pos > -1) {
-              const [tok] = newArr.splice(pos, 1);
-              newArr.unshift(tok);
-              buyEmitter.emit("buy", addr);
-            }
-          }
-        } else {
-          for (const { addr } of toFront) {
-            buyEmitter.emit("buy", addr);
-          }
-        }
-        setTokensOnce(newArr);
-      });
-    };
-
-    const scheduleFlush = () => {
-      if (flushTimer) return;
-      flushTimer = setTimeout(() => {
-        flushTimer = null;
-        flushBuffer();
-      }, BATCH_WINDOW_MS);
-    };
-
-    const startHeartbeat = () => {
-      lastPong = Date.now();
-      if (heartbeatTimer) clearInterval(heartbeatTimer);
-      heartbeatTimer = setInterval(() => {
-        try {
-          if (!ws || ws.readyState !== WebSocket.OPEN) return;
-          if (Date.now() - lastPong > HEARTBEAT_INTERVAL_MS * 2) {
-            ws.close();
-            return;
-          }
-          ws.send(JSON.stringify({ type: "ping", ts: Date.now() }));
-        } catch {}
-      }, HEARTBEAT_INTERVAL_MS);
-    };
-
-    const stopHeartbeat = () => {
-      if (heartbeatTimer) clearInterval(heartbeatTimer);
-      heartbeatTimer = null;
-    };
-
-    const connect = () => {
-      if (window.location.hostname !== "localhost" && WS_URL.includes("localhost")) {
-        console.warn("Skipping loopback socket stream engine connection on public production domains.");
-        return;
-      }
-      try {
-        ws = new WebSocket(WS_URL);
-      } catch (err) {
-        setTimeout(connect, reconnectBackoff);
-        return;
-      }
-      ws.addEventListener("open", () => {
-        reconnectBackoff = 1000;
-        startHeartbeat();
-      });
-      ws.addEventListener("message", (evt) => {
-        try {
-          const payload = JSON.parse(evt.data);
-          if (payload?.type === "pong") {
-            lastPong = Date.now();
-            return;
-          }
-          const { type, payload: inner } = payload.type ? payload : { type: "trade", payload };
-          if (type !== "trade" || !inner) return;
-          const addr = (inner.token || inner.address || "").toLowerCase();
-          if (!addr) return;
-          const bufferedData = buffer.get(addr) || { address: addr };
-          const newTradeData = { ...bufferedData, ...inner };
-          if (inner.type === "buy" || inner.isBuy) newTradeData.isBuy = true;
-          buffer.set(addr, newTradeData);
-          scheduleFlush();
-        } catch {}
-      });
-      ws.addEventListener("close", () => {
-        stopHeartbeat();
-        if (!shouldStop) setTimeout(connect, reconnectBackoff);
-        reconnectBackoff = Math.min(reconnectBackoff * 1.5, MAX_BACKOFF);
-      });
-      ws.addEventListener("error", () => {
-        try { ws.close(); } catch {}
-      });
-    };
-    connect();
-    return () => {
-      shouldStop = true;
-      try { ws.close(); } catch {}
-      if (flushTimer) clearTimeout(flushTimer);
-      stopHeartbeat();
-      buffer.clear();
-    };
-  }, [sort]);
+  // Everything related to the live trades feed — websocket lifecycle,
+  // "new buy" shake pulses, and "move to front" reordering while sorted
+  // by Last Trade — is fully owned by this hook. Home only supplies the
+  // current page of tokens and reads back the live-patched result.
+  const { tokens: liveTokens } = useTokenMovers({
+    initialTokens: tokens,
+    sort,
+    isPaused: pausedAll,
+    moverSortKey: "Last Trade",
+  });
 
   const totalPages = Math.max(1, Math.ceil(totalCount / TOKENS_PER_PAGE));
   const handlePageChange = (page) => {
@@ -393,7 +217,7 @@ export default function Home() {
 
       <div className="pt-10 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full flex-1">
         <TrendingTokens />
-        
+
         <FilterBar
           onSortChange={(s) => {
             setSort(s);
@@ -413,19 +237,21 @@ export default function Home() {
             loadTokens(1, { listedOnly: vb, sort, searchTerm });
           }}
           onPauseToggle={(v) => setPausedAll(v)}
+          onViewChange={setView}
           initialSort={sort}
           searchTerm={searchTerm}
           listedOnly={listedOnly}
           isPaused={pausedAll}
+          view={view}
         />
 
-        <div className="flex items-center gap-3 mb-4 mt-8 pb-2 border-b border-slate-900">
-          <div className="w-1.5 h-3.5 rounded-sm" style={{ backgroundColor: '#96d6cd' }} />
+        <div className="flex items-center gap-3 mb-4 mt-8 pb-2 border-b border-white/[0.08]">
+          <div className="w-1.5 h-3.5 rounded-sm" style={{ backgroundColor: "#96d6cd" }} />
           <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">
             Token Registry Feed
           </h2>
           <div className="flex-1" />
-          <div className="text-[10px] font-mono text-slate-500 bg-[#0b0f19]/60 border border-slate-900 px-2 py-0.5 rounded">
+          <div className="text-[10px] font-mono text-slate-500 bg-white/[0.03] border border-white/[0.08] px-2 py-0.5 rounded">
             COUNT: {totalCount} ACTIVE
           </div>
         </div>
@@ -433,11 +259,11 @@ export default function Home() {
         {loading ? (
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {Array.from({ length: TOKENS_PER_PAGE }).map((_, i) => (
-              <div key={`ph-${i}`} className="p-3 bg-[#0b0f19]/30 border border-slate-900/40 animate-pulse h-40" />
+              <div key={`ph-${i}`} className="p-3 bg-white/[0.02] border border-white/[0.06] animate-pulse h-40 rounded-2xl" />
             ))}
           </div>
         ) : (
-          <TokenList data={tokens} isPaused={pausedAll} />
+          <TokenList data={liveTokens} view={view} />
         )}
 
         <Pagination totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} isMobile={isMobile} />
