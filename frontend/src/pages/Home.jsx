@@ -20,10 +20,8 @@ function buildPageList(currentPage, totalPages, maxVisible = 5) {
   const half = Math.floor(maxVisible / 2);
   let start = Math.max(1, currentPage - half);
   let end = Math.min(totalPages, currentPage + half);
-  if (currentPage - half < 1)
-    end = Math.min(totalPages, end + (1 - (currentPage - half)));
-  if (currentPage + half > totalPages)
-    start = Math.max(1, start - (currentPage + half - totalPages));
+  if (currentPage - half < 1) end = Math.min(totalPages, end + (1 - (currentPage - half)));
+  if (currentPage + half > totalPages) start = Math.max(1, start - (currentPage + half - totalPages));
   if (start > 1) {
     pages.push(1);
     if (start > 2) pages.push("left-ellipsis");
@@ -155,7 +153,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [pausedAll, setPausedAll] = useState(false);
-  const [view, setView] = useState("grid");
+  const [viewMode, setViewMode] = useState("grid");
 
   const loadTokens = async (page = 1, overrides = {}) => {
     setLoading(true);
@@ -192,7 +190,7 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
-  // Everything related to the live trades feed — websocket lifecycle,
+  // Everything related to the live trades feed — Realtime subscription,
   // "new buy" shake pulses, and "move to front" reordering while sorted
   // by Last Trade — is fully owned by this hook. Home only supplies the
   // current page of tokens and reads back the live-patched result.
@@ -218,40 +216,36 @@ export default function Home() {
       <div className="pt-10 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full flex-1">
         <TrendingTokens />
 
-       <FilterBar
-  onSortChange={(s) => {
-    setSort(s);
-    setCurrentPage(1);
-    loadTokens(1, { sort: s, searchTerm, listedOnly });
-  }}
-  onSearchChange={(q) => {
-    setSearchTerm(q);
-    setCurrentPage(1);
-    loadTokens(1, { searchTerm: q, sort, listedOnly });
-  }}
-  onRefresh={() => loadTokens(currentPage)}
-  onListedToggle={(val) => {
-    const vb = Boolean(val);
-    setListedOnly(vb);
-    setCurrentPage(1);
-    loadTokens(1, { listedOnly: vb, sort, searchTerm });
-  }}
-  onPauseToggle={(v) => setPausedAll(v)}
-  onViewModeChange={setView}
-  initialSort={sort}
-  searchTerm={searchTerm}
-  listedOnly={listedOnly}
-  isPaused={pausedAll}
-  viewMode={view}
-/>
-    
-         
+        <FilterBar
+          onSortChange={(s) => {
+            setSort(s);
+            setCurrentPage(1);
+            loadTokens(1, { sort: s, searchTerm, listedOnly });
+          }}
+          onSearchChange={(q) => {
+            setSearchTerm(q);
+            setCurrentPage(1);
+            loadTokens(1, { searchTerm: q, sort, listedOnly });
+          }}
+          onRefresh={() => loadTokens(currentPage)}
+          onListedToggle={(val) => {
+            const vb = Boolean(val);
+            setListedOnly(vb);
+            setCurrentPage(1);
+            loadTokens(1, { listedOnly: vb, sort, searchTerm });
+          }}
+          onPauseToggle={(v) => setPausedAll(v)}
+          onViewModeChange={setViewMode}
+          initialSort={sort}
+          searchTerm={searchTerm}
+          listedOnly={listedOnly}
+          isPaused={pausedAll}
+          viewMode={viewMode}
+        />
 
         <div className="flex items-center gap-3 mb-4 mt-8 pb-2 border-b border-white/[0.08]">
           <div className="w-1.5 h-3.5 rounded-sm" style={{ backgroundColor: "#96d6cd" }} />
-          <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">
-            Token Registry Feed
-          </h2>
+          <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">Token Registry Feed</h2>
           <div className="flex-1" />
           <div className="text-[10px] font-mono text-slate-500 bg-white/[0.03] border border-white/[0.08] px-2 py-0.5 rounded">
             COUNT: {totalCount} ACTIVE
@@ -265,7 +259,7 @@ export default function Home() {
             ))}
           </div>
         ) : (
-          <TokenList data={liveTokens} view={view} />
+          <TokenList data={liveTokens} view={viewMode} />
         )}
 
         <Pagination totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} isMobile={isMobile} />
