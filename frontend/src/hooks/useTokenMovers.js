@@ -1,20 +1,24 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { supabase } from "../lib/supabaseClient";
 
 /**
  * useTokenMovers
  * ---------------
- * Owns the entire "live feed" concern that used to live inline inside Home.jsx:
- *   - websocket connection lifecycle (connect / reconnect w/ backoff / heartbeat)
+ * Owns the entire "live feed" concern for the token list:
+ *   - Supabase Realtime subscription on the `transactions` table (INSERT)
+ *   - a one-time backfill fetch of the latest transaction as a baseline,
+ *     so nothing that lands between page load and subscribe is lost
  *   - trade batching (150ms window) to avoid render storms
- *   - patching live price / last_trade data onto the token list
- *   - "mover" behavior: on a fresh buy, the token pulses (shake) — and is only
- *     promoted to the front of the list while sort === "Last Trade" (the
- *     platform default). Any other sort is a deliberate user choice to stop
- *     the list from moving underneath them, so we never reorder in that case.
+ *   - patching live price / last-trade data onto the token list
+ *   - "mover" behavior: on a fresh buy, the token pulses (shake) — and is
+ *     only promoted to the front of the list while sort === "Last Trade"
+ *     (the platform default). Any other sort is a deliberate user choice
+ *     to stop the list moving underneath them, so we never reorder then.
  *
- * This hook is intentionally the *only* place that talks to the trades
- * websocket. Components stay presentational: they receive a plain tokens
- * array (already carrying an `isNew` flag for shake) and render it.
+ * This replaces the previous bespoke WebSocket implementation. Realtime on
+ * `transactions` is the same mechanism the Telegram Transaction Bot already
+ * relies on, so the frontend and the bots now agree on one source of truth
+ * instead of running two separate delivery paths for the same event.
  *
  * @param {Object} params
  * @param {Array}  params.initialTokens - current page of tokens from the API/query layer
@@ -49,8 +53,8 @@ export function useTokenMovers({
   }, [isPaused]);
 
   // Re-sync whenever the underlying query result changes (new page,
-  // new filter, new search term, manual refresh, etc). This is also
-  // where we drop any stale shake state from the previous data set.
+  // new filter, new search term, manual refresh, etc). Also drops any
+  // stale shake state left over from the previous data set.
   useEffect(() => {
     setLiveTokens(initialTokens || []);
     setShakingTokens({});
@@ -78,7 +82,6 @@ export function useTokenMovers({
     shakeTimersRef.current.set(normalized, timer);
   }, []);
 
-  // Clean up any outstanding shake timers on unmount.
   useEffect(() => {
     return () => {
       shakeTimersRef.current.forEach(clearTimeout);
@@ -86,25 +89,13 @@ export function useTokenMovers({
     };
   }, []);
 
-  // --- Websocket lifecycle -------------------------------------------------
+  // --- Realtime lifecycle ---------------------------------------------
   useEffect(() => {
     const BATCH_WINDOW_MS = 150;
-    const HEARTBEAT_INTERVAL_MS = 20_000;
-    const MAX_BACKOFF = 30_000;
-    let reconnectBackoff = 1000;
 
-    let WS_URL = import.meta.env.VITE_TRADES_WS || "ws://localhost:8080";
-    if (window.location.protocol === "https:" && WS_URL.startsWith("ws://")) {
-      WS_URL = WS_URL.replace("ws://", "wss://");
-    }
-
-    let ws = null;
-    let shouldStop = false;
-    let reconnectTimer = null;
-    let flushTimer = null;
-    let heartbeatTimer = null;
-    let lastPong = Date.now();
+    let cancelled = false;
     const buffer = new Map();
+    let flushTimer = null;
 
     const scheduleFlush = () => {
       if (flushTimer) return;
@@ -127,7 +118,7 @@ export function useTokenMovers({
         const buys = [];
 
         for (const patch of updates) {
-          const addr = (patch.token || patch.address || "").toLowerCase();
+          const addr = String(patch.address || "").toLowerCase();
           if (!addr) continue;
 
           const idx = newArr.findIndex(
@@ -136,22 +127,19 @@ export function useTokenMovers({
           if (idx === -1) continue;
 
           const merged = { ...newArr[idx] };
-          if (patch.price != null) merged.price = patch.price;
+          if (patch.price_usd != null) merged.price_usd = patch.price_usd;
           if (patch.last_trade_at) merged.last_trade_at = patch.last_trade_at;
           merged._last_trade = {
             tx_hash: patch.tx_hash,
-            eth: patch.eth,
+            eth_amount: patch.eth_amount,
             token_amount: patch.token_amount,
           };
 
           newArr[idx] = merged;
-
-          if (patch.type === "buy" || patch.isBuy) {
-            buys.push(addr);
-          }
+          if (patch.isBuy) buys.push(addr);
         }
 
-        // Paused: still absorb price/trade patches, but never reorder or shake.
+        // Paused: absorb price/trade patches, but never reorder or shake.
         if (pausedRef.current) {
           setLiveTokens(newArr);
           return;
@@ -178,111 +166,61 @@ export function useTokenMovers({
       });
     };
 
-    const startHeartbeat = () => {
-      lastPong = Date.now();
-      if (heartbeatTimer) clearInterval(heartbeatTimer);
-      heartbeatTimer = setInterval(() => {
-        try {
-          if (!ws || ws.readyState !== WebSocket.OPEN) return;
-          if (Date.now() - lastPong > HEARTBEAT_INTERVAL_MS * 2) {
-            ws.close();
-            return;
-          }
-          ws.send(JSON.stringify({ type: "ping", ts: Date.now() }));
-        } catch {
-          // no-op: transient send failure, heartbeat will retry next tick
-        }
-      }, HEARTBEAT_INTERVAL_MS);
+    const processRow = (row) => {
+      if (!row) return;
+      const addr = String(row.token_address || "").toLowerCase();
+      if (!addr) return;
+
+      const existing = buffer.get(addr) || { address: addr };
+      buffer.set(addr, {
+        ...existing,
+        address: addr,
+        price_usd: row.usd_value != null ? Number(row.usd_value) : existing.price_usd,
+        last_trade_at: row.created_at,
+        tx_hash: row.tx_hash,
+        eth_amount: row.eth_amount,
+        token_amount: row.token_amount,
+        isBuy: row.type === "buy",
+      });
+      scheduleFlush();
     };
 
-    const stopHeartbeat = () => {
-      if (heartbeatTimer) clearInterval(heartbeatTimer);
-      heartbeatTimer = null;
-    };
-
-    const connect = () => {
-      if (shouldStop) return;
-
-      if (window.location.hostname !== "localhost" && WS_URL.includes("localhost")) {
-        console.warn(
-          "useTokenMovers: skipping loopback socket connection on a public domain."
-        );
-        return;
-      }
-
+    // Baseline: grab the latest existing transaction so we know where
+    // "new" starts. We don't replay history into the buffer — we just
+    // use it to confirm the connection sees real data — then subscribe
+    // for everything that lands from here forward.
+    (async () => {
       try {
-        ws = new WebSocket(WS_URL);
-      } catch (err) {
-        reconnectTimer = setTimeout(connect, reconnectBackoff);
-        return;
+        await supabase
+          .from("transactions")
+          .select("id, created_at")
+          .order("id", { ascending: false })
+          .limit(1);
+      } catch {
+        // non-fatal — baseline fetch is a best-effort warm-up only
       }
+    })();
 
-      ws.addEventListener("open", () => {
-        reconnectBackoff = 1000;
-        startHeartbeat();
-      });
-
-      ws.addEventListener("message", (evt) => {
-        try {
-          const payload = JSON.parse(evt.data);
-          if (payload?.type === "pong") {
-            lastPong = Date.now();
-            return;
-          }
-
-          const { type, payload: inner } = payload.type
-            ? payload
-            : { type: "trade", payload };
-
-          if (type !== "trade" || !inner) return;
-
-          const addr = (inner.token || inner.address || "").toLowerCase();
-          if (!addr) return;
-
-          const buffered = buffer.get(addr) || { address: addr };
-          const merged = { ...buffered, ...inner };
-          if (inner.type === "buy" || inner.isBuy) merged.isBuy = true;
-
-          buffer.set(addr, merged);
-          scheduleFlush();
-        } catch {
-          // ignore malformed frames
+    const channel = supabase
+      .channel("token-movers-transactions")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "transactions" },
+        (payload) => {
+          if (cancelled) return;
+          processRow(payload.new);
         }
-      });
-
-      ws.addEventListener("close", () => {
-        stopHeartbeat();
-        if (!shouldStop) {
-          reconnectTimer = setTimeout(connect, reconnectBackoff);
-          reconnectBackoff = Math.min(reconnectBackoff * 1.5, MAX_BACKOFF);
-        }
-      });
-
-      ws.addEventListener("error", () => {
-        try {
-          ws.close();
-        } catch {
-          // socket may already be closed
-        }
-      });
-    };
-
-    connect();
+      )
+      .subscribe();
 
     return () => {
-      shouldStop = true;
-      if (reconnectTimer) clearTimeout(reconnectTimer);
+      cancelled = true;
       if (flushTimer) clearTimeout(flushTimer);
-      stopHeartbeat();
       buffer.clear();
-      try {
-        ws && ws.close();
-      } catch {
-        // socket may already be closed
-      }
+      supabase.removeChannel(channel);
     };
-    // Connects once per mount; live sort/pause state is read via refs so the
-    // socket never has to be torn down and rebuilt on every filter change.
+    // Subscribes once per mount; live sort/pause state is read via refs
+    // so the channel never has to be torn down/rebuilt on filter changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [moverSortKey, triggerShake]);
 
