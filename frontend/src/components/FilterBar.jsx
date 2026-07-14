@@ -29,8 +29,15 @@ const useClickOutside = (ref, handler) => {
   }, [ref, handler]);
 };
 
-/* ---------- DESKTOP PORTAL DROPDOWN ---------- */
-const DesktopDropdown = ({ options, selectedValue, onSelect, label, children, width = 180 }) => {
+/* ---------- DESKTOP PORTAL DROPDOWN REFACTOR ---------- */
+const DesktopDropdown = ({
+  options,
+  selectedValue,
+  onSelect,
+  label,
+  children,
+  width = 180,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef(null);
   const containerRef = useRef(null);
@@ -76,14 +83,11 @@ const DesktopDropdown = ({ options, selectedValue, onSelect, label, children, wi
         </div>
         <span className="text-slate-200 font-bold uppercase">{selectedValue}</span>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-150 ${
-            isOpen ? "rotate-180 text-slate-300" : ""
-          }`}
+          className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-150 ${isOpen ? "rotate-180 text-slate-300" : ""}`}
         />
       </button>
 
-      {portalRoot &&
-        isOpen &&
+      {portalRoot && isOpen &&
         createPortal(
           <AnimatePresence>
             <motion.div
@@ -130,20 +134,22 @@ const DesktopDropdown = ({ options, selectedValue, onSelect, label, children, wi
   );
 };
 
-/* ---------- VIEW MODE TOGGLE (grid / list) — desktop only ---------- */
-const ViewModeToggle = ({ viewMode, onChange }) => (
-  <div className="hidden md:flex items-center gap-0.5 p-0.5 bg-white/[0.04] backdrop-blur-md border border-white/[0.08] rounded">
+/* ---------- VIEW TOGGLE (grid / list) ---------- */
+const ViewToggle = ({ view, onChange, className = "" }) => (
+  <div
+    className={`flex items-center gap-0.5 p-0.5 bg-white/[0.04] backdrop-blur-md border border-white/[0.08] rounded ${className}`}
+  >
     <button
       type="button"
       onClick={() => onChange("grid")}
-      aria-pressed={viewMode === "grid"}
+      aria-pressed={view === "grid"}
       aria-label="Grid view"
       style={{
-        backgroundColor: viewMode === "grid" ? "#96d6cd" : "",
-        color: viewMode === "grid" ? "#030712" : "",
+        backgroundColor: view === "grid" ? "#96d6cd" : "",
+        color: view === "grid" ? "#030712" : "",
       }}
       className={`h-8 w-8 flex items-center justify-center rounded transition-all ${
-        viewMode === "grid" ? "font-bold" : "text-slate-400 hover:text-slate-200"
+        view === "grid" ? "font-bold" : "text-slate-400 hover:text-slate-200"
       }`}
     >
       <LayoutGrid className="w-3.5 h-3.5" />
@@ -151,14 +157,14 @@ const ViewModeToggle = ({ viewMode, onChange }) => (
     <button
       type="button"
       onClick={() => onChange("list")}
-      aria-pressed={viewMode === "list"}
+      aria-pressed={view === "list"}
       aria-label="List view"
       style={{
-        backgroundColor: viewMode === "list" ? "#96d6cd" : "",
-        color: viewMode === "list" ? "#030712" : "",
+        backgroundColor: view === "list" ? "#96d6cd" : "",
+        color: view === "list" ? "#030712" : "",
       }}
       className={`h-8 w-8 flex items-center justify-center rounded transition-all ${
-        viewMode === "list" ? "font-bold" : "text-slate-400 hover:text-slate-200"
+        view === "list" ? "font-bold" : "text-slate-400 hover:text-slate-200"
       }`}
     >
       <Rows3 className="w-3.5 h-3.5" />
@@ -173,12 +179,12 @@ export default function FilterBar({
   onRefresh,
   onListedToggle,
   onPauseToggle,
-  onViewModeChange,
+  onViewChange,
   searchTerm = "",
   listedOnly = false,
   isPaused = false,
   initialSort = "Last Trade",
-  viewMode = "grid",
+  view = "grid",
 }) {
   const sorts = ["Marketcap", "Last Trade", "Recently Listed", "24h Volume"];
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -192,6 +198,7 @@ export default function FilterBar({
 
   return (
     <div className="w-full flex items-center gap-2 mb-4 bg-white/[0.02] backdrop-blur-md p-2 border border-white/[0.07] rounded box-border">
+
       {/* 1. Global Input Matrix System */}
       <div className="relative flex-1 md:flex-none md:w-72 group">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600 group-focus-within:text-slate-400 transition-colors" />
@@ -214,7 +221,12 @@ export default function FilterBar({
 
       {/* 2. Desktop Mode Controls Row View */}
       <div className="hidden md:flex items-center gap-1.5 flex-1 justify-start">
-        <DesktopDropdown options={sorts} selectedValue={initialSort} onSelect={onSortChange} label="Sort">
+        <DesktopDropdown
+          options={sorts}
+          selectedValue={initialSort}
+          onSelect={onSortChange}
+          label="Sort"
+        >
           <ListFilter className="w-3.5 h-3.5 text-slate-500" />
         </DesktopDropdown>
 
@@ -241,17 +253,13 @@ export default function FilterBar({
               : "bg-white/[0.04] backdrop-blur-md border-white/[0.08] text-slate-400 hover:text-slate-200"
           }`}
         >
-          <div
-            className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center transition-all ${
-              listedOnly ? "border-[#96d6cd] bg-[#96d6cd]/10" : "border-slate-700 bg-black/30"
-            }`}
-          >
+          <div className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center transition-all ${listedOnly ? "border-[#96d6cd] bg-[#96d6cd]/10" : "border-slate-700 bg-black/30"}`}>
             {listedOnly && <Check className="w-2.5 h-2.5 text-[#96d6cd] stroke-[3]" />}
           </div>
           <span className="uppercase text-[10px] tracking-wider">GRADUATED ONLY</span>
         </button>
 
-        <ViewModeToggle viewMode={viewMode} onChange={onViewModeChange} />
+        <ViewToggle view={view} onChange={onViewChange} />
       </div>
 
       {/* Desktop Inline Static Refresh Pin */}
@@ -263,8 +271,10 @@ export default function FilterBar({
         <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#96d6cd]" : ""}`} />
       </button>
 
-      {/* 3. MOBILE INTERFACE EXPANSION CONTROLS BAR — unchanged: two buttons only */}
+      {/* 3. MOBILE INTERFACE EXPANSION CONTROLS BAR */}
       <div className="flex md:hidden items-center gap-1.5">
+        <ViewToggle view={view} onChange={onViewChange} />
+
         <button
           type="button"
           onClick={() => setMobileMenuOpen(true)}
@@ -287,6 +297,7 @@ export default function FilterBar({
       <AnimatePresence>
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-[99999] md:hidden flex flex-col justify-end">
+            {/* Opaque Ambient Background */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -295,6 +306,7 @@ export default function FilterBar({
               className="absolute inset-0 bg-[#030712]/80 backdrop-blur-sm"
             />
 
+            {/* Bottom Form Sheet Container */}
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
@@ -302,6 +314,7 @@ export default function FilterBar({
               transition={{ type: "spring", damping: 25, stiffness: 220 }}
               className="relative w-full bg-[#070a14]/90 backdrop-blur-2xl border-t border-white/[0.08] rounded-t-2xl p-5 font-mono select-none flex flex-col max-h-[85vh] overflow-y-auto"
             >
+              {/* Drawer Top Handle Indicators */}
               <div className="flex items-center justify-between pb-3 mb-5 border-b border-white/[0.08]">
                 <div className="flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-widest">
                   <SlidersHorizontal size={13} className="text-[#96d6cd]" />
@@ -315,12 +328,11 @@ export default function FilterBar({
                 </button>
               </div>
 
+              {/* Action Parameter Matrix Stack */}
               <div className="space-y-6">
-                {/* Section A: Sort */}
+                {/* Section A: Selection Layout Order */}
                 <div className="space-y-2">
-                  <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                    Metrics Sorting Layout
-                  </label>
+                  <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Metrics Sorting Layout</label>
                   <div className="grid grid-cols-2 gap-2">
                     {sorts.map((option) => {
                       const isSelected = initialSort === option;
@@ -342,41 +354,12 @@ export default function FilterBar({
                   </div>
                 </div>
 
-                {/* Section A.2: Layout (grid / list) — lives here on mobile so the top bar stays uncluttered */}
+                {/* Section B: Functional Runtime States */}
                 <div className="space-y-2">
-                  <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                    Display Layout
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => onViewModeChange("grid")}
-                      className={`py-3 px-3 rounded border flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider transition-all ${
-                        viewMode === "grid"
-                          ? "bg-[#96d6cd]/5 border-[#96d6cd] text-[#96d6cd]"
-                          : "bg-white/[0.03] border-white/[0.08] text-slate-400"
-                      }`}
-                    >
-                      <LayoutGrid size={13} /> Grid
-                    </button>
-                    <button
-                      onClick={() => onViewModeChange("list")}
-                      className={`py-3 px-3 rounded border flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider transition-all ${
-                        viewMode === "list"
-                          ? "bg-[#96d6cd]/5 border-[#96d6cd] text-[#96d6cd]"
-                          : "bg-white/[0.03] border-white/[0.08] text-slate-400"
-                      }`}
-                    >
-                      <Rows3 size={13} /> List
-                    </button>
-                  </div>
-                </div>
-
-                {/* Section B: Runtime toggles */}
-                <div className="space-y-2">
-                  <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                    Data Control Filters
-                  </label>
+                  <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Data Control Filters</label>
                   <div className="flex flex-col gap-2.5">
+
+                    {/* Live Stream Controller Toggle */}
                     <button
                       onClick={() => onPauseToggle(!isPaused)}
                       className={`w-full py-3.5 px-4 rounded border text-left text-[11px] font-bold uppercase tracking-wider flex items-center justify-between transition-all ${
@@ -392,6 +375,7 @@ export default function FilterBar({
                       <span className="text-[10px] opacity-40">{isPaused ? "[ACTIVE]" : "[OFF]"}</span>
                     </button>
 
+                    {/* Graduation Filter */}
                     <button
                       onClick={() => onListedToggle(!listedOnly)}
                       className={`w-full py-3.5 px-4 rounded border text-left text-[11px] font-bold uppercase tracking-wider flex items-center justify-between transition-all ${
@@ -401,21 +385,19 @@ export default function FilterBar({
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <div
-                          className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
-                            listedOnly ? "border-[#96d6cd]" : "border-slate-800"
-                          }`}
-                        >
+                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${listedOnly ? "border-[#96d6cd]" : "border-slate-800"}`}>
                           {listedOnly && <Check size={10} className="stroke-[3]" />}
                         </div>
                         <span>Show Graduated Only</span>
                       </div>
                       <span className="text-[10px] opacity-40">{listedOnly ? "[ACTIVE]" : "[OFF]"}</span>
                     </button>
+
                   </div>
                 </div>
               </div>
 
+              {/* Execution Layer Core */}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
