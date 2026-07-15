@@ -13,6 +13,10 @@ import {
   Rows3,
 } from "lucide-react";
 
+/* Shared with Navbar.jsx / TokenCard.jsx / TrendingTokens.jsx — keep in sync */
+const ACCENT = "#96d6cd";
+const NESTED_FILL = "bg-white/[0.04] border border-white/[0.08]";
+
 const useClickOutside = (ref, handler) => {
   useEffect(() => {
     if (!ref) return;
@@ -52,6 +56,44 @@ function useBodyPortalRoot(id) {
 
   return node;
 }
+
+/* ---------- SWITCH ----------
+   A track + thumb, used two ways:
+   - <Switch> is a standalone interactive control (its own <button>) for
+     compact desktop chips.
+   - <SwitchTrack> is the presentational half only (no button), for the
+     mobile drawer where the *whole row* is the tap target — nesting a
+     <button> inside another <button> there would be invalid HTML. */
+const SwitchTrack = ({ checked, activeColor = ACCENT, size = "md" }) => {
+  const dims = size === "sm" ? { w: 32, h: 18, thumb: 14, pad: 2 } : { w: 40, h: 22, thumb: 18, pad: 2 };
+  const travel = dims.w - dims.pad * 2 - dims.thumb;
+  return (
+    <span
+      className="relative inline-flex shrink-0 items-center rounded-full transition-colors duration-200"
+      style={{ width: dims.w, height: dims.h, backgroundColor: checked ? activeColor : "rgba(255,255,255,0.1)" }}
+    >
+      <motion.span
+        className="inline-block rounded-full bg-[#030712]"
+        style={{ width: dims.thumb, height: dims.thumb, marginLeft: dims.pad }}
+        animate={{ x: checked ? travel : 0 }}
+        transition={{ type: "spring", stiffness: 500, damping: 32 }}
+      />
+    </span>
+  );
+};
+
+const Switch = ({ checked, onChange, activeColor = ACCENT, label, size = "md" }) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    aria-label={label}
+    onClick={() => onChange(!checked)}
+    className="shrink-0"
+  >
+    <SwitchTrack checked={checked} activeColor={activeColor} size={size} />
+  </button>
+);
 
 /* ---------- DESKTOP PORTAL DROPDOWN ---------- */
 const DesktopDropdown = ({ options, selectedValue, onSelect, label, children, width = 180 }) => {
@@ -104,13 +146,13 @@ const DesktopDropdown = ({ options, selectedValue, onSelect, label, children, wi
         ref={triggerRef}
         onClick={() => setIsOpen((p) => !p)}
         style={{ borderColor: isOpen ? "#96d6cd40" : "" }}
-        className="h-9 flex items-center justify-between gap-2 px-3 bg-white/[0.04] backdrop-blur-md border border-white/[0.08] rounded text-xs font-mono tracking-wide hover:bg-white/[0.07] hover:text-slate-200 transition-all"
+        className={`h-9 flex items-center justify-between gap-2 px-3 rounded text-xs tracking-wide hover:bg-white/[0.07] hover:text-slate-200 transition-all ${NESTED_FILL}`}
       >
         <div className="flex items-center gap-1.5 opacity-70">
           {children}
-          <span className="uppercase text-[10px]">{label}:</span>
+          <span className="text-[11px]">{label}</span>
         </div>
-        <span className="text-slate-200 font-bold uppercase">{selectedValue}</span>
+        <span className="text-slate-200 font-semibold">{selectedValue}</span>
         <ChevronDown
           className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-150 ${
             isOpen ? "rotate-180 text-slate-300" : ""
@@ -135,7 +177,7 @@ const DesktopDropdown = ({ options, selectedValue, onSelect, label, children, wi
                 zIndex: 99999,
               }}
             >
-              <div className="bg-[#030712]/95 backdrop-blur-xl border border-white/[0.08] rounded shadow-2xl overflow-hidden p-1 space-y-0.5">
+              <div className="bg-[#0b0f19]/95 backdrop-blur-2xl backdrop-saturate-[1.6] border border-white/[0.08] rounded-xl shadow-2xl overflow-hidden p-1 space-y-0.5">
                 {options.map((option) => {
                   const isSelected = selectedValue === option;
                   return (
@@ -145,11 +187,9 @@ const DesktopDropdown = ({ options, selectedValue, onSelect, label, children, wi
                         onSelect(option);
                         setIsOpen(false);
                       }}
-                      style={{ color: isSelected ? "#96d6cd" : "" }}
-                      className={`w-full text-left px-3 py-2 text-[10px] font-mono uppercase rounded flex items-center justify-between transition-colors ${
-                        isSelected
-                          ? "bg-white/[0.06] font-bold"
-                          : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
+                      style={{ color: isSelected ? ACCENT : "" }}
+                      className={`w-full text-left px-3 py-2 text-[12px] rounded-lg flex items-center justify-between transition-colors ${
+                        isSelected ? "bg-white/[0.06] font-semibold" : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
                       }`}
                     >
                       <span>{option}</span>
@@ -168,14 +208,14 @@ const DesktopDropdown = ({ options, selectedValue, onSelect, label, children, wi
 
 /* ---------- VIEW MODE TOGGLE (grid / list) — desktop only ---------- */
 const ViewModeToggle = ({ viewMode, onChange }) => (
-  <div className="hidden md:flex items-center gap-0.5 p-0.5 bg-white/[0.04] backdrop-blur-md border border-white/[0.08] rounded">
+  <div className={`hidden md:flex items-center gap-0.5 p-0.5 rounded ${NESTED_FILL}`}>
     <button
       type="button"
       onClick={() => onChange("grid")}
       aria-pressed={viewMode === "grid"}
       aria-label="Grid view"
       style={{
-        backgroundColor: viewMode === "grid" ? "#96d6cd" : "",
+        backgroundColor: viewMode === "grid" ? ACCENT : "",
         color: viewMode === "grid" ? "#030712" : "",
       }}
       className={`h-8 w-8 flex items-center justify-center rounded transition-all ${
@@ -190,7 +230,7 @@ const ViewModeToggle = ({ viewMode, onChange }) => (
       aria-pressed={viewMode === "list"}
       aria-label="List view"
       style={{
-        backgroundColor: viewMode === "list" ? "#96d6cd" : "",
+        backgroundColor: viewMode === "list" ? ACCENT : "",
         color: viewMode === "list" ? "#030712" : "",
       }}
       className={`h-8 w-8 flex items-center justify-center rounded transition-all ${
@@ -221,6 +261,8 @@ export default function FilterBar({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const drawerPortalRoot = useBodyPortalRoot("mobile-drawer-portal-root");
 
+  const isLive = !isPaused;
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await onRefresh();
@@ -244,12 +286,12 @@ export default function FilterBar({
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 220 }}
-            className="relative w-full bg-[#070a14]/90 backdrop-blur-2xl border-t border-white/[0.08] rounded-t-2xl p-5 font-mono select-none flex flex-col max-h-[85vh] overflow-y-auto"
+            className="relative w-full bg-[#0b0f19]/95 backdrop-blur-2xl backdrop-saturate-[1.6] border-t border-white/[0.08] rounded-t-[24px] p-5 select-none flex flex-col max-h-[85vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between pb-3 mb-5 border-b border-white/[0.08]">
-              <div className="flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-widest">
-                <SlidersHorizontal size={13} className="text-[#96d6cd]" />
-                <span>Terminal Filter Deck</span>
+              <div className="flex items-center gap-2 text-slate-200 font-semibold text-sm">
+                <SlidersHorizontal size={15} style={{ color: ACCENT }} />
+                <span>Filters</span>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
@@ -262,9 +304,7 @@ export default function FilterBar({
             <div className="space-y-6">
               {/* Section A: Sort */}
               <div className="space-y-2">
-                <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                  Metrics Sorting Layout
-                </label>
+                <label className="text-[11px] text-slate-500 font-semibold">Sort by</label>
                 <div className="grid grid-cols-2 gap-2">
                   {sorts.map((option) => {
                     const isSelected = initialSort === option;
@@ -272,14 +312,12 @@ export default function FilterBar({
                       <button
                         key={option}
                         onClick={() => onSortChange(option)}
-                        className={`py-3 px-3 rounded border text-left text-[11px] font-bold uppercase tracking-wider flex items-center justify-between transition-all ${
-                          isSelected
-                            ? "bg-[#96d6cd]/5 border-[#96d6cd] text-[#96d6cd]"
-                            : "bg-white/[0.03] border-white/[0.08] text-slate-400"
+                        className={`py-3 px-3 rounded-xl border text-left text-[12px] font-medium flex items-center justify-between transition-all ${
+                          isSelected ? "bg-[#96d6cd]/10 border-[#96d6cd]/50 text-[#96d6cd]" : "bg-white/[0.03] border-white/[0.08] text-slate-400"
                         }`}
                       >
                         <span>{option}</span>
-                        {isSelected && <Check size={12} className="stroke-[3]" />}
+                        {isSelected && <Check size={13} className="stroke-[3]" />}
                       </button>
                     );
                   })}
@@ -288,84 +326,77 @@ export default function FilterBar({
 
               {/* Section A.2: Layout (grid / list) */}
               <div className="space-y-2">
-                <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                  Display Layout
-                </label>
+                <label className="text-[11px] text-slate-500 font-semibold">Layout</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => onViewModeChange("grid")}
-                    className={`py-3 px-3 rounded border flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider transition-all ${
-                      viewMode === "grid"
-                        ? "bg-[#96d6cd]/5 border-[#96d6cd] text-[#96d6cd]"
-                        : "bg-white/[0.03] border-white/[0.08] text-slate-400"
+                    className={`py-3 px-3 rounded-xl border flex items-center justify-center gap-2 text-[12px] font-medium transition-all ${
+                      viewMode === "grid" ? "bg-[#96d6cd]/10 border-[#96d6cd]/50 text-[#96d6cd]" : "bg-white/[0.03] border-white/[0.08] text-slate-400"
                     }`}
                   >
-                    <LayoutGrid size={13} /> Grid
+                    <LayoutGrid size={14} /> Grid
                   </button>
                   <button
                     onClick={() => onViewModeChange("list")}
-                    className={`py-3 px-3 rounded border flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider transition-all ${
-                      viewMode === "list"
-                        ? "bg-[#96d6cd]/5 border-[#96d6cd] text-[#96d6cd]"
-                        : "bg-white/[0.03] border-white/[0.08] text-slate-400"
+                    className={`py-3 px-3 rounded-xl border flex items-center justify-center gap-2 text-[12px] font-medium transition-all ${
+                      viewMode === "list" ? "bg-[#96d6cd]/10 border-[#96d6cd]/50 text-[#96d6cd]" : "bg-white/[0.03] border-white/[0.08] text-slate-400"
                     }`}
                   >
-                    <Rows3 size={13} /> List
+                    <Rows3 size={14} /> List
                   </button>
                 </div>
               </div>
 
-              {/* Section B: Runtime toggles */}
-              <div className="space-y-2">
-                <label className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                  Data Control Filters
-                </label>
-                <div className="flex flex-col gap-2.5">
-                  <button
-                    onClick={() => onPauseToggle(!isPaused)}
-                    className={`w-full py-3.5 px-4 rounded border text-left text-[11px] font-bold uppercase tracking-wider flex items-center justify-between transition-all ${
-                      isPaused
-                        ? "bg-[#ffaa44]/5 border-[#ffaa44]/40 text-[#ffaa44]"
-                        : "bg-white/[0.03] border-white/[0.08] text-slate-400"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-2 h-2 rounded-full ${isPaused ? "bg-[#ffaa44] animate-pulse" : "bg-slate-700"}`} />
-                      <span>{isPaused ? "Live Streaming Suspended" : "Pause Realtime Stream"}</span>
-                    </div>
-                    <span className="text-[10px] opacity-40">{isPaused ? "[ACTIVE]" : "[OFF]"}</span>
-                  </button>
+              {/* Section B: Live data — a real settings list. Each row IS
+                  the tap target (role="switch" on the row itself), so the
+                  switch inside is presentational only — avoids nesting a
+                  <button> inside a <button>. */}
+              <div className="space-y-1">
+                <label className="text-[11px] text-slate-500 font-semibold">Live data</label>
 
-                  <button
-                    onClick={() => onListedToggle(!listedOnly)}
-                    className={`w-full py-3.5 px-4 rounded border text-left text-[11px] font-bold uppercase tracking-wider flex items-center justify-between transition-all ${
-                      listedOnly
-                        ? "bg-[#96d6cd]/5 border-[#96d6cd]/40 text-[#96d6cd]"
-                        : "bg-white/[0.03] border-white/[0.08] text-slate-400"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
-                          listedOnly ? "border-[#96d6cd]" : "border-slate-800"
-                        }`}
-                      >
-                        {listedOnly && <Check size={10} className="stroke-[3]" />}
-                      </div>
-                      <span>Show Graduated Only</span>
-                    </div>
-                    <span className="text-[10px] opacity-40">{listedOnly ? "[ACTIVE]" : "[OFF]"}</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isLive}
+                  onClick={() => onPauseToggle(isLive)}
+                  className={`w-full py-3 px-3.5 rounded-xl border flex items-center justify-between transition-all ${NESTED_FILL} ${
+                    isLive ? "border-[#96d6cd]/30" : ""
+                  }`}
+                >
+                  <div className="text-left">
+                    <p className="text-[13px] font-medium text-slate-200">Live updates</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      {isLive ? "Streaming new trades in real time" : "Feed is paused"}
+                    </p>
+                  </div>
+                  <SwitchTrack checked={isLive} />
+                </button>
+
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={listedOnly}
+                  onClick={() => onListedToggle(!listedOnly)}
+                  className={`w-full py-3 px-3.5 rounded-xl border flex items-center justify-between transition-all ${NESTED_FILL} ${
+                    listedOnly ? "border-[#96d6cd]/30" : ""
+                  }`}
+                >
+                  <div className="text-left">
+                    <p className="text-[13px] font-medium text-slate-200">Graduated only</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Hide tokens still on the bonding curve</p>
+                  </div>
+                  <SwitchTrack checked={listedOnly} />
+                </button>
               </div>
             </div>
 
             <button
               type="button"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full mt-8 bg-[#96d6cd] hover:bg-[#83c0b7] text-[#030712] font-black text-xs uppercase tracking-widest py-3.5 rounded-xl text-center transition-all active:scale-[0.99]"
+              className="w-full mt-8 text-[#030712] font-bold text-sm py-3.5 rounded-xl text-center transition-all active:scale-[0.99]"
+              style={{ backgroundColor: ACCENT }}
             >
-              Apply Directives
+              Apply
             </button>
           </motion.div>
         </div>
@@ -374,16 +405,16 @@ export default function FilterBar({
   );
 
   return (
-    <div className="w-full flex items-center gap-2 mb-4 bg-white/[0.02] backdrop-blur-md p-2 border border-white/[0.07] rounded box-border">
-      {/* 1. Global Input Matrix System */}
+    <div className={`w-full flex items-center gap-2 mb-4 p-2 rounded-xl ${NESTED_FILL}`}>
+      {/* 1. Search */}
       <div className="relative flex-1 md:flex-none md:w-72 group">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600 group-focus-within:text-slate-400 transition-colors" />
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="SEARCH BY IDENTIFIER / ADDR..."
-          className="w-full h-9 pl-9 pr-8 bg-white/[0.04] backdrop-blur-md border border-white/[0.08] rounded text-[11px] font-mono text-slate-200 placeholder-slate-600 focus:border-white/[0.16] outline-none transition-all uppercase tracking-wider"
+          placeholder="Search by name or address"
+          className="w-full h-9 pl-9 pr-8 bg-black/20 border border-white/[0.08] rounded-lg text-[13px] text-slate-200 placeholder-slate-600 focus:border-white/[0.2] outline-none transition-all"
         />
         {searchTerm && (
           <button
@@ -395,63 +426,46 @@ export default function FilterBar({
         )}
       </div>
 
-      {/* 2. Desktop Mode Controls Row View */}
+      {/* 2. Desktop controls */}
       <div className="hidden md:flex items-center gap-1.5 flex-1 justify-start">
         <DesktopDropdown options={sorts} selectedValue={initialSort} onSelect={onSortChange} label="Sort">
           <ListFilter className="w-3.5 h-3.5 text-slate-500" />
         </DesktopDropdown>
 
-        <button
-          onClick={() => onPauseToggle(!isPaused)}
-          style={{ borderColor: isPaused ? "#ffaa4430" : "" }}
-          className={`h-9 flex items-center gap-2 px-3 rounded text-xs font-mono tracking-wide border transition-all ${
-            isPaused
-              ? "bg-[#ffaa44]/5 text-[#ffaa44] font-bold"
-              : "bg-white/[0.04] backdrop-blur-md border-white/[0.08] text-slate-400 hover:text-slate-200"
-          }`}
-        >
-          <div className={`w-1.5 h-1.5 rounded-full ${isPaused ? "bg-[#ffaa44] animate-pulse" : "bg-slate-700"}`} />
-          <span className="uppercase text-[10px]">{isPaused ? "LIVE PAUSED" : "PAUSE STREAM"}</span>
-        </button>
+        {/* Live updates — compact switch chip */}
+        <div className={`h-9 flex items-center gap-2.5 pl-3 pr-2.5 rounded ${NESTED_FILL}`}>
+          <span className="text-[11px] text-slate-300 whitespace-nowrap">Live updates</span>
+          <Switch checked={isLive} onChange={(v) => onPauseToggle(!v)} label="Toggle live updates" size="sm" />
+        </div>
 
-        <button
-          type="button"
-          onClick={() => onListedToggle(!listedOnly)}
-          style={{ borderColor: listedOnly ? "#96d6cd50" : "" }}
-          className={`h-9 flex items-center gap-2.5 px-3 rounded text-xs font-mono tracking-wide border select-none transition-all ${
-            listedOnly
-              ? "bg-[#96d6cd]/5 text-[#96d6cd] font-bold"
-              : "bg-white/[0.04] backdrop-blur-md border-white/[0.08] text-slate-400 hover:text-slate-200"
-          }`}
-        >
-          <div
-            className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center transition-all ${
-              listedOnly ? "border-[#96d6cd] bg-[#96d6cd]/10" : "border-slate-700 bg-black/30"
-            }`}
-          >
-            {listedOnly && <Check className="w-2.5 h-2.5 text-[#96d6cd] stroke-[3]" />}
-          </div>
-          <span className="uppercase text-[10px] tracking-wider">GRADUATED ONLY</span>
-        </button>
+        {/* Graduated only — compact switch chip */}
+        <div className={`h-9 flex items-center gap-2.5 pl-3 pr-2.5 rounded ${NESTED_FILL}`}>
+          <span className="text-[11px] text-slate-300 whitespace-nowrap">Graduated only</span>
+          <Switch checked={listedOnly} onChange={onListedToggle} label="Toggle graduated only" size="sm" />
+        </div>
 
         <ViewModeToggle viewMode={viewMode} onChange={onViewModeChange} />
       </div>
 
-      {/* Desktop Inline Static Refresh Pin */}
+      {/* Desktop refresh */}
       <button
         onClick={handleRefresh}
         disabled={isRefreshing}
-        className="hidden md:flex h-9 w-9 items-center justify-center rounded bg-white/[0.04] backdrop-blur-md border border-white/[0.08] text-slate-500 hover:text-slate-200 disabled:opacity-30 transition-all flex-shrink-0"
+        className={`hidden md:flex h-9 w-9 items-center justify-center rounded text-slate-500 hover:text-slate-200 disabled:opacity-30 transition-all flex-shrink-0 ${NESTED_FILL}`}
       >
-        <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#96d6cd]" : ""}`} />
+        <RefreshCw
+          className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+          style={{ color: isRefreshing ? ACCENT : undefined }}
+        />
       </button>
 
-      {/* 3. MOBILE INTERFACE EXPANSION CONTROLS BAR */}
+      {/* 3. Mobile controls */}
       <div className="flex md:hidden items-center gap-1.5">
         <button
           type="button"
           onClick={() => setMobileMenuOpen(true)}
-          className="h-9 px-3 flex items-center gap-2 bg-white/[0.04] backdrop-blur-md border border-white/[0.08] rounded font-mono text-[11px] text-[#96d6cd] font-bold uppercase tracking-wider"
+          className={`h-9 px-3 flex items-center gap-2 rounded text-[12px] font-semibold ${NESTED_FILL}`}
+          style={{ color: ACCENT }}
         >
           <SlidersHorizontal size={14} />
           <span>Filters</span>
@@ -460,9 +474,9 @@ export default function FilterBar({
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="h-9 w-9 flex items-center justify-center rounded bg-white/[0.04] backdrop-blur-md border border-white/[0.08] text-slate-400"
+          className={`h-9 w-9 flex items-center justify-center rounded text-slate-400 ${NESTED_FILL}`}
         >
-          <RefreshCw size={14} className={isRefreshing ? "animate-spin text-[#96d6cd]" : ""} />
+          <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} style={{ color: isRefreshing ? ACCENT : undefined }} />
         </button>
       </div>
 
