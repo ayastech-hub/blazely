@@ -136,7 +136,7 @@ export default function TradeAlertsMarquee({
                   </span>
 
                   
-                    href={`${etherscanBase}/tx/${alert.tx_hash}`}
+                   <a href={`${etherscanBase}/tx/${alert.tx_hash}`}
                     target="_blank"
                     rel="noreferrer"
                     className="text-slate-600 hover:text-slate-300 font-bold transition-colors border-l border-white/[0.08] pl-1.5 ml-0.5 text-[10px]"
