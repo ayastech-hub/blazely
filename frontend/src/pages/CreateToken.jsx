@@ -19,6 +19,16 @@
  *      this component — we don't block the success screen on that, we just optionally
  *      show a "finalizing" indicator via a lightweight Supabase Realtime subscription.
  *
+ * UI-ONLY ADDITION (this revision):
+ *
+ *   The "Advanced Configuration" block (fee receiver, buy/sell tax, creator vault/vesting,
+ *   sniper protection, whitelist) is presentational only. It is deliberately NOT wired into
+ *   `prepareMetadata`, `handleDeploy`, or the contract call — there is no backend/contract
+ *   support for these yet. All state for it lives in the single `advanced` object below,
+ *   clearly separated from the real submission state, so it's obvious what's live vs. UI
+ *   scaffold when the backend/contract work lands. Search for "ADVANCED CONFIG" to find
+ *   every piece of it.
+ *
  * BUGS FIXED vs. the previous version of this file (kept here as a maintenance changelog —
  * delete this comment block once the team has read it):
  *
@@ -64,6 +74,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAccount, useBalance, useChainId, useSwitchChain } from "wagmi";
 import { BrowserProvider } from "ethers";
 import { ethers } from "ethers";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   UploadCloud,
   Copy,
@@ -72,9 +83,17 @@ import {
   X,
   Loader2,
   CheckCircle,
+  ChevronDown,
+  Droplets,
+  Percent,
+  Lock,
+  ShieldAlert,
+  Users,
+  SlidersHorizontal,
 } from "lucide-react";
 import { ConnectKitButton } from "connectkit";
 import { createClient } from "@supabase/supabase-js";
+import { GlassSurface } from "../components/TokenCard";
 
 // ---------------------------------------------------------------------------------
 // Environment / configuration
@@ -131,6 +150,27 @@ const P0_ETH_PER_TOKEN = 0.000000001;
 const TOKENS_PER_ETH = 1 / P0_ETH_PER_TOKEN;
 
 // ---------------------------------------------------------------------------------
+// ADVANCED CONFIG — UI-only constants (no backend/contract support yet)
+// ---------------------------------------------------------------------------------
+const MAX_TAX_PERCENT = 4;
+
+const SHORT_DURATION_PRESETS = [
+  { key: "1h", label: "1 Hour" },
+  { key: "1d", label: "1 Day" },
+  { key: "1mo", label: "1 Month" },
+  { key: "infinity", label: "Infinity" },
+  { key: "custom", label: "Custom" },
+];
+
+const VESTING_DURATION_PRESETS = [
+  { key: "1mo", label: "1 Month" },
+  { key: "3mo", label: "3 Months" },
+  { key: "6mo", label: "6 Months" },
+  { key: "1y", label: "1 Year" },
+  { key: "custom", label: "Custom" },
+];
+
+// ---------------------------------------------------------------------------------
 // Error message helper
 // ---------------------------------------------------------------------------------
 function decodeContractError(err, contractInterface) {
@@ -177,7 +217,8 @@ function decodeContractError(err, contractInterface) {
 }
 
 // ---------------------------------------------------------------------------------
-// Reusable form field
+// Reusable form field — restyled to the glass system (translucent surface, soft
+// border, teal focus/error states) but same props/behavior as before.
 // ---------------------------------------------------------------------------------
 const Field = ({ label, isError, maxLength, value = "", isTextarea, ...rest }) => {
   const Comp = isTextarea ? "textarea" : "input";
@@ -195,19 +236,19 @@ const Field = ({ label, isError, maxLength, value = "", isTextarea, ...rest }) =
         {...rest}
         value={value}
         maxLength={maxLength}
-        className={`w-full p-2 bg-[#030712] text-slate-200 border rounded-none font-mono text-xs focus:outline-none focus:border-slate-700 ${
-          isError ? "border-rose-500" : "border-slate-900"
+        className={`w-full p-2.5 bg-black/30 backdrop-blur-md text-slate-200 border rounded-lg font-mono text-xs focus:outline-none transition-colors ${
+          isError ? "border-rose-500/60 focus:border-rose-500" : "border-white/[0.08] focus:border-teal/40"
         }`}
       />
-      {isError && <span className="text-rose-500 text-[10px] mt-0.5">{isError}</span>}
+      {isError && <span className="text-rose-400 text-[10px] mt-1">{isError}</span>}
     </div>
   );
 };
 
 // ---------------------------------------------------------------------------------
-// Initial buy section — now a PURE display component. All validation lives in the parent
-// (`ethValidation`), passed down as `errorMessage`, so there is exactly one place that decides
-// whether an ETH amount is valid — fixing the "two validations can disagree" bug.
+// Initial buy section — PURE display component. All validation lives in the parent
+// (`ethValidation`), passed down as `errorMessage`, so there is exactly one place that
+// decides whether an ETH amount is valid.
 // ---------------------------------------------------------------------------------
 const InitialBuySection = ({ ethAmount, setEthAmount, walletBalance, errorMessage }) => {
   const balance = Number(walletBalance || 0);
@@ -229,15 +270,13 @@ const InitialBuySection = ({ ethAmount, setEthAmount, walletBalance, errorMessag
   }, [ethAmount]);
 
   return (
-    <div className="p-3 bg-[#0b0f19]/40 border border-slate-900 font-mono text-[11px]">
-      <div className="flex flex-wrap justify-between items-center gap-1 mb-2">
-        <span className="text-slate-400 font-bold uppercase tracking-wider">
-          💰 Initial Buy (optional)
-        </span>
+    <GlassSurface className="rounded-2xl p-3.5">
+      <div className="flex flex-wrap justify-between items-center gap-1 mb-2.5 font-mono text-[11px]">
+        <span className="text-slate-400 font-bold uppercase tracking-wider">Initial Buy (optional)</span>
         <span className="text-slate-500">BAL: {balance.toFixed(6)} ETH</span>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2 mb-2">
+      <div className="flex flex-col sm:flex-row gap-2 mb-2.5">
         <input
           type="number"
           inputMode="decimal"
@@ -246,17 +285,17 @@ const InitialBuySection = ({ ethAmount, setEthAmount, walletBalance, errorMessag
           min="0"
           value={ethAmount}
           onChange={(e) => setEthAmount(e.target.value)}
-          className={`w-full p-2 bg-[#030712] text-slate-200 border rounded-none text-xs focus:outline-none ${
-            errorMessage ? "border-rose-500" : "border-slate-900"
+          className={`w-full p-2.5 bg-black/30 backdrop-blur-md text-slate-200 border rounded-lg text-xs focus:outline-none transition-colors ${
+            errorMessage ? "border-rose-500/60" : "border-white/[0.08] focus:border-teal/40"
           }`}
         />
-        <div className="flex gap-1 shrink-0">
+        <div className="flex gap-1.5 shrink-0">
           {[0.25, 0.5, 1].map((p) => (
             <button
               key={p}
               type="button"
               onClick={() => setPercent(p)}
-              className="flex-1 sm:flex-initial p-2 bg-[#030712] border border-slate-900 text-slate-400 hover:text-slate-200 text-[10px]"
+              className="flex-1 sm:flex-initial px-2.5 py-2 bg-white/[0.03] backdrop-blur-md border border-white/[0.08] rounded-lg text-slate-400 hover:text-teal hover:border-teal/30 hover:bg-white/[0.06] transition-all text-[10px] font-bold"
             >
               {p === 1 ? "MAX" : `${p * 100}%`}
             </button>
@@ -264,9 +303,9 @@ const InitialBuySection = ({ ethAmount, setEthAmount, walletBalance, errorMessag
         </div>
       </div>
 
-      {errorMessage && <p className="text-rose-500 mb-2 text-[10px]">{errorMessage}</p>}
+      {errorMessage && <p className="text-rose-400 mb-2 text-[10px] font-mono">{errorMessage}</p>}
 
-      <div className="bg-[#030712]/60 border border-slate-900/60 p-2 text-[10px] text-slate-400 space-y-1">
+      <div className="bg-black/20 border border-white/[0.06] rounded-xl p-2.5 text-[10px] text-slate-400 space-y-1 font-mono">
         <div className="flex justify-between">
           <span>EST_TOKENS:</span>
           <span className="text-slate-200 font-bold">{stats.tokens}</span>
@@ -280,9 +319,137 @@ const InitialBuySection = ({ ethAmount, setEthAmount, walletBalance, errorMessag
           slightly lower.
         </div>
       </div>
-    </div>
+    </GlassSurface>
   );
 };
+
+// ---------------------------------------------------------------------------------
+// ADVANCED CONFIG — shared presentational pieces (UI only, see file-level note above)
+// ---------------------------------------------------------------------------------
+
+const ToggleSwitch = ({ checked, onChange, label }) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    aria-label={label}
+    onClick={() => onChange(!checked)}
+    className={`relative w-[38px] h-[22px] rounded-full transition-colors duration-200 shrink-0 ${
+      checked ? "bg-teal" : "bg-white/[0.14]"
+    }`}
+  >
+    <span
+      className={`absolute top-0.5 left-0.5 w-[18px] h-[18px] rounded-full bg-[#030712] transition-transform duration-200 ${
+        checked ? "translate-x-4" : "translate-x-0"
+      }`}
+    />
+  </button>
+);
+
+const DurationSelector = ({ presets, value, onChange, customValue, customUnit, onCustomValueChange, onCustomUnitChange }) => (
+  <div className="space-y-2">
+    <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+      {presets.map((d) => (
+        <button
+          key={d.key}
+          type="button"
+          onClick={() => onChange(d.key)}
+          className={`py-2 px-2 rounded-lg border text-[10px] font-bold uppercase tracking-wide transition-all ${
+            value === d.key
+              ? "bg-teal/10 border-teal/40 text-teal"
+              : "bg-black/20 border-white/[0.08] text-slate-400 hover:text-slate-200 hover:border-white/[0.14]"
+          }`}
+        >
+          {d.label}
+        </button>
+      ))}
+    </div>
+
+    {value === "custom" && (
+      <div className="flex gap-2">
+        <input
+          type="number"
+          min="1"
+          value={customValue}
+          onChange={(e) => onCustomValueChange(e.target.value)}
+          placeholder="Amount"
+          className="flex-1 p-2 bg-black/30 backdrop-blur-md border border-white/[0.08] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-teal/40"
+        />
+        <select
+          value={customUnit}
+          onChange={(e) => onCustomUnitChange(e.target.value)}
+          className="p-2 bg-black/30 backdrop-blur-md border border-white/[0.08] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-teal/40"
+        >
+          <option value="minutes">Minutes</option>
+          <option value="hours">Hours</option>
+          <option value="days">Days</option>
+          <option value="months">Months</option>
+        </select>
+      </div>
+    )}
+  </div>
+);
+
+const FieldLabel = ({ children }) => (
+  <label className="block text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1.5">
+    {children}
+  </label>
+);
+
+// One collapsible feature row: icon, title, description, enable switch, and an
+// expand/collapse chevron. Fields inside dim + go inert whenever the switch is off,
+// even if the row is expanded — so "expanded but disabled" reads clearly.
+const AdvancedFeatureRow = ({ icon: Icon, title, description, enabled, onEnabledChange, expanded, onToggleExpanded, children }) => (
+  <div className="border border-white/[0.08] rounded-2xl overflow-hidden bg-black/20 backdrop-blur-md">
+    <button
+      type="button"
+      onClick={onToggleExpanded}
+      className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-white/[0.03] transition-colors"
+    >
+      <div
+        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
+          enabled ? "bg-teal/10 border-teal/30 text-teal" : "bg-white/[0.03] border-white/[0.08] text-slate-500"
+        }`}
+      >
+        <Icon size={15} />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <span className="text-xs font-bold text-slate-200">{title}</span>
+        <p className="text-[10px] text-slate-500 mt-0.5 truncate">{description}</p>
+      </div>
+
+      <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+        <ToggleSwitch checked={enabled} onChange={onEnabledChange} label={`Enable ${title}`} />
+      </div>
+
+      <ChevronDown
+        size={14}
+        className={`shrink-0 text-slate-500 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+      />
+    </button>
+
+    <AnimatePresence initial={false}>
+      {expanded && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="overflow-hidden"
+        >
+          <div
+            className={`p-4 pt-3 border-t border-white/[0.06] space-y-3 transition-opacity ${
+              enabled ? "" : "opacity-40 pointer-events-none"
+            }`}
+          >
+            {children}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+);
 
 // =================================================================================
 // Main component
@@ -320,6 +487,52 @@ const CreateToken = () => {
   });
   const [socialErrors, setSocialErrors] = useState({ website: "", telegram: "", twitter: "" });
   const [nameSymbolErrors, setNameSymbolErrors] = useState({ name: "", symbol: "" });
+
+  // ---------------------------------------------------------------------------------
+  // ADVANCED CONFIG state — UI only, see file-level note at the top of this file.
+  // `advancedOpen` is the top-level "show me the advanced section at all" toggle;
+  // each feature then has its own `enabled` (does it apply) and `expanded` (am I
+  // looking at its fields right now) state.
+  // ---------------------------------------------------------------------------------
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  const [feeReceiver, setFeeReceiver] = useState({ enabled: false, expanded: false, address: "" });
+
+  const [tax, setTax] = useState({
+    enabled: false,
+    expanded: false,
+    buyTax: 0,
+    sellTax: 0,
+    startPeriod: "launch", // "launch" | "graduation"
+    duration: "1h",
+    customValue: "",
+    customUnit: "hours",
+  });
+
+  const [vault, setVault] = useState({
+    enabled: false,
+    expanded: false,
+    duration: "3mo",
+    customValue: "",
+    customUnit: "months",
+  });
+
+  const [sniper, setSniper] = useState({
+    enabled: false,
+    expanded: false,
+    maxWalletPercent: 2,
+    duration: "1h",
+    customValue: "",
+    customUnit: "hours",
+  });
+
+  const [whitelist, setWhitelist] = useState({ enabled: false, expanded: false, wallets: "" });
+
+  const clampTax = (v) => {
+    const n = parseFloat(v);
+    if (isNaN(n)) return 0;
+    return Math.min(MAX_TAX_PERCENT, Math.max(0, n));
+  };
 
   const walletBalanceEth = useMemo(() => {
     if (!balanceData?.value) return 0;
@@ -604,8 +817,8 @@ const CreateToken = () => {
     <div className="font-mono min-h-screen bg-[#030712] text-slate-300 p-3 sm:p-8 relative">
       {/* --- Error toast --- */}
       {error && (
-        <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-50 p-3 bg-rose-950/90 border border-rose-800 text-slate-100 flex items-start gap-3 text-xs sm:max-w-sm">
-          <AlertTriangle size={14} className="shrink-0 text-rose-500 mt-0.5" />
+        <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-50 p-3.5 rounded-2xl bg-rose-950/80 backdrop-blur-xl border border-rose-800/60 text-slate-100 flex items-start gap-3 text-xs sm:max-w-sm shadow-[0_8px_28px_rgba(0,0,0,0.45)]">
+          <AlertTriangle size={14} className="shrink-0 text-rose-400 mt-0.5" />
           <div className="flex-1">
             <span className="font-bold uppercase tracking-wider block mb-0.5">Error</span>
             <p>{error}</p>
@@ -618,11 +831,11 @@ const CreateToken = () => {
 
       {/* --- Wrong network banner --- */}
       {wrongNetwork && (
-        <div className="mb-4 max-w-3xl mx-auto p-3 bg-amber-950/40 border border-amber-800 text-amber-400 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <div className="mb-4 max-w-3xl mx-auto p-3.5 rounded-2xl bg-amber-950/30 backdrop-blur-md border border-amber-800/50 text-amber-400 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <span>You're connected to the wrong network.</span>
           <button
             onClick={() => switchChain?.({ chainId: EXPECTED_CHAIN_ID })}
-            className="px-3 py-1 border border-amber-700 uppercase text-[10px] font-bold hover:bg-amber-900/40"
+            className="px-3 py-1.5 rounded-lg border border-amber-700/60 uppercase text-[10px] font-bold hover:bg-amber-900/30 transition-colors"
           >
             Switch Network
           </button>
@@ -631,14 +844,12 @@ const CreateToken = () => {
 
       <div className="max-w-3xl mx-auto">
         {/* --- Progress tracker --- */}
-        <div className="flex flex-col sm:flex-row gap-1 mb-8 border border-slate-900 bg-[#0b0f19]/20 p-2 text-[10px] font-bold text-slate-500 tracking-widest">
+        <div className="flex flex-col sm:flex-row gap-1.5 mb-8 p-1.5 rounded-2xl bg-white/[0.02] backdrop-blur-md border border-white/[0.07] text-[10px] font-bold text-slate-500 tracking-widest">
           {[1, 2, 3].map((n) => (
             <div
               key={n}
-              className={`flex-1 flex items-center gap-2 px-2 py-1 ${
-                step === n
-                  ? "bg-[#96d6cd]/10 border border-[#96d6cd]/40 text-[#96d6cd]"
-                  : "bg-[#030712]/40 border border-slate-900"
+              className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-xl transition-colors ${
+                step === n ? "bg-teal/10 border border-teal/30 text-teal" : "bg-white/[0.02] border border-transparent"
               }`}
             >
               <span>[{String(n).padStart(2, "0")}]</span>
@@ -651,150 +862,397 @@ const CreateToken = () => {
 
         {/* --- Step 1: form --- */}
         {step === 1 && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 bg-[#0b0f19]/40 border border-slate-900 p-4 space-y-4">
-              <div className="text-[10px] font-bold text-slate-500 border-b border-slate-900 pb-1 uppercase tracking-wider">
-                Core Parameters
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Field
-                  label="Token Name *"
-                  name="name"
-                  value={tokenData.name}
-                  onChange={handleTextChange}
-                  maxLength={MAX_NAME_LENGTH}
-                  isError={nameSymbolErrors.name}
-                />
-                <Field
-                  label="Symbol *"
-                  name="symbol"
-                  value={tokenData.symbol}
-                  onChange={handleTextChange}
-                  maxLength={MAX_SYMBOL_LENGTH}
-                  isError={nameSymbolErrors.symbol}
-                />
-              </div>
-              <Field
-                label="Description"
-                name="description"
-                value={tokenData.description}
-                onChange={handleTextChange}
-                maxLength={300}
-                isTextarea
-                rows={3}
-              />
-
-              <div className="text-[10px] font-bold text-slate-500 border-b border-slate-900 pb-1 pt-2 uppercase tracking-wider">
-                Social Links
-              </div>
-              <div className="space-y-3">
-                <Field
-                  label="Website"
-                  name="website"
-                  placeholder="https://yourwebsite.com"
-                  value={tokenData.website}
-                  onChange={handleTextChange}
-                  isError={socialErrors.website}
-                />
-                <Field
-                  label="Telegram"
-                  name="telegram"
-                  placeholder="https://t.me/username"
-                  value={tokenData.telegram}
-                  onChange={handleTextChange}
-                  isError={socialErrors.telegram}
-                />
-                <Field
-                  label="Twitter / X"
-                  name="twitter"
-                  placeholder="https://x.com/username"
-                  value={tokenData.twitter}
-                  onChange={handleTextChange}
-                  isError={socialErrors.twitter}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4 lg:col-span-1">
-              <div className="bg-[#0b0f19]/40 border border-slate-900 p-4 flex flex-col items-center">
-                <div className="text-[10px] font-bold text-slate-500 border-b border-slate-900 pb-1 w-full uppercase tracking-wider text-left mb-3">
-                  Logo (optional)
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <GlassSurface className="lg:col-span-2 rounded-[28px] p-4 space-y-4">
+                <div className="text-[10px] font-bold text-slate-500 border-b border-white/[0.07] pb-2 uppercase tracking-wider">
+                  Core Parameters
                 </div>
-                <div
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    handleLogoFile(e.dataTransfer.files?.[0]);
-                  }}
-                  className="w-full bg-[#030712] border border-dashed border-slate-900 p-4 flex flex-col items-center justify-center min-h-[140px]"
-                >
-                  {logoPreview ? (
-                    <img
-                      src={logoPreview}
-                      className="w-20 h-20 border border-slate-900 object-cover rounded-none"
-                      alt="Logo preview"
-                    />
-                  ) : (
-                    <UploadCloud size={24} className="text-slate-600 mb-2" />
-                  )}
-                  <label className="mt-2 text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-[#0b0f19] border border-slate-800 text-slate-300 hover:text-slate-100 cursor-pointer">
-                    Choose file
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={(e) => handleLogoFile(e.target.files?.[0])}
-                    />
-                  </label>
-                  <span className="text-[9px] text-slate-600 mt-2">Max size: 5MB</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field
+                    label="Token Name *"
+                    name="name"
+                    value={tokenData.name}
+                    onChange={handleTextChange}
+                    maxLength={MAX_NAME_LENGTH}
+                    isError={nameSymbolErrors.name}
+                  />
+                  <Field
+                    label="Symbol *"
+                    name="symbol"
+                    value={tokenData.symbol}
+                    onChange={handleTextChange}
+                    maxLength={MAX_SYMBOL_LENGTH}
+                    isError={nameSymbolErrors.symbol}
+                  />
                 </div>
-              </div>
+                <Field
+                  label="Description"
+                  name="description"
+                  value={tokenData.description}
+                  onChange={handleTextChange}
+                  maxLength={300}
+                  isTextarea
+                  rows={3}
+                />
 
-              <InitialBuySection
-                ethAmount={ethAmount}
-                setEthAmount={setEthAmount}
-                walletBalance={walletBalanceEth}
-                errorMessage={ethValidation.ok ? null : ethValidation.message}
-              />
+                <div className="text-[10px] font-bold text-slate-500 border-b border-white/[0.07] pb-2 pt-2 uppercase tracking-wider">
+                  Social Links
+                </div>
+                <div className="space-y-3">
+                  <Field
+                    label="Website"
+                    name="website"
+                    placeholder="https://yourwebsite.com"
+                    value={tokenData.website}
+                    onChange={handleTextChange}
+                    isError={socialErrors.website}
+                  />
+                  <Field
+                    label="Telegram"
+                    name="telegram"
+                    placeholder="https://t.me/username"
+                    value={tokenData.telegram}
+                    onChange={handleTextChange}
+                    isError={socialErrors.telegram}
+                  />
+                  <Field
+                    label="Twitter / X"
+                    name="twitter"
+                    placeholder="https://x.com/username"
+                    value={tokenData.twitter}
+                    onChange={handleTextChange}
+                    isError={socialErrors.twitter}
+                  />
+                </div>
+              </GlassSurface>
 
-              {/*
-                The core bug fix lives here: `disabled` is now ONLY applied when the wallet is
-                already connected. When disconnected, the button must always be clickable so
-                the user can actually open the wallet-connect modal — that's the whole point
-                of showing it.
-              */}
-              <ConnectKitButton.Custom>
-                {({ show }) => (
-                  <button
-                    onClick={isConnected ? handleDeploy : show}
-                    disabled={isConnected && !isFormValid}
-                    style={
-                      isConnected && !isFormValid
-                        ? {}
-                        : { backgroundColor: "#96d6cd", color: "#030712" }
-                    }
-                    className={`w-full p-3 font-bold text-xs uppercase tracking-widest text-center transition-all rounded-none ${
-                      isConnected && !isFormValid
-                        ? "bg-slate-900 text-slate-600 border border-slate-900 cursor-not-allowed"
-                        : "hover:opacity-90"
-                    }`}
+              <div className="space-y-4 lg:col-span-1">
+                <GlassSurface className="rounded-[28px] p-4 flex flex-col items-center">
+                  <div className="text-[10px] font-bold text-slate-500 border-b border-white/[0.07] pb-2 w-full uppercase tracking-wider text-left mb-3">
+                    Logo (optional)
+                  </div>
+                  <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleLogoFile(e.dataTransfer.files?.[0]);
+                    }}
+                    className="w-full bg-black/20 rounded-2xl border border-dashed border-white/[0.14] p-4 flex flex-col items-center justify-center min-h-[140px]"
                   >
-                    {isConnected ? "Deploy Token" : "Connect Wallet"}
-                  </button>
+                    {logoPreview ? (
+                      <img
+                        src={logoPreview}
+                        className="w-20 h-20 rounded-xl border border-white/[0.08] object-cover"
+                        alt="Logo preview"
+                      />
+                    ) : (
+                      <UploadCloud size={24} className="text-slate-600 mb-2" />
+                    )}
+                    <label className="mt-2 text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:text-teal hover:border-teal/30 cursor-pointer transition-colors">
+                      Choose file
+                      <input
+                        type="file"
+                        hidden
+                        accept="image/*"
+                        onChange={(e) => handleLogoFile(e.target.files?.[0])}
+                      />
+                    </label>
+                    <span className="text-[9px] text-slate-600 mt-2">Max size: 5MB</span>
+                  </div>
+                </GlassSurface>
+
+                <InitialBuySection
+                  ethAmount={ethAmount}
+                  setEthAmount={setEthAmount}
+                  walletBalance={walletBalanceEth}
+                  errorMessage={ethValidation.ok ? null : ethValidation.message}
+                />
+
+                {/*
+                  The core bug fix lives here: `disabled` is now ONLY applied when the wallet
+                  is already connected. When disconnected, the button must always be clickable
+                  so the user can actually open the wallet-connect modal.
+                */}
+                <ConnectKitButton.Custom>
+                  {({ show }) => (
+                    <button
+                      onClick={isConnected ? handleDeploy : show}
+                      disabled={isConnected && !isFormValid}
+                      style={
+                        isConnected && !isFormValid
+                          ? {}
+                          : { backgroundColor: "#96d6cd", color: "#030712" }
+                      }
+                      className={`w-full p-3.5 rounded-2xl font-bold text-xs uppercase tracking-widest text-center transition-all ${
+                        isConnected && !isFormValid
+                          ? "bg-white/[0.03] text-slate-600 border border-white/[0.08] cursor-not-allowed"
+                          : "hover:opacity-90"
+                      }`}
+                    >
+                      {isConnected ? "Deploy Token" : "Connect Wallet"}
+                    </button>
+                  )}
+                </ConnectKitButton.Custom>
+                {!isConnected && (
+                  <div className="text-[9px] text-center text-slate-600 uppercase">
+                    Connect a wallet to continue
+                  </div>
                 )}
-              </ConnectKitButton.Custom>
-              {!isConnected && (
-                <div className="text-[9px] text-center text-slate-600 uppercase">
-                  Connect a wallet to continue
-                </div>
-              )}
+              </div>
             </div>
+
+            {/* =========================================================================
+                ADVANCED CONFIGURATION — UI ONLY (no backend/contract wiring yet)
+                Collapsed by default so a simple launch stays a short form; opening this
+                reveals five independently-collapsible features, each off by default.
+                ========================================================================= */}
+            <GlassSurface className="rounded-[28px]">
+              <button
+                type="button"
+                onClick={() => setAdvancedOpen((p) => !p)}
+                className="w-full flex items-center gap-3 p-4 text-left"
+              >
+                <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-slate-400 shrink-0">
+                  <SlidersHorizontal size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-slate-200" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+                      Advanced Configuration
+                    </span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 bg-white/[0.05] px-1.5 py-0.5 rounded">
+                      Optional
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    Fees, tax, vesting, and anti-snipe protection — for serious launches.
+                  </p>
+                </div>
+                <ChevronDown
+                  size={16}
+                  className={`shrink-0 text-slate-500 transition-transform duration-200 ${advancedOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              <AnimatePresence initial={false}>
+                {advancedOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <div className="p-4 pt-0 space-y-2.5">
+                      {/* --- Fee Receiver --- */}
+                      <AdvancedFeatureRow
+                        icon={Droplets}
+                        title="Fee Receiver"
+                        description="Send a share of trading fees to a custom wallet instead of the default treasury."
+                        enabled={feeReceiver.enabled}
+                        onEnabledChange={(v) => setFeeReceiver((p) => ({ ...p, enabled: v }))}
+                        expanded={feeReceiver.expanded}
+                        onToggleExpanded={() => setFeeReceiver((p) => ({ ...p, expanded: !p.expanded }))}
+                      >
+                        <FieldLabel>Receiver Address</FieldLabel>
+                        <input
+                          type="text"
+                          placeholder="0x..."
+                          value={feeReceiver.address}
+                          onChange={(e) => setFeeReceiver((p) => ({ ...p, address: e.target.value }))}
+                          className="w-full p-2.5 bg-black/30 backdrop-blur-md border border-white/[0.08] rounded-lg text-xs font-mono text-slate-200 focus:outline-none focus:border-teal/40"
+                        />
+                        <p className="text-[10px] text-slate-500">
+                          Leave empty to keep fees going to the default treasury address.
+                        </p>
+                      </AdvancedFeatureRow>
+
+                      {/* --- Buy / Sell Tax --- */}
+                      <AdvancedFeatureRow
+                        icon={Percent}
+                        title="Buy / Sell Tax"
+                        description={`Charge up to ${MAX_TAX_PERCENT}% on trades, for a limited window or indefinitely.`}
+                        enabled={tax.enabled}
+                        onEnabledChange={(v) => setTax((p) => ({ ...p, enabled: v }))}
+                        expanded={tax.expanded}
+                        onToggleExpanded={() => setTax((p) => ({ ...p, expanded: !p.expanded }))}
+                      >
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <FieldLabel>Buy Tax</FieldLabel>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min="0"
+                                max={MAX_TAX_PERCENT}
+                                step="0.1"
+                                value={tax.buyTax}
+                                onChange={(e) => setTax((p) => ({ ...p, buyTax: clampTax(e.target.value) }))}
+                                className="w-full p-2.5 pr-7 bg-black/30 backdrop-blur-md border border-white/[0.08] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-teal/40"
+                              />
+                              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-bold">%</span>
+                            </div>
+                          </div>
+                          <div>
+                            <FieldLabel>Sell Tax</FieldLabel>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min="0"
+                                max={MAX_TAX_PERCENT}
+                                step="0.1"
+                                value={tax.sellTax}
+                                onChange={(e) => setTax((p) => ({ ...p, sellTax: clampTax(e.target.value) }))}
+                                className="w-full p-2.5 pr-7 bg-black/30 backdrop-blur-md border border-white/[0.08] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-teal/40"
+                              />
+                              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-bold">%</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <FieldLabel>Start Period</FieldLabel>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {[
+                              { key: "launch", label: "At Launch" },
+                              { key: "graduation", label: "After Graduation" },
+                            ].map((opt) => (
+                              <button
+                                key={opt.key}
+                                type="button"
+                                onClick={() => setTax((p) => ({ ...p, startPeriod: opt.key }))}
+                                className={`py-2 px-2 rounded-lg border text-[10px] font-bold uppercase tracking-wide transition-all ${
+                                  tax.startPeriod === opt.key
+                                    ? "bg-teal/10 border-teal/40 text-teal"
+                                    : "bg-black/20 border-white/[0.08] text-slate-400 hover:text-slate-200"
+                                }`}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <FieldLabel>Tax Duration</FieldLabel>
+                          <DurationSelector
+                            presets={SHORT_DURATION_PRESETS}
+                            value={tax.duration}
+                            onChange={(v) => setTax((p) => ({ ...p, duration: v }))}
+                            customValue={tax.customValue}
+                            customUnit={tax.customUnit}
+                            onCustomValueChange={(v) => setTax((p) => ({ ...p, customValue: v }))}
+                            onCustomUnitChange={(v) => setTax((p) => ({ ...p, customUnit: v }))}
+                          />
+                        </div>
+                      </AdvancedFeatureRow>
+
+                      {/* --- Creator Vault / Vesting --- */}
+                      <AdvancedFeatureRow
+                        icon={Lock}
+                        title="Creator Vault (Vesting)"
+                        description="Lock the tokens you buy at launch and release them gradually over time."
+                        enabled={vault.enabled}
+                        onEnabledChange={(v) => setVault((p) => ({ ...p, enabled: v }))}
+                        expanded={vault.expanded}
+                        onToggleExpanded={() => setVault((p) => ({ ...p, expanded: !p.expanded }))}
+                      >
+                        <FieldLabel>Vesting Duration</FieldLabel>
+                        <DurationSelector
+                          presets={VESTING_DURATION_PRESETS}
+                          value={vault.duration}
+                          onChange={(v) => setVault((p) => ({ ...p, duration: v }))}
+                          customValue={vault.customValue}
+                          customUnit={vault.customUnit}
+                          onCustomValueChange={(v) => setVault((p) => ({ ...p, customValue: v }))}
+                          onCustomUnitChange={(v) => setVault((p) => ({ ...p, customUnit: v }))}
+                        />
+                        <p className="text-[10px] text-slate-500">
+                          Your initial-buy tokens unlock linearly over this period — a common
+                          signal of long-term commitment for serious projects.
+                        </p>
+                      </AdvancedFeatureRow>
+
+                      {/* --- Sniper Protection --- */}
+                      <AdvancedFeatureRow
+                        icon={ShieldAlert}
+                        title="Sniper Protection"
+                        description="Cap how much of the supply any single wallet can hold, for a window after launch."
+                        enabled={sniper.enabled}
+                        onEnabledChange={(v) => setSniper((p) => ({ ...p, enabled: v }))}
+                        expanded={sniper.expanded}
+                        onToggleExpanded={() => setSniper((p) => ({ ...p, expanded: !p.expanded }))}
+                      >
+                        <FieldLabel>Max Wallet (% of supply)</FieldLabel>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0.1"
+                            max="10"
+                            step="0.1"
+                            value={sniper.maxWalletPercent}
+                            onChange={(e) =>
+                              setSniper((p) => ({
+                                ...p,
+                                maxWalletPercent: Math.min(10, Math.max(0.1, parseFloat(e.target.value) || 0.1)),
+                              }))
+                            }
+                            className="w-full p-2.5 pr-7 bg-black/30 backdrop-blur-md border border-white/[0.08] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-teal/40"
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-bold">%</span>
+                        </div>
+
+                        <FieldLabel>Protection Duration</FieldLabel>
+                        <DurationSelector
+                          presets={SHORT_DURATION_PRESETS}
+                          value={sniper.duration}
+                          onChange={(v) => setSniper((p) => ({ ...p, duration: v }))}
+                          customValue={sniper.customValue}
+                          customUnit={sniper.customUnit}
+                          onCustomValueChange={(v) => setSniper((p) => ({ ...p, customValue: v }))}
+                          onCustomUnitChange={(v) => setSniper((p) => ({ ...p, customUnit: v }))}
+                        />
+                        <p className="text-[10px] text-slate-500">
+                          Wallets cannot hold more than this share of supply until protection
+                          expires. Addresses on the whitelist below bypass this cap.
+                        </p>
+                      </AdvancedFeatureRow>
+
+                      {/* --- Whitelist --- */}
+                      <AdvancedFeatureRow
+                        icon={Users}
+                        title="Whitelist (Bypass List)"
+                        description="Wallets that skip the sniper-protection cap entirely."
+                        enabled={whitelist.enabled}
+                        onEnabledChange={(v) => setWhitelist((p) => ({ ...p, enabled: v }))}
+                        expanded={whitelist.expanded}
+                        onToggleExpanded={() => setWhitelist((p) => ({ ...p, expanded: !p.expanded }))}
+                      >
+                        <FieldLabel>Whitelisted Wallets</FieldLabel>
+                        <textarea
+                          rows={4}
+                          placeholder={"0x1234...\n0xabcd... (one per line)"}
+                          value={whitelist.wallets}
+                          onChange={(e) => setWhitelist((p) => ({ ...p, wallets: e.target.value }))}
+                          className="w-full p-2.5 bg-black/30 backdrop-blur-md border border-white/[0.08] rounded-lg text-xs font-mono text-slate-200 focus:outline-none focus:border-teal/40"
+                        />
+                        <p className="text-[10px] text-slate-500">
+                          One address per line. These wallets bypass the sniper-protection
+                          wallet cap above.
+                        </p>
+                      </AdvancedFeatureRow>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </GlassSurface>
           </div>
         )}
 
         {/* --- Step 2 & 3: submitting / success --- */}
         {step >= 2 && (
-          <div className="bg-[#0b0f19]/40 border border-slate-900 p-6 flex flex-col items-center justify-center text-center">
+          <GlassSurface className="rounded-[28px] p-6 flex flex-col items-center justify-center text-center">
             {step === 2 && (
               <div className="py-8 space-y-4">
                 <Loader2 size={32} className="animate-spin text-slate-500 mx-auto" />
@@ -815,7 +1273,7 @@ const CreateToken = () => {
 
                 {tokenAddress ? (
                   <>
-                    <div className="bg-[#030712] border border-slate-900 p-3 text-left">
+                    <div className="bg-black/20 border border-white/[0.08] rounded-2xl p-3.5 text-left">
                       <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
                         Contract Address
                       </div>
@@ -823,10 +1281,10 @@ const CreateToken = () => {
                         <span className="font-mono text-slate-300 truncate break-all">
                           {tokenAddress}
                         </span>
-                        <div className="flex gap-1 shrink-0">
+                        <div className="flex gap-1.5 shrink-0">
                           <button
                             onClick={() => navigator.clipboard.writeText(tokenAddress)}
-                            className="p-1 border border-slate-800 text-slate-400 hover:text-slate-200"
+                            className="p-1.5 rounded-lg border border-white/[0.08] text-slate-400 hover:text-teal hover:border-teal/30 transition-colors"
                             title="Copy address"
                           >
                             <Copy size={12} />
@@ -834,7 +1292,7 @@ const CreateToken = () => {
                           <Link
                             to={`/token/${tokenAddress}`}
                             target="_blank"
-                            className="p-1 border border-slate-800 text-slate-400 hover:text-slate-200"
+                            className="p-1.5 rounded-lg border border-white/[0.08] text-slate-400 hover:text-teal hover:border-teal/30 transition-colors"
                             title="Open token page"
                           >
                             <ExternalLink size={12} />
@@ -846,21 +1304,21 @@ const CreateToken = () => {
                     {/* Purely cosmetic indexing indicator — see the effect above */}
                     <div className="text-[10px] text-slate-500 uppercase tracking-wide">
                       {indexingStatus === "ready"
-                        ? "✅ Metadata indexed — token page is fully ready."
-                        : "⏳ Finalizing metadata (logo, socials)... your token is already live on-chain."}
+                        ? "Metadata indexed — token page is fully ready."
+                        : "Finalizing metadata (logo, socials)... your token is already live on-chain."}
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-2 justify-center pt-2">
                       <button
                         onClick={() => navigate(`/token/${tokenAddress}`)}
                         style={{ backgroundColor: "#96d6cd", color: "#030712" }}
-                        className="px-4 py-1.5 text-xs font-black uppercase tracking-wider hover:opacity-90"
+                        className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider hover:opacity-90 transition-opacity"
                       >
                         View Token
                       </button>
                       <button
                         onClick={resetForm}
-                        className="px-4 py-1.5 text-xs font-bold uppercase tracking-wider bg-[#030712] border border-slate-800 text-slate-400 hover:text-slate-200"
+                        className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-white/[0.03] border border-white/[0.08] text-slate-400 hover:text-slate-200 hover:border-white/[0.14] transition-colors"
                       >
                         Create Another
                       </button>
@@ -869,7 +1327,7 @@ const CreateToken = () => {
                 ) : (
                   // We couldn't decode the token address from the receipt (should be rare) —
                   // give the user the transaction hash instead of routing to a broken page.
-                  <div className="bg-amber-950/40 border border-amber-800 text-amber-400 p-3 text-left text-xs space-y-2">
+                  <div className="bg-amber-950/30 border border-amber-800/50 rounded-2xl text-amber-400 p-3.5 text-left text-xs space-y-2">
                     <p>
                       Your transaction confirmed, but we couldn't automatically detect the new
                       token address. Check the transaction for details:
@@ -877,7 +1335,7 @@ const CreateToken = () => {
                     <p className="font-mono break-all">{creationTxHash}</p>
                     <button
                       onClick={resetForm}
-                      className="mt-2 px-3 py-1 border border-amber-700 uppercase text-[10px] font-bold hover:bg-amber-900/40"
+                      className="mt-2 px-3 py-1.5 rounded-lg border border-amber-700/60 uppercase text-[10px] font-bold hover:bg-amber-900/30 transition-colors"
                     >
                       Create Another
                     </button>
@@ -885,7 +1343,7 @@ const CreateToken = () => {
                 )}
               </div>
             )}
-          </div>
+          </GlassSurface>
         )}
       </div>
     </div>
