@@ -1,4 +1,3 @@
-// src/components/TrendingTokens.jsx
 import React, { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -13,10 +12,13 @@ const formatNumber = (num) => {
 
 const TrendingTokenCard = ({ token }) => {
   return (
-    <Link to={`/token/${token.address}`} className="block shrink-0">
-      <div className="w-56 h-16 bg-[#0b0f19]/40 border border-slate-900 rounded-none flex items-center px-2.5 gap-2.5 transition-colors hover:bg-[#0b0f19]/80 hover:border-slate-800">
-        
-        <div className="w-10 h-10 rounded-none bg-[#030712] border border-slate-900 overflow-hidden flex items-center justify-center shrink-0">
+    <Link to={`/token/${token.address}`} className="block shrink-0 group">
+      <div className="relative w-56 h-16 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.035] backdrop-blur-xl backdrop-saturate-150 flex items-center px-3 gap-2.5 transition-all duration-300 hover:bg-white/[0.06] hover:border-white/[0.14] hover:-translate-y-0.5 shadow-[0_6px_20px_rgba(0,0,0,0.35)]">
+        {/* specular highlight, same as the token card glass */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+        <div className="pointer-events-none absolute -top-8 left-3 right-3 h-14 rounded-full bg-white/[0.05] blur-2xl" />
+
+        <div className="relative z-10 w-10 h-10 rounded-xl bg-black/40 border border-white/[0.08] overflow-hidden flex items-center justify-center shrink-0 backdrop-blur-md">
           {token.logo ? (
             <img
               src={token.logo}
@@ -25,30 +27,37 @@ const TrendingTokenCard = ({ token }) => {
               loading="lazy"
             />
           ) : (
-            <span className="text-slate-500 font-bold text-xs">
+            <span
+              className="text-slate-500 font-light text-sm"
+              style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+            >
               {token.symbol?.[0]?.toUpperCase()}
             </span>
           )}
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="text-xs font-black text-slate-200 uppercase tracking-wider truncate leading-tight">
+        <div className="relative z-10 flex-1 min-w-0">
+          <div
+            className="text-xs font-medium text-slate-200 truncate leading-tight group-hover:text-white transition-colors"
+            style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+          >
             {token.name}
           </div>
-          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wide truncate mt-0.5">
+          <div
+            className="text-[10px] text-slate-500 font-bold uppercase tracking-wide truncate mt-0.5"
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          >
             ${token.symbol}
           </div>
         </div>
 
-        <div className="text-right text-[9px] font-mono leading-normal font-bold">
-          <div className="text-slate-300">
-            MC:{formatNumber(token.market_cap)}
-          </div>
-          <div className="text-slate-500">
-            VOL:{formatNumber(token.volume_24h)}
-          </div>
+        <div
+          className="relative z-10 text-right text-[9px] font-bold leading-normal"
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        >
+          <div className="text-slate-300">MC:{formatNumber(token.market_cap)}</div>
+          <div className="text-teal/80">VOL:{formatNumber(token.volume_24h)}</div>
         </div>
-
       </div>
     </Link>
   );
@@ -132,31 +141,29 @@ const TrendingTokens = () => {
 
   return (
     <section className="font-mono mt-6 mb-4">
-      
-      <div className="flex items-center justify-between mb-3 border-b border-slate-900 pb-2">
+      <div className="flex items-center justify-between mb-3 border-b border-white/[0.08] pb-2">
         <h2 className="text-xs font-black uppercase text-slate-200 tracking-wider">
           METRICS_INDEX // TRENDING_VOL
         </h2>
         <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5">
-          <span className="w-1 h-1 rounded-none bg-[#96d6cd] animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[#96d6cd] animate-pulse shadow-[0_0_6px_rgba(150,214,205,0.6)]" />
           ACTIVE DEPLOYMENTS
         </span>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto scrollbar-none py-0.5">
+      <div className="flex gap-2.5 overflow-x-auto scrollbar-none py-1">
         {tokens.map((token) => (
           <TrendingTokenCard key={token.address} token={token} />
         ))}
 
         <Link
           to="/tokens"
-          className="w-12 min-w-[48px] h-16 flex items-center justify-center bg-[#0b0f19]/20 border border-slate-900 text-slate-500 hover:text-slate-300 hover:border-slate-800 transition-colors rounded-none"
+          className="w-12 min-w-[48px] h-16 flex items-center justify-center rounded-2xl bg-white/[0.03] backdrop-blur-md border border-white/[0.08] text-slate-500 hover:text-teal hover:bg-white/[0.06] hover:border-white/[0.14] transition-all duration-300"
           title="Inspect All Network Assets"
         >
           <ChevronRight size={16} />
         </Link>
       </div>
-
     </section>
   );
 };
