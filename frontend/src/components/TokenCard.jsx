@@ -1,8 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Globe, Send, AtSign } from "lucide-react";
+import { Globe, Send, AtSign, CheckCircle2, Sparkles } from "lucide-react";
 import { getPublicUrlSafe } from "../api/supabaseTokens";
+
+/* ============================================================
+   Shared design tokens — kept identical to Navbar.jsx so every
+   surface in the app reads as one system, not a patchwork.
+   ============================================================ */
+const ACCENT = "#96d6cd";
+
+const GLASS =
+  "border border-white/[0.08] bg-white/[0.06] backdrop-blur-2xl backdrop-saturate-[1.6] backdrop-brightness-105 shadow-[0_10px_40px_-8px_rgba(0,0,0,0.6)]";
+
+// Nested elements inside a glass surface use a SOLID fill, never another
+// blur layer — stacking backdrop-blur inside backdrop-blur muddies the
+// effect and costs paint performance for no visual gain.
+const NESTED_FILL = "bg-black/25 border border-white/[0.08]";
 
 /* -------------------- Telemetry Formatters -------------------- */
 
@@ -66,11 +80,11 @@ export function useResolvedLogo(token) {
 export function GlassSurface({ children, className = "", isNew, glowTint }) {
   return (
     <div
-      className={`relative overflow-hidden border transition-all duration-500 ${
+      className={`relative overflow-hidden transition-all duration-500 ${GLASS} ${
         isNew
-          ? "border-teal/40 shadow-[0_0_0_1px_rgba(150,214,205,0.15),0_8px_32px_rgba(150,214,205,0.18)]"
-          : "border-white/[0.08] shadow-[0_8px_28px_rgba(0,0,0,0.45)]"
-      } bg-white/[0.035] backdrop-blur-2xl backdrop-saturate-150 hover:bg-white/[0.06] hover:border-white/[0.14] ${className}`}
+          ? "border-[#96d6cd]/40 shadow-[0_0_0_1px_rgba(150,214,205,0.15),0_10px_40px_-8px_rgba(150,214,205,0.22)]"
+          : ""
+      } hover:bg-white/[0.09] hover:border-white/[0.14] ${className}`}
       style={{
         backgroundImage: glowTint
           ? `radial-gradient(120% 100% at 12% 0%, ${glowTint}, transparent 55%)`
@@ -78,32 +92,44 @@ export function GlassSurface({ children, className = "", isNew, glowTint }) {
       }}
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-      <div className="pointer-events-none absolute -top-10 left-4 right-4 h-20 rounded-full bg-white/[0.05] blur-2xl" />
       <div className="relative z-10 h-full">{children}</div>
     </div>
   );
 }
 
-export function TokenLogo({ token, logoSrc, size = "w-14 h-14", textSize = "text-xl" }) {
+export function TokenLogo({ token, logoSrc, size = "w-16 h-16", textSize = "text-2xl", accent = false }) {
   return (
-    <div
-      className={`${size} bg-black/40 border border-white/[0.08] rounded-xl flex items-center justify-center overflow-hidden shrink-0 backdrop-blur-md`}
-    >
-      {logoSrc ? (
-        <img
-          src={logoSrc}
-          alt={token.name}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-          }}
-        />
-      ) : (
+    <div className="relative shrink-0">
+      <div
+        className={`${size} bg-black/30 border rounded-2xl flex items-center justify-center overflow-hidden ${
+          accent ? "border-[#96d6cd]/40" : "border-white/[0.1]"
+        }`}
+      >
+        {logoSrc ? (
+          <img
+            src={logoSrc}
+            alt={token.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        ) : (
+          <span
+            className={`${textSize} font-medium text-slate-500`}
+            style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+          >
+            {token.symbol?.charAt(0).toUpperCase() || "T"}
+          </span>
+        )}
+      </div>
+      {accent && (
         <span
-          className={`${textSize} font-light text-slate-500`}
-          style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+          className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-[#0b0f19] flex items-center justify-center"
+          style={{ backgroundColor: ACCENT }}
+          aria-hidden="true"
         >
-          {token.symbol?.charAt(0).toUpperCase() || "T"}
+          <Sparkles size={8} className="text-[#030712]" strokeWidth={2.5} />
         </span>
       )}
     </div>
@@ -119,7 +145,7 @@ export function SocialLink({ href, icon, label }) {
       rel="noopener noreferrer"
       aria-label={label}
       onClick={(e) => e.stopPropagation()}
-      className="p-1.5 border border-white/[0.08] bg-white/[0.03] backdrop-blur-md text-slate-500 hover:text-teal hover:border-teal/30 hover:bg-white/[0.06] transition-all duration-300 rounded-lg"
+      className={`p-1.5 rounded-lg text-slate-500 hover:text-[#96d6cd] hover:border-[#96d6cd]/30 transition-colors duration-200 ${NESTED_FILL}`}
     >
       {icon}
     </a>
@@ -127,8 +153,10 @@ export function SocialLink({ href, icon, label }) {
 }
 
 export function SocialLinks({ token }) {
+  const hasAny = token.website || token.twitter || token.telegram;
+  if (!hasAny) return null;
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1.5 shrink-0">
       <SocialLink href={token.website} icon={<Globe size={11} />} label="Website" />
       <SocialLink href={token.twitter} icon={<AtSign size={11} />} label="Twitter" />
       <SocialLink href={token.telegram} icon={<Send size={11} />} label="Telegram" />
@@ -139,11 +167,10 @@ export function SocialLinks({ token }) {
 export function MetricGroup({ label, value, currency }) {
   return (
     <div
-      className="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.07] backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px]"
-      style={{ fontFamily: "'JetBrains Mono', monospace" }}
+      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] ${NESTED_FILL}`}
     >
-      <span className="text-slate-500 uppercase font-bold tracking-wider">{label}</span>
-      <span className="text-slate-200 font-bold tabular-nums">
+      <span className="text-slate-500 font-medium">{label}</span>
+      <span className="text-slate-100 font-semibold tabular-nums font-mono">
         {compactNumberShort(value, currency)}
       </span>
     </div>
@@ -154,12 +181,7 @@ export function MetricGroup({ label, value, currency }) {
 // intentionally rendered as a neutral dash until the metric is available.
 export function ChangeValue({ className = "" }) {
   return (
-    <span
-      className={`text-[11px] text-slate-500 font-bold tabular-nums ${className}`}
-      style={{ fontFamily: "'JetBrains Mono', monospace" }}
-    >
-      —
-    </span>
+    <span className={`text-[11px] text-slate-500 font-semibold tabular-nums font-mono ${className}`}>—</span>
   );
 }
 
@@ -167,10 +189,11 @@ export function CurveOrStatus({ token }) {
   if (token.graduated) {
     return (
       <div
-        className="text-[9px] font-bold uppercase tracking-widest bg-teal/10 border border-teal/30 text-teal px-2.5 py-1 inline-block rounded-lg backdrop-blur-md"
-        style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg w-fit"
+        style={{ backgroundColor: `${ACCENT}1A`, border: `1px solid ${ACCENT}40`, color: ACCENT }}
       >
-        STATUS: GRADUATED
+        <CheckCircle2 size={12} strokeWidth={2.5} />
+        Graduated
       </div>
     );
   }
@@ -179,17 +202,18 @@ export function CurveOrStatus({ token }) {
 
   return (
     <div className="w-full">
-      <div
-        className="flex items-center justify-between font-bold text-[9px] text-slate-500 uppercase tracking-wider mb-1.5"
-        style={{ fontFamily: "'JetBrains Mono', monospace" }}
-      >
-        <span>CURVE_FILL</span>
-        <span>{progress.toFixed(1)}%</span>
+      <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1.5">
+        <span>Bonding curve</span>
+        <span className="font-mono font-semibold text-slate-300 tabular-nums">{progress.toFixed(1)}%</span>
       </div>
-      <div className="w-full h-1.5 bg-black/40 border border-white/[0.06] overflow-hidden rounded-full">
+      <div className="w-full h-1.5 bg-black/30 overflow-hidden rounded-full">
         <div
-          className="h-full bg-teal rounded-full shadow-[0_0_8px_rgba(150,214,205,0.5)]"
-          style={{ width: `${progress}%` }}
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: `${progress}%`,
+            backgroundColor: ACCENT,
+            boxShadow: `0 0 8px ${ACCENT}80`,
+          }}
         />
       </div>
     </div>
@@ -216,49 +240,55 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
       <Link to={`/token/${token.address}`} className="block group h-full">
         <GlassSurface
           isNew={isNew}
-          glowTint={isNew ? "rgba(150,214,205,0.1)" : undefined}
-          className="h-full rounded-[28px] p-4 flex flex-col justify-between group-hover:-translate-y-0.5"
+          glowTint={isNew ? "rgba(150,214,205,0.12)" : undefined}
+          className="h-full rounded-[24px] p-5 flex flex-col justify-between group-hover:-translate-y-0.5"
         >
-          <div className="flex gap-3 items-start min-w-0 w-full mb-4">
-            <TokenLogo token={token} logoSrc={logoSrc} />
+          {/* Header — logo now anchors the card instead of competing with text */}
+          <div className="flex gap-3.5 items-center min-w-0 w-full mb-4">
+            <TokenLogo token={token} logoSrc={logoSrc} accent={isNew} />
 
             <div className="min-w-0 flex-1">
-              <h3
-                className="text-sm font-medium text-slate-200 truncate group-hover:text-white transition-colors leading-tight"
-                style={{ fontFamily: "'Fraunces', Georgia, serif" }}
-              >
-                {token.name}
-              </h3>
+              <div className="flex items-center gap-2 min-w-0">
+                <h3
+                  className="text-[15px] font-medium text-slate-100 truncate group-hover:text-white transition-colors leading-tight"
+                  style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+                >
+                  {token.name}
+                </h3>
+                {isNew && (
+                  <span
+                    className="shrink-0 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+                    style={{ backgroundColor: `${ACCENT}22`, color: ACCENT }}
+                  >
+                    New
+                  </span>
+                )}
+              </div>
 
-              <p
-                className="text-[10px] text-slate-500 font-bold uppercase tracking-wider truncate mt-0.5"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-              >
+              <p className="text-[11px] text-slate-500 font-semibold font-mono truncate mt-0.5">
                 ${token.symbol ?? "—"}
               </p>
 
               {displayPrice !== null && (
-                <p
-                  className="text-[10px] text-teal font-bold mt-1"
-                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                >
+                <p className="text-[13px] font-bold font-mono mt-1" style={{ color: ACCENT }}>
                   ${Number(displayPrice).toFixed(8)}
                 </p>
               )}
-
-              <div className="mt-2.5">
-                <SocialLinks token={token} />
-              </div>
             </div>
           </div>
 
+          {/* Metrics — solid nested chips, single glass layer */}
           <div className="flex flex-wrap items-center gap-1.5 mb-4">
             <MetricGroup label="MCAP" value={displayMarketcap} currency="ETH" />
             <MetricGroup label="VOL" value={displayVolume} currency="ETH" />
           </div>
 
-          <div className="w-full border-t border-white/[0.06] pt-3">
-            <CurveOrStatus token={token} />
+          {/* Footer — status/progress + socials on one line */}
+          <div className="flex items-center gap-3 w-full border-t border-white/[0.06] pt-3.5">
+            <div className="flex-1 min-w-0">
+              <CurveOrStatus token={token} />
+            </div>
+            <SocialLinks token={token} />
           </div>
         </GlassSurface>
       </Link>
