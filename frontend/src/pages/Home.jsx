@@ -198,6 +198,7 @@ export default function Home() {
     initialTokens: tokens,
     sort,
     isPaused: pausedAll,
+currentPage,
     moverSortKey: "Last Trade",
   });
 
