@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { buyEmitter } from "../utils/buyEmitter";
 import { supabase } from "../lib/supabaseClient";
+
+/* Shared with Navbar.jsx / TokenCard.jsx — keep in sync */
+const ACCENT = "#96d6cd";
+const NESTED_FILL = "bg-black/25 border border-white/[0.08]";
 
 const shortenAddr = (a = "") =>
   typeof a === "string" && a.length > 8
@@ -13,7 +18,7 @@ export default function TradeAlertsMarquee({
   maxAlerts = 15,
 }) {
   const [alerts, setAlerts] = useState([]);
-  const [sysStatus, setSysStatus] = useState("SYNCED");
+  const [isLive, setIsLive] = useState(false);
 
   useEffect(() => {
     let channel;
@@ -21,7 +26,6 @@ export default function TradeAlertsMarquee({
     const TARGET_TABLE = "transactions";
 
     const loadLatestTrades = async () => {
-      setSysStatus("FETCHING");
       const { data, error } = await supabase
         .from(TARGET_TABLE)
         .select("*")
@@ -29,8 +33,8 @@ export default function TradeAlertsMarquee({
         .limit(maxAlerts);
 
       if (error) {
-        console.error("[SYS_ERR]:", error);
-        setSysStatus("ERR_DISCONNECT");
+        console.error("Failed to load recent trades:", error);
+        setIsLive(false);
         return;
       }
 
@@ -45,7 +49,6 @@ export default function TradeAlertsMarquee({
       }));
 
       setAlerts(formatted);
-      setSysStatus("LIVE_STREAMING");
     };
 
     const subscribeRealtime = () => {
@@ -80,7 +83,7 @@ export default function TradeAlertsMarquee({
           }
         )
         .subscribe((status) => {
-          if (status === "SUBSCRIBED") setSysStatus("LINK_ONLINE");
+          setIsLive(status === "SUBSCRIBED");
         });
     };
 
@@ -93,17 +96,21 @@ export default function TradeAlertsMarquee({
   }, [maxAlerts]);
 
   return (
-    <div className="w-full h-10 flex items-center font-mono text-[11px] select-none relative overflow-hidden box-border border-b border-white/[0.08] bg-white/[0.015] backdrop-blur-xl">
-      {/* Fixed status anchor */}
-      <div className="h-full bg-white/[0.04] backdrop-blur-md border-r border-white/[0.08] px-3 flex items-center gap-2 text-[#96d6cd] font-bold shrink-0 z-10 shadow-[4px_0_16px_rgba(0,0,0,0.35)]">
-        <span className="w-1.5 h-1.5 rounded-full bg-[#96d6cd] animate-pulse shadow-[0_0_6px_rgba(150,214,205,0.6)]" />
-        <span className="tracking-wider text-[10px] text-slate-400">SYS.TICKER //</span>
-        <span className="text-[10px] text-[#96d6cd] opacity-80">{sysStatus}</span>
+    <div className="w-full h-10 flex items-center text-[11px] select-none relative overflow-hidden box-border border-b border-white/[0.08] bg-white/[0.02] backdrop-blur-xl">
+      {/* Live indicator — just the dot, no status label */}
+      <div className="h-full flex items-center px-3.5 shrink-0 z-10 border-r border-white/[0.08] bg-black/20">
+        <span
+          className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${isLive ? "animate-pulse" : ""}`}
+          style={{
+            backgroundColor: isLive ? ACCENT : "#475569",
+            boxShadow: isLive ? `0 0 6px ${ACCENT}99` : "none",
+          }}
+        />
       </div>
 
       {/* Rolling ticker */}
       <div className="flex flex-1 items-center overflow-x-auto no-scrollbar h-full px-4">
-        <div className="flex items-center gap-2.5 whitespace-nowrap">
+        <div className="flex items-center gap-2 whitespace-nowrap">
           <AnimatePresence initial={false}>
             {alerts.map((alert) => {
               const isBuy = alert.type === "BOUGHT";
@@ -115,33 +122,35 @@ export default function TradeAlertsMarquee({
                   animate={{ opacity: 1, x: 0, scale: 1, filter: "brightness(1)" }}
                   exit={{ opacity: 0, x: 100, transition: { duration: 0.2 } }}
                   transition={{ type: "spring", stiffness: 260, damping: 24, mass: 0.8 }}
-                  className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/[0.03] backdrop-blur-md border border-white/[0.07] font-mono tracking-tight"
+                  className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg font-mono ${NESTED_FILL}`}
                 >
                   <span className="text-slate-500 font-medium">{shortenAddr(alert.user)}</span>
 
                   <span
-                    className={`font-black text-[10px] px-1.5 py-0.5 rounded-md ${
-                      isBuy ? "text-teal bg-teal/10" : "text-rose-400 bg-rose-500/10"
+                    className={`font-bold text-[10px] px-1.5 py-0.5 rounded-md ${
+                      isBuy ? "bg-[#96d6cd]/10" : "bg-rose-500/10 text-rose-400"
                     }`}
+                    style={isBuy ? { color: ACCENT } : undefined}
                   >
-                    {isBuy ? "★ BUY" : "✖ SELL"}
+                    {isBuy ? "Buy" : "Sell"}
                   </span>
 
-                  <span className="text-slate-100 font-bold">{Number(alert.eth || 0).toFixed(4)} ETH</span>
+                  <span className="text-slate-100 font-semibold">{Number(alert.eth || 0).toFixed(4)} ETH</span>
 
-                  <span className="text-slate-600">➔</span>
+                  <ArrowRight size={11} className="text-slate-600" />
 
-                  <span className="text-slate-400 hover:text-teal transition-colors cursor-pointer">
+                  <span className="text-slate-400 hover:text-[#96d6cd] transition-colors cursor-pointer">
                     {shortenAddr(alert.token)}
                   </span>
 
-                  
-                   <a href={`${etherscanBase}/tx/${alert.tx_hash}`}
+                  <a
+                    href={`${etherscanBase}/tx/${alert.tx_hash}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-slate-600 hover:text-slate-300 font-bold transition-colors border-l border-white/[0.08] pl-1.5 ml-0.5 text-[10px]"
+                    aria-label="View transaction"
+                    className="text-slate-600 hover:text-slate-300 transition-colors border-l border-white/[0.08] pl-1.5 ml-0.5"
                   >
-                    [HEX]
+                    <ExternalLink size={11} />
                   </a>
                 </motion.div>
               );
@@ -149,9 +158,7 @@ export default function TradeAlertsMarquee({
           </AnimatePresence>
 
           {alerts.length === 0 && (
-            <div className="text-slate-600 tracking-widest text-[10px] animate-pulse">
-              [CRITICAL] RUNNING ENGINE... PIPELINE_VACANT
-            </div>
+            <div className="text-slate-600 text-[11px]">Waiting for trades…</div>
           )}
         </div>
       </div>
