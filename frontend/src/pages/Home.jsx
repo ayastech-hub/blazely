@@ -7,10 +7,22 @@ import { ChevronLeft, ChevronRight, Twitter, Send, BookOpen } from "lucide-react
 import TokenList from "../components/TokenList";
 import { fetchTokensFromSupabase } from "../api/supabaseTokens";
 import { useTokenMovers } from "../hooks/useTokenMovers";
+import Logo from "../components/Logo";
+
+/* Shared with Navbar.jsx / TokenCard.jsx / FilterBar.jsx — keep in sync */
+const ACCENT = "#96d6cd";
+const NESTED_FILL = "bg-white/[0.04] border border-white/[0.08]";
 
 const TOKENS_PER_PAGE = 12;
 
-// --- Pagination helpers ---
+/* -------------------- Discord icon (matches Navbar.jsx) -------------------- */
+const DiscordIcon = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127.14 96.36" role="img" fill="currentColor" {...props}>
+    <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.5-5c1-.73,2-1.51,2.95-2.31A75.31,75.31,0,0,0,96,78.2c1,.8,2,1.58,3,2.31a68.43,68.43,0,0,1-10.5,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31.54-18.83C129.9,49.52,123.75,26.74,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z" />
+  </svg>
+);
+
+/* -------------------- Pagination helpers -------------------- */
 function buildPageList(currentPage, totalPages, maxVisible = 5) {
   const pages = [];
   if (totalPages <= maxVisible) {
@@ -36,6 +48,7 @@ function buildPageList(currentPage, totalPages, maxVisible = 5) {
 
 const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
   if (!totalPages || totalPages <= 1) return null;
+
   if (isMobile) {
     return (
       <nav className="mt-6 flex items-center justify-center gap-3">
@@ -43,22 +56,22 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
           aria-label="Previous page"
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className="px-3 py-1 rounded bg-white/[0.04] border border-white/[0.08] text-slate-400 text-xs font-bold uppercase disabled:opacity-30"
+          className={`w-9 h-9 flex items-center justify-center rounded-full text-slate-400 disabled:opacity-30 ${NESTED_FILL}`}
         >
-          <ChevronLeft className="w-3.5 h-3.5 inline-block" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
 
-        <div className="text-[11px] font-mono text-slate-400 px-2.5 py-1 rounded bg-white/[0.03] border border-white/[0.08]">
-          PAGE <span className="font-bold text-[#96d6cd] px-0.5">{currentPage}</span> / {totalPages}
+        <div className={`text-[12px] text-slate-400 px-3 py-1.5 rounded-full ${NESTED_FILL}`}>
+          Page <span className="font-mono font-semibold" style={{ color: ACCENT }}>{currentPage}</span> of {totalPages}
         </div>
 
         <button
           aria-label="Next page"
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className="px-3 py-1 rounded bg-white/[0.04] border border-white/[0.08] text-slate-400 text-xs font-bold uppercase disabled:opacity-30"
+          className={`w-9 h-9 flex items-center justify-center rounded-full text-slate-400 disabled:opacity-30 ${NESTED_FILL}`}
         >
-          <ChevronRight className="w-3.5 h-3.5 inline-block" />
+          <ChevronRight className="w-4 h-4" />
         </button>
       </nav>
     );
@@ -71,7 +84,7 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
         aria-label="Previous page"
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="flex items-center justify-center w-7 h-7 rounded bg-white/[0.04] border border-white/[0.08] text-slate-400 disabled:opacity-30 transition-all hover:text-slate-200"
+        className={`flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 disabled:opacity-30 transition-all hover:text-slate-200 ${NESTED_FILL}`}
       >
         <ChevronLeft className="w-3.5 h-3.5" />
       </button>
@@ -83,20 +96,20 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
             aria-current={p === currentPage ? "page" : undefined}
             onClick={() => onPageChange(p)}
             style={{
-              backgroundColor: p === currentPage ? "#96d6cd" : "",
-              borderColor: p === currentPage ? "#96d6cd" : "",
+              backgroundColor: p === currentPage ? ACCENT : "",
+              borderColor: p === currentPage ? ACCENT : "",
             }}
-            className={`w-7 h-7 rounded text-[11px] font-mono font-bold transition-all border ${
+            className={`w-8 h-8 rounded-lg text-[12px] font-mono font-semibold transition-all border ${
               p === currentPage
                 ? "text-[#030712] shadow-sm"
                 : "bg-white/[0.03] border-white/[0.08] text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]"
             }`}
           >
-            {String(p).padStart(2, "0")}
+            {p}
           </button>
         ) : (
-          <span key={`${p}-${idx}`} className="w-5 text-center font-mono text-slate-600 text-xs">
-            ...
+          <span key={`${p}-${idx}`} className="w-5 text-center text-slate-600 text-xs">
+            …
           </span>
         )
       )}
@@ -105,7 +118,7 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
         aria-label="Next page"
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className="flex items-center justify-center w-7 h-7 rounded bg-white/[0.04] border border-white/[0.08] text-slate-400 disabled:opacity-30 transition-all hover:text-slate-200"
+        className={`flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 disabled:opacity-30 transition-all hover:text-slate-200 ${NESTED_FILL}`}
       >
         <ChevronRight className="w-3.5 h-3.5" />
       </button>
@@ -113,36 +126,73 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
   );
 };
 
+/* -------------------- Footer -------------------- */
+const footerLinks = [
+  { name: "Leaderboard", href: "/leaderboard" },
+  { name: "Bridge", href: "/bridge" },
+  { name: "Locking", href: "/locking" },
+];
+const footerSocials = [
+  { name: "Twitter", href: "https://twitter.com", icon: Twitter },
+  { name: "Telegram", href: "https://t.me", icon: Send },
+  { name: "Discord", href: "https://discord.gg", icon: DiscordIcon },
+  { name: "Docs", href: "https://docs.example.com", icon: BookOpen },
+];
+
 const Footer = () => (
-  <footer className="mt-16 border-t border-white/[0.08] bg-white/[0.015] backdrop-blur-sm">
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <div className="text-xs font-black uppercase tracking-widest" style={{ color: "#96d6cd" }}>
-          Blazely
+  <footer className="mt-16 border-t border-white/[0.08] bg-white/[0.02]">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 sm:grid-cols-2 gap-8">
+      {/* Brand */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2.5">
+          <Logo size={30} />
+          <span className="font-black text-sm" style={{ fontFamily: "'Fraunces', Georgia, serif", color: ACCENT }}>
+            Blazely
+          </span>
         </div>
-        <p className="text-[10px] font-mono text-slate-600">&copy; {new Date().getFullYear()} CORE</p>
+        <p className="text-[13px] text-slate-500 max-w-xs leading-relaxed">
+          A faster way to discover, trade, and launch tokens across the curve.
+        </p>
       </div>
 
-      <div className="flex items-center gap-1">
-        <a href="#" aria-label="Twitter" className="p-2 rounded text-slate-500 hover:text-[#96d6cd] hover:bg-white/[0.06] transition-colors">
-          <Twitter size={14} />
-        </a>
-        <a href="#" aria-label="Telegram" className="p-2 rounded text-slate-500 hover:text-[#96d6cd] hover:bg-white/[0.06] transition-colors">
-          <Send size={14} />
-        </a>
-        <a href="#" aria-label="Docs" className="p-2 rounded text-slate-500 hover:text-slate-200 hover:bg-white/[0.06] transition-colors">
-          <BookOpen size={14} />
-        </a>
+      {/* Links + socials */}
+      <div className="flex flex-col sm:items-end gap-4">
+        <nav className="flex flex-wrap gap-x-5 gap-y-2 sm:justify-end">
+          {footerLinks.map((link) => (
+            <a key={link.name} href={link.href} className="text-[13px] text-slate-400 hover:text-white transition-colors">
+              {link.name}
+            </a>
+          ))}
+        </nav>
+        <div className="flex items-center gap-1.5">
+          {footerSocials.map((s) => (
+            <a
+              key={s.name}
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={s.name}
+              className={`p-2 rounded-lg text-slate-500 hover:text-[#96d6cd] hover:border-white/[0.14] transition-colors ${NESTED_FILL}`}
+            >
+              <s.icon size={14} />
+            </a>
+          ))}
+        </div>
       </div>
     </div>
-    <div className="max-w-[1600px] mx-auto px-4 pb-4">
-      <p className="text-[9px] font-mono uppercase tracking-wider text-slate-600 text-center">
-        RISK NOTE: SPECULATIVE PROTOCOL ASSETS INDUCE CAPITAL EXPOSURE. OPERATE WITH AUTONOMY.
-      </p>
+
+    <div className="border-t border-white/[0.06]">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p className="text-[11px] text-slate-600">© {new Date().getFullYear()} Blazely. All rights reserved.</p>
+        <p className="text-[11px] text-slate-600 text-center sm:text-right max-w-md">
+          Tokens on the curve are speculative and can lose value quickly. Only trade what you can afford to lose.
+        </p>
+      </div>
     </div>
   </footer>
 );
 
+/* -------------------- Home -------------------- */
 export default function Home() {
   const [tokens, setTokens] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -198,7 +248,7 @@ export default function Home() {
     initialTokens: tokens,
     sort,
     isPaused: pausedAll,
-currentPage,
+    currentPage,
     moverSortKey: "Last Trade",
   });
 
@@ -210,53 +260,52 @@ currentPage,
 
   return (
     <div className="min-h-screen relative flex flex-col bg-[#030712] text-slate-100">
-      <div>
-        <TradeAlertsMarquee />
+      <TradeAlertsMarquee />
+
+      <div className="pt-10 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full">
+        <TrendingTokens />
       </div>
 
-      <div className="pt-10 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full flex-1">
-        <TrendingTokens />
-
-        <FilterBar
-          onSortChange={(s) => {
-            setSort(s);
-            setCurrentPage(1);
-            loadTokens(1, { sort: s, searchTerm, listedOnly });
-          }}
-          onSearchChange={(q) => {
-            setSearchTerm(q);
-            setCurrentPage(1);
-            loadTokens(1, { searchTerm: q, sort, listedOnly });
-          }}
-          onRefresh={() => loadTokens(currentPage)}
-          onListedToggle={(val) => {
-            const vb = Boolean(val);
-            setListedOnly(vb);
-            setCurrentPage(1);
-            loadTokens(1, { listedOnly: vb, sort, searchTerm });
-          }}
-          onPauseToggle={(v) => setPausedAll(v)}
-          onViewModeChange={setViewMode}
-          initialSort={sort}
-          searchTerm={searchTerm}
-          listedOnly={listedOnly}
-          isPaused={pausedAll}
-          viewMode={viewMode}
-        />
-
-        <div className="flex items-center gap-3 mb-4 mt-8 pb-2 border-b border-white/[0.08]">
-          <div className="w-1.5 h-3.5 rounded-sm" style={{ backgroundColor: "#96d6cd" }} />
-          <h2 className="text-xs font-black uppercase tracking-widest text-slate-400">Token Registry Feed</h2>
-          <div className="flex-1" />
-          <div className="text-[10px] font-mono text-slate-500 bg-white/[0.03] border border-white/[0.08] px-2 py-0.5 rounded">
-            COUNT: {totalCount} ACTIVE
-          </div>
+      {/* Filter band — full-bleed edge to edge (matches the ticker above),
+          content inside stays padded/centered to the same max-width as
+          the rest of the page, instead of being boxed into the narrower
+          card padding everything else sits in. */}
+      <div className="w-full border-y border-white/[0.08] bg-white/[0.015] mt-6">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <FilterBar
+            onSortChange={(s) => {
+              setSort(s);
+              setCurrentPage(1);
+              loadTokens(1, { sort: s, searchTerm, listedOnly });
+            }}
+            onSearchChange={(q) => {
+              setSearchTerm(q);
+              setCurrentPage(1);
+              loadTokens(1, { searchTerm: q, sort, listedOnly });
+            }}
+            onRefresh={() => loadTokens(currentPage)}
+            onListedToggle={(val) => {
+              const vb = Boolean(val);
+              setListedOnly(vb);
+              setCurrentPage(1);
+              loadTokens(1, { listedOnly: vb, sort, searchTerm });
+            }}
+            onPauseToggle={(v) => setPausedAll(v)}
+            onViewModeChange={setViewMode}
+            initialSort={sort}
+            searchTerm={searchTerm}
+            listedOnly={listedOnly}
+            isPaused={pausedAll}
+            viewMode={viewMode}
+          />
         </div>
+      </div>
 
+      <div className="px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full flex-1 pt-6">
         {loading ? (
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {Array.from({ length: TOKENS_PER_PAGE }).map((_, i) => (
-              <div key={`ph-${i}`} className="p-3 bg-white/[0.02] border border-white/[0.06] animate-pulse h-40 rounded-2xl" />
+              <div key={`ph-${i}`} className={`h-40 rounded-[24px] animate-pulse ${NESTED_FILL}`} />
             ))}
           </div>
         ) : (
@@ -266,6 +315,7 @@ currentPage,
         <Pagination totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} isMobile={isMobile} />
         <AIChatSupport />
       </div>
+
       <Footer />
     </div>
   );
