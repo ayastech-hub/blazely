@@ -13,6 +13,10 @@ import TokenCard, {
   ChangeValue,
 } from "./TokenCard";
 
+/* Shared with Navbar.jsx / TokenCard.jsx / FilterBar.jsx — keep in sync */
+const ACCENT = "#96d6cd";
+const NESTED_FILL = "bg-black/25 border border-white/[0.08]";
+
 /* --------------------------------------------------------------------
  * List (table) view
  *
@@ -44,15 +48,11 @@ function TableHeader() {
   return (
     <div className="flex items-stretch border-b border-white/[0.08] min-w-max">
       <div
-        className={`sticky left-0 z-20 ${STICKY_COL_WIDTH} shrink-0 flex items-center px-4 py-2.5 bg-[#0b0f1c]/95 backdrop-blur-md border-r border-white/[0.08] text-[9px] uppercase tracking-widest text-slate-500 font-bold`}
-        style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        className={`sticky left-0 z-20 ${STICKY_COL_WIDTH} shrink-0 flex items-center px-4 py-2.5 bg-[#0b0f1c]/95 backdrop-blur-md border-r border-white/[0.08] text-[10px] text-slate-500 font-semibold`}
       >
         Token
       </div>
-      <div
-        className="flex items-center gap-3 px-4 py-2.5 text-[9px] uppercase tracking-widest text-slate-500 font-bold"
-        style={{ fontFamily: "'JetBrains Mono', monospace" }}
-      >
+      <div className="flex items-center gap-3 px-4 py-2.5 text-[10px] text-slate-500 font-semibold">
         {REST_COLUMNS.map((col) => (
           <div key={col.key} className={`${col.width} shrink-0 text-right`}>
             {col.label}
@@ -76,14 +76,14 @@ function TokenRow({ token, index, isNew }) {
       animate={isNew ? { ...shakeKeyframes, opacity: 1, y: 0, filter: "blur(0px)" } : "visible"}
       custom={index}
       className={`border-b border-white/[0.05] last:border-b-0 transition-colors duration-300 min-w-max ${
-        isNew ? "bg-teal/[0.05]" : "hover:bg-white/[0.035]"
+        isNew ? "bg-[#96d6cd]/[0.05]" : "hover:bg-white/[0.035]"
       }`}
     >
       <Link to={`/token/${token.address}`} className="flex items-stretch group">
         {/* Sticky/frozen identity column — stays put while the rest scrolls */}
         <div
           className={`sticky left-0 z-10 ${STICKY_COL_WIDTH} shrink-0 flex items-center gap-3 px-4 py-3 bg-[#0b0f1c]/95 backdrop-blur-md border-r border-white/[0.08] ${
-            isNew ? "bg-teal/[0.08]" : ""
+            isNew ? "bg-[#96d6cd]/[0.08]" : ""
           }`}
         >
           <TokenLogo token={token} logoSrc={logoSrc} size="w-9 h-9" textSize="text-sm" />
@@ -94,21 +94,13 @@ function TokenRow({ token, index, isNew }) {
             >
               {token.name}
             </h3>
-            <p
-              className="text-[10px] text-slate-500 font-bold uppercase tracking-wider truncate"
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            >
-              ${token.symbol ?? "—"}
-            </p>
+            <p className="text-[10px] text-slate-500 font-semibold font-mono truncate">${token.symbol ?? "—"}</p>
           </div>
         </div>
 
         {/* Scrollable data columns */}
         <div className="flex items-center gap-3 px-4 py-3">
-          <div
-            className="w-24 shrink-0 text-right text-teal text-[11px] font-bold tabular-nums"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-          >
+          <div className="w-24 shrink-0 text-right text-[11px] font-semibold font-mono tabular-nums" style={{ color: ACCENT }}>
             {displayPrice !== null ? `$${Number(displayPrice).toFixed(8)}` : "—"}
           </div>
 
@@ -117,16 +109,10 @@ function TokenRow({ token, index, isNew }) {
           <div className="w-14 shrink-0 text-right"><ChangeValue /></div>
           <div className="w-14 shrink-0 text-right"><ChangeValue /></div>
 
-          <div
-            className="w-24 shrink-0 text-right text-slate-300 text-[11px] font-bold tabular-nums"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-          >
+          <div className="w-24 shrink-0 text-right text-slate-300 text-[11px] font-semibold font-mono tabular-nums">
             {compactNumberShort(displayMarketcap, "ETH")}
           </div>
-          <div
-            className="w-24 shrink-0 text-right text-slate-300 text-[11px] font-bold tabular-nums"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-          >
+          <div className="w-24 shrink-0 text-right text-slate-300 text-[11px] font-semibold font-mono tabular-nums">
             {compactNumberShort(displayVolume, "ETH")}
           </div>
 
@@ -145,7 +131,7 @@ function TokenRow({ token, index, isNew }) {
 
 function TokenTable({ data }) {
   return (
-    <GlassSurface className="rounded-2xl">
+    <GlassSurface className="rounded-[22px]">
       {/* This is the one scroll container — sticky positioning on the
           identity column resolves against it, so it stays pinned no
           matter how far right the rest of the row scrolls. */}
@@ -167,7 +153,7 @@ function TokenTable({ data }) {
 
 function TokenGrid({ data }) {
   return (
-    <div className="font-mono grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
       {data.map((token, index) => (
         <div key={token.address || token.id || index} className="w-full h-full">
           <TokenCard token={token} index={index} isNew={token.isNew} />
@@ -184,8 +170,9 @@ function TokenGrid({ data }) {
 export default function TokenList({ data = [], view = "grid" }) {
   if (!data.length) {
     return (
-      <div className="text-center py-12 border border-dashed border-white/[0.08] bg-white/[0.02] backdrop-blur-md text-slate-600 font-bold tracking-widest text-[10px] uppercase rounded-2xl">
-        NULL DESCRIPTOR // NO COMPLIANT TOKENS DETECTED
+      <div className={`text-center py-14 rounded-[22px] border-dashed ${NESTED_FILL}`}>
+        <p className="text-sm text-slate-400 font-medium">No tokens found</p>
+        <p className="text-xs text-slate-600 mt-1">Try a different search or clear your filters.</p>
       </div>
     );
   }
