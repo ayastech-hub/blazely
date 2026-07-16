@@ -8,6 +8,7 @@ import TokenList from "../components/TokenList";
 import { fetchTokensFromSupabase } from "../api/supabaseTokens";
 import { useTokenMovers } from "../hooks/useTokenMovers";
 import Logo from "../components/Logo";
+import BackgroundGlow from "../components/BackgroundGlow";
 
 /* Shared with Navbar.jsx / TokenCard.jsx / FilterBar.jsx — keep in sync */
 const ACCENT = "#96d6cd";
@@ -260,6 +261,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen relative flex flex-col bg-[#030712] text-slate-100">
+      <BackgroundGlow />
+
+      <div className="relative z-10 flex flex-col flex-1">
       <TradeAlertsMarquee />
 
       <div className="pt-10 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full">
@@ -317,6 +321,7 @@ export default function Home() {
       </div>
 
       <Footer />
+      </div>
     </div>
   );
 }
