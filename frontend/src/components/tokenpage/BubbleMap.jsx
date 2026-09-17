@@ -4,7 +4,7 @@ import { useTokenHolders } from "../../hooks/useTokenHolders";
 import { computeBubbleLayout } from "../../utils/bubblePacking";
 
 const LAUNCHPAD_ADDRESS = (import.meta.env.VITE_LAUNCHPAD_ADDRESS || "").toLowerCase();
-const BUBBLE_COLORS = ["#96d6cd", "#5eead4", "#2dd4bf", "#14b8a6", "#0d9488", "#fbbf24", "#fb7185", "#475569"];
+const BUBBLE_COLORS = ["var(--teal)", "var(--teal-mid)", "var(--teal-2)", "var(--teal-3)", "var(--teal-4)", "var(--amber)", "var(--rose)", "var(--border-mid)"];
 
 export default function BubbleMap({ tokenAddress, circulatingSupply }) {
   const { holders, loading } = useTokenHolders(tokenAddress, 30);
@@ -40,10 +40,10 @@ export default function BubbleMap({ tokenAddress, circulatingSupply }) {
         ) : (
           <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} style={{ display: "block" }}>
             {[0, width / 5, (2 * width) / 5, (3 * width) / 5, (4 * width) / 5, width].map((x) => (
-              <line key={x} x1={x} y1={0} x2={x} y2={height} stroke="#1e293b" strokeWidth="0.3" />
+              <line key={x} x1={x} y1={0} x2={x} y2={height} stroke="var(--border)" strokeWidth="0.3" />
             ))}
             {[0, height / 5, (2 * height) / 5, (3 * height) / 5, (4 * height) / 5, height].map((y) => (
-              <line key={y} x1={0} y1={y} x2={width} y2={y} stroke="#1e293b" strokeWidth="0.3" />
+              <line key={y} x1={0} y1={y} x2={width} y2={y} stroke="var(--border)" strokeWidth="0.3" />
             ))}
 
             {layout.map((b, i) => {
@@ -92,8 +92,8 @@ export default function BubbleMap({ tokenAddress, circulatingSupply }) {
         <div style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(2,4,10,0.9)", border: `1px solid ${C.border}`, borderRadius: 5, padding: "7px 10px" }}>
           {[
             { col: C.teal, l: "Bonding Curve / LP" },
-            { col: "#fbbf24", l: "Large Holder" },
-            { col: "#475569", l: "Other" },
+            { col: "var(--amber)", l: "Large Holder" },
+            { col: "var(--border-mid)", l: "Other" },
           ].map((x) => (
             <div key={x.l} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
               <div style={{ width: 7, height: 7, borderRadius: "50%", background: x.col, opacity: 0.7 }} />

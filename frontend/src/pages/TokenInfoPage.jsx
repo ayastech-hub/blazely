@@ -1,13 +1,36 @@
 /**
- * TokenInfoPage
- * * Updated: Fixed-viewport architecture with internal scrolling 
- * and edge-to-edge content constraint.
+ * src/pages/TokenInfoPage.jsx
+ *
+ * PURPOSE
+ * The per-token dashboard: header stats, price chart, buy/sell, and a
+ * tabbed right panel (Holders, Dev Tokens, Bubble Map, Info, Comments) plus
+ * a Trades panel. This is a fixed-viewport ("app" style) layout —
+ * `height: 100dvh` with internal scroll regions — not a normal scrolling
+ * page, which is why it doesn't get the same page-background container
+ * treatment (Home/Leaderboard/etc.'s bg-alt bordered box) the rest of the
+ * app's pages use; there's no natural place for it here.
+ *
+ * DATA SOURCE — GRADUATED VS NOT
+ * `useTokenPageData` is the single consolidated fetch for everything
+ * pre-graduation (our own indexer). Once `token.graduated` is true:
+ *  - `useDexscreenerStats` supplies live market cap/volume (our indexer
+ *    goes stale post-graduation — it only watches the bonding curve).
+ *  - `TradesPanel` switches to `useGraduatedTrades`, which merges the
+ *    indexed curve history with live Uniswap swaps read directly from the
+ *    pair contract over RPC (not indexed/persisted — see that hook's own
+ *    header comment for why, and what a real implementation still needs).
+ *  - The chart is NOT switched to a Dexscreener embed — it keeps showing
+ *    the indexer's (now-frozen) history, with a "View live chart" link out
+ *    to Dexscreener instead. Rebuilding this page's own chart to consume
+ *    live Uniswap data is real, separate work.
  */
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { useTokenPageData } from "../hooks/useTokenPageData";
+import { useDexscreenerStats } from "../hooks/useDexscreenerStats";
+import Loading from "../components/ui/Loading";
 import { C } from "../utils/designTokens";
 
 import TokenHeaderBar from "../components/tokenpage/TokenHeaderBar";
@@ -60,8 +83,15 @@ export default function TokenInfoPage() {
   const priceUsd =
  tokenPriceUsdFromMetrics(metrics?.price_usd);
 
-  if (loading && !token) return <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: C.bg, color: C.mid, fontFamily: C.mono, fontSize: 11 }}>SYNCHRONIZING...</div>;
-  if (error || !token) return <div style={{ height: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: C.bg, color: C.sub, fontFamily: C.mono, gap: 8 }}>Token not found.</div>;
+  // Once a token graduates, trading moves to Uniswap and our own indexer's
+  // price history/market-cap figures go stale (it only watches the bonding
+  // curve contract). Dexscreener already indexes the Uniswap pair, so that's
+  // the live source once graduated=true; useDexscreenerStats is a no-op
+  // until an address is passed in, so this is safe to call unconditionally.
+  const liveStats = useDexscreenerStats(token?.graduated ? "base" : null, token?.address);
+
+  if (loading && !token) return <Loading label="SYNCHRONIZING..." fullSection />;
+  if (error || !token) return <div style={{ minHeight: "50vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: C.bg, color: C.sub, fontFamily: C.mono, gap: 8 }}>Token not found.</div>;
 
   const renderRightPanel = () => (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", minHeight: 0 }}>
@@ -75,7 +105,7 @@ creatorWallet={token.creator_wallet}  circulatingSupply={metrics?.circulating_su
   );
 
   return (
-    <div style={{ fontFamily: C.sans, background: C.bg, color: C.text, height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ fontFamily: C.sans, color: C.text, height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       
       <motion.button
         onClick={() => setShowBuySell(true)}
@@ -91,7 +121,7 @@ creatorWallet={token.creator_wallet}  circulatingSupply={metrics?.circulating_su
           borderRadius: 999,
           border: `1px solid ${C.borderHi}`, 
           background: C.teal, 
-          color: "#000", 
+          color: "var(--pure-black)", 
           fontFamily: C.mono,
           fontWeight: 800, 
           fontSize: 11, 
@@ -109,8 +139,24 @@ creatorWallet={token.creator_wallet}  circulatingSupply={metrics?.circulating_su
         {!isScrolling && <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>TRADE</motion.span>}
       </motion.button>
 
-      <TokenHeaderBar token={token} metrics={metrics} />
+      <TokenHeaderBar token={token} metrics={metrics} liveStats={token.graduated ? liveStats : null} />
       <ChartSection tokenAddress={token.address} livePrice={priceUsd} />
+
+      {token.graduated && (
+        <div style={{ padding: "6px 14px", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 9, color: C.mid, fontFamily: C.mono, letterSpacing: "0.05em" }}>
+            Chart above stops updating post-graduation — Uniswap trading isn't indexed yet
+          </span>
+          <a
+            href={`https://dexscreener.com/base/${token.address.toLowerCase()}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{ fontSize: 9, fontWeight: 700, color: C.teal, fontFamily: C.mono, textDecoration: "none", whiteSpace: "nowrap", marginLeft: 10 }}
+          >
+            View live chart ↗
+          </a>
+        </div>
+      )}
 
       {!token.graduated && (
         <div style={{ padding: "8px 14px", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
@@ -122,7 +168,7 @@ creatorWallet={token.creator_wallet}  circulatingSupply={metrics?.circulating_su
         {isDesktop ? (
           <>
             <div style={{ width: 420, flexShrink: 0, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", overflowY: "auto" }}>
-              <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} />
+              <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} graduated={token.graduated} pairAddress={token.liquidity_pair} />
             </div>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
               <div style={{ display: "flex", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
@@ -141,7 +187,7 @@ creatorWallet={token.creator_wallet}  circulatingSupply={metrics?.circulating_su
               ))}
             </div>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", minHeight: 0 }}>
-              {tab === "Trades" ? <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} /> : renderRightPanel()}
+              {tab === "Trades" ? <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} graduated={token.graduated} pairAddress={token.liquidity_pair} /> : renderRightPanel()}
             </div>
           </div>
         )}

@@ -33,18 +33,18 @@ export default function Chart({ tokenAddress }) {
     if (!containerRef.current) return;
 
     const chart = createChart(containerRef.current, {
-      layout: { background: { type: ColorType.Solid, color: "#0f1114" }, textColor: "#9aa4b2" },
+      layout: { background: { type: ColorType.Solid, color: "var(--panel-deep-2)" }, textColor: "var(--text-sub-2)" },
       grid: { vertLines: { color: "rgba(70,80,90,0.25)" }, horzLines: { color: "rgba(70,80,90,0.18)" } },
       width: containerRef.current.clientWidth,
       height: 400,
     });
 
     const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: "#22c55e",
-      downColor: "#ef4444",
+      upColor: "var(--green)",
+      downColor: "var(--red)",
       borderVisible: false,
-      wickUpColor: "#22c55e",
-      wickDownColor: "#ef4444",
+      wickUpColor: "var(--green)",
+      wickDownColor: "var(--red)",
     });
 
     chartRef.current = chart;
@@ -120,34 +120,34 @@ export default function Chart({ tokenAddress }) {
   }, [tokenAddress, timeframe, metric]);
 
   return (
-    <div className="flex flex-col w-full bg-[#0f1114] p-4 rounded-xl">
+    <div className="flex flex-col w-full bg-[var(--panel-deep-2)] p-4 rounded-xl">
       <div className="flex gap-4 mb-4 text-sm">
         <div className="flex gap-2">
           {["5m", "1H", "1D"].map((tf) => (
             <button
               key={tf}
               onClick={() => setTimeframe(tf)}
-              className={`px-2 py-1 rounded ${timeframe === tf ? "bg-slate-700 text-white" : "text-slate-400"}`}
+              className={`px-2 py-1 rounded ${timeframe === tf ? "bg-[var(--border-mid)] text-[var(--text-bright)]" : "text-[var(--text-mid-2)]"}`}
             >
               {tf}
             </button>
           ))}
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setMetric("PRICE")} className={metric === "PRICE" ? "text-teal-400" : "text-slate-400"}>
+          <button onClick={() => setMetric("PRICE")} className={metric === "PRICE" ? "text-[var(--teal-2)]" : "text-[var(--text-mid-2)]"}>
             Price
           </button>
-          <button onClick={() => setMetric("MC")} className={metric === "MC" ? "text-teal-400" : "text-slate-400"}>
+          <button onClick={() => setMetric("MC")} className={metric === "MC" ? "text-[var(--teal-2)]" : "text-[var(--text-mid-2)]"}>
             Mcap
           </button>
         </div>
-        {loading && <span className="text-slate-600 text-[10px] self-center animate-pulse">loading...</span>}
+        {loading && <span className="text-[var(--border-mid)] text-[10px] self-center animate-pulse">loading...</span>}
       </div>
 
       <div ref={containerRef} className="w-full h-[400px]" />
 
       {!loading && candlesRef.current.length === 0 && (
-        <div className="text-center text-slate-600 text-[10px] uppercase tracking-widest py-8">
+        <div className="text-center text-[var(--border-mid)] text-[10px] uppercase tracking-widest py-8">
           No trades yet in this window.
         </div>
       )}

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { C } from "../../utils/designTokens";
-import { Icon } from "./Icons";
+import { Filter, RotateCcw } from "lucide-react";
 
 function Label({ children }) {
   return (
@@ -75,7 +75,7 @@ export default function TxFilterSheet({ onClose, onApply }) {
             gap: 7,
           }}
         >
-          <Icon.Filter /> TRANSACTIONS FILTER
+          <Filter size={12} /> TRANSACTIONS FILTER
         </div>
         <div style={{ display: "flex", borderBottom: `1px solid ${C.border}` }}>
           {["Type", "Amount"].map((t) => (
@@ -164,7 +164,7 @@ export default function TxFilterSheet({ onClose, onApply }) {
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 18px 0" }}>
           <button onClick={reset} style={{ background: "none", border: "none", color: C.sub, fontSize: 10, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontFamily: C.mono }}>
-            <Icon.Reset /> RESET
+            <RotateCcw size={12} /> RESET
           </button>
           <button
             onClick={apply}
@@ -172,7 +172,7 @@ export default function TxFilterSheet({ onClose, onApply }) {
               background: C.teal,
               border: "none",
               borderRadius: 5,
-              color: "#030712",
+              color: "var(--bg)",
               fontWeight: 700,
               fontSize: 11,
               padding: "10px 32px",

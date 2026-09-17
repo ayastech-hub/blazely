@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import { ChevronRight, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { GLASS } from "./ui/GlassCard";
 
 /* Shared with Navbar.jsx / TokenCard.jsx — keep in sync */
-const ACCENT = "#96d6cd";
-const NESTED_FILL = "bg-black/25 border border-white/[0.08]";
+const ACCENT = "var(--teal)";
+const NESTED_FILL = "bg-[var(--bg)]/25 border border-white/[0.08]";
 
 const formatNumber = (num) => {
   if (!num) return "$0";
@@ -17,14 +18,14 @@ const formatNumber = (num) => {
 const TrendingTokenCard = ({ token }) => {
   return (
     <Link to={`/token/${token.address}`} className="block shrink-0 group">
-      <div className="relative w-56 h-16 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.05] backdrop-blur-2xl backdrop-saturate-[1.6] backdrop-brightness-105 flex items-center px-3 gap-2.5 transition-all duration-300 hover:bg-white/[0.09] hover:border-white/[0.14] hover:-translate-y-0.5 shadow-[0_6px_20px_rgba(0,0,0,0.35)]">
+      <div className={`relative w-56 h-16 overflow-hidden rounded-2xl ${GLASS} flex items-center px-3 gap-2.5 transition-all duration-300 hover:bg-white/[0.09] hover:border-white/[0.14] hover:-translate-y-0.5`}>
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
-        <div className="relative z-10 w-11 h-11 rounded-xl bg-black/30 border border-white/[0.1] overflow-hidden flex items-center justify-center shrink-0">
+        <div className="relative z-10 w-11 h-11 rounded-xl bg-[var(--bg)]/30 border border-white/[0.1] overflow-hidden flex items-center justify-center shrink-0">
           {token.logo ? (
             <img src={token.logo} alt={token.symbol} className="w-full h-full object-cover" loading="lazy" />
           ) : (
-            <span className="text-slate-500 font-medium text-sm" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+            <span className="text-[var(--text-faint-2)] font-medium text-sm" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
               {token.symbol?.[0]?.toUpperCase()}
             </span>
           )}
@@ -32,18 +33,18 @@ const TrendingTokenCard = ({ token }) => {
 
         <div className="relative z-10 flex-1 min-w-0">
           <div
-            className="text-xs font-medium text-slate-200 truncate leading-tight group-hover:text-white transition-colors"
+            className="text-xs font-medium text-[var(--text-bright-2)] truncate leading-tight group-hover:text-white transition-colors"
             style={{ fontFamily: "'Fraunces', Georgia, serif" }}
           >
             {token.name}
           </div>
-          <div className="text-[10px] text-slate-500 font-semibold font-mono truncate mt-0.5">
+          <div className="text-[10px] text-[var(--text-faint-2)] font-semibold font-mono truncate mt-0.5">
             ${token.symbol}
           </div>
         </div>
 
         <div className="relative z-10 text-right text-[9px] font-semibold font-mono leading-normal shrink-0">
-          <div className="text-slate-300">{formatNumber(token.market_cap)}</div>
+          <div className="text-[var(--text-mid)]">{formatNumber(token.market_cap)}</div>
           <div style={{ color: ACCENT }}>{formatNumber(token.volume_24h)} vol</div>
         </div>
       </div>
@@ -119,12 +120,12 @@ const TrendingTokens = () => {
             className="w-1.5 h-1.5 rounded-full animate-pulse"
             style={{ backgroundColor: ACCENT, boxShadow: `0 0 6px ${ACCENT}99` }}
           />
-          <h2 className="text-sm font-semibold text-slate-200">Trending</h2>
+          <h2 className="text-sm font-semibold text-[var(--text-bright-2)]">Trending</h2>
         </div>
 
         <Link
           to="/create"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[#030712] font-bold text-[11px] hover:brightness-105 active:scale-[0.97] transition-all duration-150"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[var(--bg)] font-bold text-[11px] hover:brightness-105 active:scale-[0.97] transition-all duration-150"
           style={{ backgroundColor: ACCENT }}
         >
           <Plus size={12} strokeWidth={2.5} />
@@ -140,9 +141,9 @@ const TrendingTokens = () => {
           ))}
         </div>
       ) : error ? (
-        <div className="flex items-center justify-between text-[13px] text-slate-500 py-6">
+        <div className="flex items-center justify-between text-[13px] text-[var(--text-faint-2)] py-6">
           <span>{error}</span>
-          <button onClick={fetchTrendingTokens} className="text-slate-300 hover:text-white font-medium">
+          <button onClick={fetchTrendingTokens} className="text-[var(--text-mid)] hover:text-white font-medium">
             Retry
           </button>
         </div>
@@ -154,7 +155,7 @@ const TrendingTokens = () => {
 
           <Link
             to="/tokens"
-            className={`w-12 min-w-[48px] h-16 flex items-center justify-center rounded-2xl text-slate-500 hover:text-[#96d6cd] hover:border-white/[0.14] transition-all duration-300 ${NESTED_FILL}`}
+            className={`w-12 min-w-[48px] h-16 flex items-center justify-center rounded-2xl text-[var(--text-faint-2)] hover:text-[var(--teal)] hover:border-white/[0.14] transition-all duration-300 ${NESTED_FILL}`}
             title="View all tokens"
           >
             <ChevronRight size={16} />

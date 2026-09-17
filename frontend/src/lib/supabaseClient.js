@@ -3,10 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 
 /**
  * Make sure these environment variables exist in your Vite/.env:
- * VITE_REACT_APP_REACT_APP_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+ * VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
  *
  * Example .env (at project root):
- * VITE_REACT_APP_SUPABASE_URL=https://your-project-id.supabase.co
+ * VITE_SUPABASE_URL=https://your-project-id.supabase.co
  * VITE_SUPABASE_ANON_KEY=eyJ...yourAnonKey...
  *
  * NOTE: Vite exposes only variables prefixed with VITE_ to the client.
@@ -30,7 +30,18 @@ if (!REACT_APP_SUPABASE_URL || !SUPABASE_ANON_KEY) {
  */
 const supabase = createClient(
   REACT_APP_SUPABASE_URL || "",
-  SUPABASE_ANON_KEY || ""
+  SUPABASE_ANON_KEY || "",
+  {
+    auth: {
+      // Explicit, not just relying on supabase-js's defaults: a wallet
+      // sign-in (see src/lib/siweAuth.js) should survive a page reload
+      // without re-prompting for a signature, only expiring/refreshing
+      // like any normal session would.
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false, // no OAuth redirect flow in this app
+    },
+  }
 );
 
 /**

@@ -3,19 +3,179 @@
 @tailwind utilities;
 
 /* ==========================================================================
-   Design tokens
+   ORIGINAL PALETTE — commented out, not active.
+   This is the exact palette that shipped before this pass. To go back to
+   it: delete the "Design tokens (refined palette)" block below this one,
+   then delete the two comment-marker lines that wrap this block (the line
+   right below this banner, and the closing marker line right above the
+   refined-palette banner). Every variable name is identical between the
+   two blocks, so nothing else in the app needs to change either way.
    ========================================================================== */
+/*
 :root {
-  --bg-main: #030712;
+  ---- Brand / accent ----
+  --teal: #96d6cd;
+  --teal-soft: #6fb8ad;
+  --teal-bright: #b2e3dc;
+  --teal-mid: #5eead4;
+  --teal-2: #2dd4bf;
+  --teal-3: #14b8a6;
+  --teal-4: #0d9488;
+  --brand-primary: var(--teal);
+  --brand-primary-rgb: 150, 214, 205;
+  --accent-purple: #a855f7;
+
+  ---- Backgrounds / surfaces ----
+  --bg: #030712;
+  --bg-main: var(--bg);
+  --bg-alt: #0b0f19;
+  --bg-alt-2: #0b0f1c;
+  --panel: #0d1320;
+  --panel-alt: #0a0f1c;
+  --panel-soft: #0d1220;
+  --panel-raised: #10182a;
+  --panel-deep: #0e1424;
+  --panel-deep-2: #0f1114;
+  --bg-deep-2: #060e1a;
+  --bg-deep-3: #040d0a;
+  --bg-deep-4: #030a0f;
+  --bg-deep-5: #02040a;
+  --near-black: #111827;
+  --pure-black: #000000;
   --bg-card: rgba(11, 15, 25, 0.4);
   --bg-deck: rgba(14, 20, 36, 0.8);
+
+  ---- Borders ----
+  --border: #1e293b;
+  --border-soft: #1b2333;
+  --border-hi: #334155;
+  --border-mid: #475569;
   --border-slate: rgba(30, 41, 59, 0.4);
 
-  --brand-primary: #96d6cd;
-  --brand-primary-rgb: 150, 214, 205;
+  ---- Text ----
+  --text-bright: #f1f5f9;
+  --text-bright-2: #e2e8f0;
+  --text-mid: #cbd5e1;
+  --text-mid-2: #94a3b8;
+  --text-sub: #a3b1c6;
+  --text-sub-2: #9aa4b2;
+  --text-faint: #6b7890;
+  --text-faint-2: #64748b;
+  --text-dim: #4b5568;
+  --text-muted: var(--text-faint-2);
 
-  --text-muted: #64748b;
-  --accent-purple: #a855f7;
+  ---- Status / semantic ----
+  --amber: #fbbf24;
+  --amber-2: #f59e0b;
+  --rose: #fb7185;
+  --rose-soft: #fda4af;
+  --red: #ef4444;
+  --red-2: #ff4d4d;
+  --green: #22c55e;
+  --green-2: #4ade80;
+  --amber-deep: #451a03;
+  --amber-deep-2: #78350f;
+  --rose-deep: #4c0519;
+  --green-deep: #052e16;
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+}
+*/
+
+/* ==========================================================================
+   Design tokens (refined palette) — this is the ACTIVE block.
+   Same variable names as the commented block above, only the values
+   changed. --teal (the primary brand color) and its direct family
+   (--teal-soft, --teal-bright, --teal-mid, --teal-2, --teal-3, --teal-4)
+   are UNCHANGED on purpose. This pass only refines the surrounding
+   surfaces, text tiers, and secondary status colors into one deliberate,
+   evenly-stepped cool-toned ramp instead of the previous pile of
+   near-duplicate near-black shades.
+   ========================================================================== */
+:root {
+  /* ---- Brand / accent ---- */
+  --teal: #96d6cd;
+  --teal-soft: #6fb8ad;
+  --teal-bright: #b2e3dc;
+  --teal-mid: #5eead4;
+  --teal-2: #2dd4bf;
+  --teal-3: #14b8a6;
+  --teal-4: #0d9488;
+  --brand-primary: var(--teal);
+  --brand-primary-rgb: 150, 214, 205;
+  --accent-purple: #a78bfa;
+
+  /* ---- Backgrounds / surfaces ----
+     A single cool blue-slate hue stepped evenly by lightness, matching the
+     teal accent's cool cast, instead of several unrelated near-blacks. */
+  --bg: #05070d;
+  --bg-main: var(--bg);
+  --bg-alt: #090d16;
+  --bg-alt-2: #0a0e18;
+  --panel: #0d121d;
+  --panel-alt: #0a0f19;
+  --panel-soft: #0e1420;
+  --panel-raised: #131b29;
+  --panel-deep: #0b1017;
+  --panel-deep-2: #0e1319;
+  --bg-deep-2: #070b13;
+  --bg-deep-3: #05090f;
+  --bg-deep-4: #04070c;
+  --bg-deep-5: #030509;
+  --near-black: #101725;
+  --pure-black: #000000;
+  --bg-card: rgba(10, 14, 22, 0.4);
+  --bg-deck: rgba(13, 19, 32, 0.8);
+
+  /* ---- Borders ---- */
+  --border: #1c2536;
+  --border-soft: #182031;
+  --border-hi: #2e394c;
+  --border-mid: #414f66;
+  --border-slate: rgba(28, 37, 54, 0.4);
+
+  /* ---- Text ---- */
+  --text-bright: #f4f7fb;
+  --text-bright-2: #e5eaf2;
+  --text-mid: #cbd4e1;
+  --text-mid-2: #93a1b8;
+  --text-sub: #a1aec3;
+  --text-sub-2: #97a2b3;
+  --text-faint: #6d7a93;
+  --text-faint-2: #66748c;
+  --text-dim: #4a5568;
+  --text-muted: var(--text-faint-2);
+
+  /* ---- Status / semantic ---- */
+  --amber: #f5b942;
+  --amber-2: #f2a30f;
+  --rose: #fb7c93;
+  --rose-soft: #fda9ba;
+  --red: #ef4f4f;
+  --red-2: #ff5c5c;
+  --green: #2fce6e;
+  --green-2: #52d68a;
+  --amber-deep: #401d05;
+  --amber-deep-2: #74390f;
+  --rose-deep: #4a0a1e;
+  --green-deep: #06301b;
+
+  /* Input fields — previously the darkest panel/bg tokens, which read as
+     almost invisible "holes" with no clear editable affordance. A pure
+     white input was tried and correctly rejected — it looks like a
+     light-mode patch glued onto a dark app. The actual fix: a distinctly
+     LIGHTER dark shade than the surrounding card, with a visible border and
+     a bright focus ring, so it reads as "editable" without breaking the
+     dark theme. */
+  --input-bg: var(--panel-raised);
+  --input-bg-hover: #182234;
+  --input-border: var(--border-hi);
+  --input-border-focus: var(--teal);
+  --input-text: var(--text-bright);
+  --input-placeholder: var(--text-faint-2);
 
   /* Radius scale — keep every rounded surface on one of these so the app
      doesn't accumulate one-off corner radii over time. */
@@ -24,6 +184,58 @@
   --radius-lg: 22px;
   --radius-xl: 28px;
 }
+
+/* ==========================================================================
+   Scrollbar-hide utility — Tailwind core doesn't ship one. Used for
+   horizontally-scrollable rows (e.g. Profile's tab bar) where the scroll
+   affordance is a fade-edge hint instead of a visible scrollbar.
+   ========================================================================== */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ==========================================================================
+   Shimmer — used by skeleton/loading placeholders (e.g. TokenCardSkeleton)
+   so loading states read as "content is arriving" rather than a dead gray box.
+   ========================================================================== */
+@keyframes brand-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.brand-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--panel-alt) 25%,
+    var(--panel-raised) 37%,
+    var(--panel-alt) 63%
+  );
+  background-size: 800px 100%;
+  animation: brand-shimmer 1.6s ease-in-out infinite;
+}
+
+/* Continuous rotation for the branded ring loader (components/ui/Loading.jsx) */
+@keyframes brand-spin {
+  to { transform: rotate(360deg); }
+}
+.brand-spin {
+  animation: brand-spin 1.1s linear infinite;
+}
+
+/* ==========================================================================
+   Z-index scale
+   Documented so a full-screen overlay never needs to reach for a magic
+   number like 99999 to "be safe" — pick the tier below and it's guaranteed
+   to sit above everything beneath it and below everything above it.
+     0   — decorative background layers (glow, gradients)
+     10  — in-flow content that needs to sit above a sibling glow/backdrop
+     20  — sticky in-page bars (list headers, tab bars)
+     50  — the site navbar and the floating AI chat widget
+     100 — full-screen overlays: mobile drawers, modals, toasts
+   ========================================================================== */
 
 /* ==========================================================================
    Global reset
@@ -35,7 +247,7 @@ body {
   margin: 0;
   padding: 0;
   background-color: var(--bg-main);
-  color: #f1f5f9;
+  color: var(--text-bright);
   /* Body copy is a proper sans-serif by default now. Monospace is reserved
      for actual data — prices, addresses, percentages — applied deliberately
      with Tailwind's `font-mono` utility where it belongs, not inherited by
@@ -91,9 +303,9 @@ main {
   font-weight: 700;
   padding: 0.625rem 1.25rem;
   border-radius: var(--radius-sm);
-  background: #030712;
+  background: var(--bg);
   border: 1px solid var(--border-slate);
-  color: #94a3b8;
+  color: var(--text-mid-2);
   cursor: pointer;
 }
 

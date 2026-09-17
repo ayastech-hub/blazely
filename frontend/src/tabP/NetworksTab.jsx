@@ -14,11 +14,8 @@ const NetworksTab = ({
   const navigate = useNavigate();
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div
-        className="p-5 sm:p-6 space-y-3"
-        style={{ backgroundColor: C.panelSoft, border: `1px solid ${C.borderSoft}`, borderRadius: C.radiusCard, boxShadow: C.shadowCard }}
-      >
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-3">
         <div className="flex items-center gap-3 pb-3 border-b" style={{ borderColor: C.borderSoft }}>
           <div className="w-9 h-9 flex items-center justify-center rounded-xl" style={{ backgroundColor: C.tealDim, color: C.teal }}>
             <Users size={16} />
@@ -26,6 +23,14 @@ const NetworksTab = ({
           <span className="text-sm font-semibold" style={{ color: C.bright }}>
             People you follow
           </span>
+          {following.length > 0 && (
+            <span
+              className="text-[11px] font-medium px-2 py-0.5 rounded-full ml-auto"
+              style={{ color: C.mid, backgroundColor: C.panel, border: `1px solid ${C.borderSoft}` }}
+            >
+              {following.length}
+            </span>
+          )}
         </div>
         {following.length === 0 ? (
           <p className="text-sm py-6 text-center" style={{ color: C.sub }}>
@@ -62,10 +67,7 @@ const NetworksTab = ({
         )}
       </div>
 
-      <div
-        className="p-5 sm:p-6 space-y-3"
-        style={{ backgroundColor: C.panelSoft, border: `1px solid ${C.borderSoft}`, borderRadius: C.radiusCard, boxShadow: C.shadowCard }}
-      >
+      <div className="space-y-3">
         <div className="flex items-center gap-3 pb-3 border-b" style={{ borderColor: C.borderSoft }}>
           <div className="w-9 h-9 flex items-center justify-center rounded-xl" style={{ backgroundColor: C.tealDim, color: C.teal }}>
             <Eye size={16} />
@@ -73,6 +75,14 @@ const NetworksTab = ({
           <span className="text-sm font-semibold" style={{ color: C.bright }}>
             Your watchlist
           </span>
+          {watchlist.length > 0 && (
+            <span
+              className="text-[11px] font-medium px-2 py-0.5 rounded-full ml-auto"
+              style={{ color: C.mid, backgroundColor: C.panel, border: `1px solid ${C.borderSoft}` }}
+            >
+              {watchlist.length}
+            </span>
+          )}
         </div>
         {watchlist.length === 0 ? (
           <p className="text-sm py-6 text-center" style={{ color: C.sub }}>

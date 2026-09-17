@@ -24,7 +24,7 @@ export default function BondingCurveProgress({ percent = 0, graduated = false, h
   if (graduated) {
     return (
       <div
-        className={`inline-flex items-center px-2 py-0.5 border border-slate-900 bg-[#0b0f19]/60 text-[9px] font-mono uppercase tracking-widest text-slate-400 font-bold rounded-sm ${className}`}
+        className={`inline-flex items-center px-2 py-0.5 border border-[var(--border)] bg-[var(--bg-alt)]/60 text-[9px] font-mono uppercase tracking-widest text-[var(--text-mid-2)] font-bold rounded-sm ${className}`}
       >
         [ STATUS: GRADUATED / UNISWAP POOL ACTIVE ]
       </div>
@@ -34,19 +34,19 @@ export default function BondingCurveProgress({ percent = 0, graduated = false, h
   return (
     <div className={`w-full flex flex-col gap-1.5 ${className}`}>
       <div
-        className="relative w-full bg-[#030712] border border-slate-900/60 overflow-hidden rounded-sm"
+        className="relative w-full bg-[var(--bg)] border border-[var(--border)]/60 overflow-hidden rounded-sm"
         style={{ height: trackHeight }}
       >
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${clamped}%` }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          style={{ backgroundColor: "#96d6cd" }}
+          style={{ backgroundColor: "var(--teal)" }}
           className="h-full opacity-90"
         />
         <motion.div
           className="absolute top-0 bottom-0 w-[2px] pointer-events-none"
-          style={{ backgroundColor: "#96d6cd" }}
+          style={{ backgroundColor: "var(--teal)" }}
           animate={{ left: `${clamped}%` }}
           transition={{ type: "spring", stiffness: 140, damping: 20, mass: 0.4 }}
         >
@@ -54,9 +54,9 @@ export default function BondingCurveProgress({ percent = 0, graduated = false, h
         </motion.div>
       </div>
 
-      <div className="flex items-center justify-between font-mono text-[9px] uppercase tracking-wider text-slate-500">
+      <div className="flex items-center justify-between font-mono text-[9px] uppercase tracking-wider text-[var(--text-faint-2)]">
         <span>Curve Fill</span>
-        <span className="font-bold text-slate-200">{clamped.toFixed(2)}%</span>
+        <span className="font-bold text-[var(--text-bright-2)]">{clamped.toFixed(2)}%</span>
       </div>
     </div>
   );

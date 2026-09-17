@@ -5,7 +5,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { C } from "../../utils/designTokens";
-import { Icon } from "./Icons";
+import { Check, Copy } from "lucide-react";
 import { useDevTokens } from "../../hooks/useDevTokens";
 import { formatCompact, formatWei, shortenAddress } from "../../utils/format";
 
@@ -20,7 +20,7 @@ function CopyBtn({ text }) {
       }}
       style={{ background: "none", border: "none", cursor: "pointer", padding: "2px 4px", color: ok ? C.teal : C.mid, display: "flex", alignItems: "center" }}
     >
-      {ok ? <Icon.Check /> : <Icon.Copy />}
+      {ok ? <Check size={11} /> : <Copy size={11} />}
     </button>
   );
 }
@@ -54,7 +54,7 @@ export default function DevTokensPanel({ creatorWallet, currentTokenAddress }) {
             style={{ display: "grid", gridTemplateColumns: "1fr 70px 70px", padding: "11px 14px", borderBottom: `1px solid ${C.border}`, alignItems: "center", textDecoration: "none", color: "inherit" }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-              <div style={{ width: 18, height: 18, borderRadius: 3, flexShrink: 0, background: "linear-gradient(135deg,#0d1320,#030712)", border: `1px solid ${C.borderHi}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: C.mono, fontSize: 7, fontWeight: 700, color: C.teal }}>
+              <div style={{ width: 18, height: 18, borderRadius: 3, flexShrink: 0, background: "linear-gradient(135deg,var(--panel),var(--bg))", border: `1px solid ${C.borderHi}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: C.mono, fontSize: 7, fontWeight: 700, color: C.teal }}>
                 {t.symbol?.slice(0, 2)}
               </div>
               <div style={{ minWidth: 0 }}>

@@ -1,6 +1,7 @@
 // src/components/Navbar.jsx
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
+import { ACCENT, GLASS } from "./ui/GlassCard";
 import {
   Menu,
   X,
@@ -28,10 +29,6 @@ import { useWallet } from "../context/WalletContext";
    - interactive controls sit on SOLID nested fills, never on
      raw glass, so contrast and hit targets stay predictable
    ============================================================ */
-const ACCENT = "#96d6cd";
-
-const GLASS =
-  "border border-white/[0.08] bg-white/[0.06] backdrop-blur-2xl backdrop-saturate-[1.6] backdrop-brightness-105 shadow-[0_10px_40px_-8px_rgba(0,0,0,0.6)]";
 
 const SpecularEdge = () => (
   <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
@@ -64,6 +61,7 @@ const navLinks = [
   { name: "Leaderboard", path: "/leaderboard" },
   { name: "Bridge", path: "/bridge" },
   { name: "Locking", path: "/locking" },
+  { name: "Bounty", path: "/bounty" },
   { name: "Profile", path: "/profile" },
 ];
 const socialLinks = [
@@ -211,13 +209,13 @@ const Navbar = ({ onSearchChange = () => {} }) => {
 
   const getNavLinkClass = ({ isActive }) =>
     `relative px-3.5 py-1.5 rounded-full text-[12px] font-semibold tracking-wide transition-all duration-200 ${
-      isActive ? "text-[#030712] bg-[#96d6cd]" : "text-slate-300 hover:text-white hover:bg-white/[0.08]"
+      isActive ? "text-[var(--bg)] bg-[var(--teal)]" : "text-[var(--text-mid)] hover:text-white hover:bg-white/[0.08]"
     }`;
 
   const getMobileLinkClass = (path, end) => {
     const isActive = end ? location.pathname === path : location.pathname.startsWith(path);
     return `flex items-center justify-between p-3.5 rounded-xl text-sm font-semibold transition-colors duration-150 ${
-      isActive ? "text-[#030712] bg-[#96d6cd]" : "text-slate-200 hover:bg-white/[0.06]"
+      isActive ? "text-[var(--bg)] bg-[var(--teal)]" : "text-[var(--text-bright-2)] hover:bg-white/[0.06]"
     }`;
   };
 
@@ -231,20 +229,20 @@ const Navbar = ({ onSearchChange = () => {} }) => {
 
     if (loading)
       return (
-        <div className="flex flex-col items-center justify-center flex-1 text-slate-400 py-14">
-          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/10 border-t-[#96d6cd] mb-4" />
-          <p className="text-sm text-slate-400">Searching…</p>
+        <div className="flex flex-col items-center justify-center flex-1 text-[var(--text-mid-2)] py-14">
+          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/10 border-t-[var(--teal)] mb-4" />
+          <p className="text-sm text-[var(--text-mid-2)]">Searching…</p>
         </div>
       );
 
     if (errorMsg)
       return (
         <div className="flex flex-col items-center justify-center flex-1 py-14 text-center px-6">
-          <div className="w-9 h-9 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-3">
-            <X size={16} className="text-rose-400" />
+          <div className="w-9 h-9 rounded-full bg-[var(--rose)]/10 border border-[var(--rose)]/20 flex items-center justify-center mb-3">
+            <X size={16} className="text-[var(--rose)]" />
           </div>
-          <p className="text-sm font-medium text-slate-200">Search is unavailable</p>
-          <p className="text-slate-500 mt-1 text-xs max-w-xs">{errorMsg} Try again in a moment.</p>
+          <p className="text-sm font-medium text-[var(--text-bright-2)]">Search is unavailable</p>
+          <p className="text-[var(--text-faint-2)] mt-1 text-xs max-w-xs">{errorMsg} Try again in a moment.</p>
         </div>
       );
 
@@ -252,10 +250,10 @@ const Navbar = ({ onSearchChange = () => {} }) => {
       return (
         <div className="flex flex-col items-center justify-center flex-1 py-14 text-center px-6">
           <div className="w-9 h-9 rounded-full bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mb-3">
-            <Search size={15} className="text-slate-500" />
+            <Search size={15} className="text-[var(--text-faint-2)]" />
           </div>
-          <p className="text-sm text-slate-300 font-medium">Search tokens or wallets</p>
-          <p className="text-xs text-slate-500 mt-1 max-w-xs">Type a name, ticker, or paste an address to get started.</p>
+          <p className="text-sm text-[var(--text-mid)] font-medium">Search tokens or wallets</p>
+          <p className="text-xs text-[var(--text-faint-2)] mt-1 max-w-xs">Type a name, ticker, or paste an address to get started.</p>
         </div>
       );
 
@@ -263,10 +261,10 @@ const Navbar = ({ onSearchChange = () => {} }) => {
       return (
         <div className="flex flex-col items-center justify-center flex-1 py-14 text-center px-6">
           <div className="w-9 h-9 rounded-full bg-white/[0.05] border border-white/[0.08] flex items-center justify-center mb-3">
-            <Search size={15} className="text-slate-600" />
+            <Search size={15} className="text-[var(--border-mid)]" />
           </div>
-          <p className="text-sm text-slate-300 font-medium">No results for "{query}"</p>
-          <p className="text-xs text-slate-500 mt-1">Check the spelling or try a full address.</p>
+          <p className="text-sm text-[var(--text-mid)] font-medium">No results for "{query}"</p>
+          <p className="text-xs text-[var(--text-faint-2)] mt-1">Check the spelling or try a full address.</p>
         </div>
       );
 
@@ -282,10 +280,10 @@ const Navbar = ({ onSearchChange = () => {} }) => {
               type="button"
               onClick={() => setActiveTab(tab.key)}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === tab.key ? "bg-white/[0.08] text-white" : "text-slate-500 hover:text-slate-300"
+                activeTab === tab.key ? "bg-white/[0.08] text-white" : "text-[var(--text-faint-2)] hover:text-[var(--text-mid)]"
               }`}
             >
-              {tab.label} <span className="text-slate-500 font-normal">{tab.count}</span>
+              {tab.label} <span className="text-[var(--text-faint-2)] font-normal">{tab.count}</span>
             </button>
           ))}
         </div>
@@ -313,11 +311,11 @@ const Navbar = ({ onSearchChange = () => {} }) => {
                     className="w-9 h-9 rounded-lg bg-white/[0.05] object-cover border border-white/[0.08] shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-slate-100 font-semibold text-sm truncate">
+                    <p className="text-[var(--text-bright)] font-semibold text-sm truncate">
                       {isToken ? item.symbol : item.display_name || "Unnamed wallet"}
                     </p>
                     <div className="flex items-center gap-1.5">
-                      <p className="text-[11px] text-slate-500 font-mono truncate">{formattedCA}</p>
+                      <p className="text-[11px] text-[var(--text-faint-2)] font-mono truncate">{formattedCA}</p>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -329,20 +327,20 @@ const Navbar = ({ onSearchChange = () => {} }) => {
                         aria-label="Copy address"
                       >
                         {copiedAddress === address ? (
-                          <Check size={11} className="text-emerald-400" />
+                          <Check size={11} className="text-[var(--green-2)]" />
                         ) : (
-                          <Copy size={11} className="text-slate-600 hover:text-slate-400" />
+                          <Copy size={11} className="text-[var(--border-mid)] hover:text-[var(--text-mid-2)]" />
                         )}
                       </button>
                     </div>
                   </div>
 
                   {isToken && (
-                    <span className="shrink-0 text-[11px] font-mono font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">
+                    <span className="shrink-0 text-[11px] font-mono font-semibold text-[var(--green-2)] bg-[var(--green)]/10 px-2 py-1 rounded-md border border-[var(--green)]/20">
                       {formatMarketCap(item.market_cap)}
                     </span>
                   )}
-                  <ArrowRight size={13} className="text-slate-700 shrink-0" />
+                  <ArrowRight size={13} className="text-[var(--border-hi)] shrink-0" />
                 </Link>
               </div>
             );
@@ -371,7 +369,7 @@ const Navbar = ({ onSearchChange = () => {} }) => {
               </span>
             </Link>
 
-            <nav className="hidden lg:flex items-center gap-1 p-1 rounded-full bg-black/20 border border-white/[0.06]">
+            <nav className="hidden lg:flex items-center gap-1 p-1 rounded-full bg-[var(--bg)]/20 border border-white/[0.06]">
               {navLinks.map((link) => (
                 <NavLink key={link.name} to={link.path} end={link.end} className={getNavLinkClass}>
                   {link.name}
@@ -385,19 +383,19 @@ const Navbar = ({ onSearchChange = () => {} }) => {
             {/* Search trigger — solid nested fill, not raw glass */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="hidden md:flex items-center gap-2.5 pl-3 pr-2 py-1.5 rounded-full bg-black/25 border border-white/[0.08] text-slate-400 hover:text-slate-200 hover:border-white/[0.14] transition-all duration-200 w-48"
+              className="hidden md:flex items-center gap-2.5 pl-3 pr-2 py-1.5 rounded-full bg-[var(--bg)]/25 border border-white/[0.08] text-[var(--text-mid-2)] hover:text-[var(--text-bright-2)] hover:border-white/[0.14] transition-all duration-200 w-48"
               aria-label="Search"
             >
               <Search size={14} />
               <span className="text-[13px]">Search…</span>
-              <kbd className="ml-auto text-[10px] font-mono font-semibold text-slate-500 bg-white/[0.06] border border-white/[0.08] rounded px-1.5 py-0.5">
+              <kbd className="ml-auto text-[10px] font-mono font-semibold text-[var(--text-faint-2)] bg-white/[0.06] border border-white/[0.08] rounded px-1.5 py-0.5">
                 {shortcutHint}
               </kbd>
             </button>
 
             <button
               onClick={() => setSearchOpen(true)}
-              className="md:hidden p-2 rounded-full text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]"
+              className="md:hidden p-2 rounded-full text-[var(--text-mid-2)] hover:text-[var(--text-bright-2)] hover:bg-white/[0.06]"
               aria-label="Search"
             >
               <Search size={17} />
@@ -405,7 +403,7 @@ const Navbar = ({ onSearchChange = () => {} }) => {
 
             <Link
               to="/create"
-              className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[#030712] font-bold text-[12px] tracking-wide hover:brightness-105 active:scale-[0.97] transition-all duration-150 shadow-[0_2px_12px_-2px_rgba(150,214,205,0.5)]"
+              className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[var(--bg)] font-bold text-[12px] tracking-wide hover:brightness-105 active:scale-[0.97] transition-all duration-150 shadow-[0_2px_12px_-2px_rgba(150,214,205,0.5)]"
               style={{ backgroundColor: ACCENT }}
             >
               <Plus size={13} strokeWidth={2.5} />
@@ -423,13 +421,13 @@ const Navbar = ({ onSearchChange = () => {} }) => {
                         if (!isConnected) return show();
                         if (!isAuthenticated) await connectWallet();
                       }}
-                      className="flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-full bg-black/25 border border-white/[0.08] text-slate-300 hover:border-white/[0.16] hover:text-white text-[13px] font-semibold transition-all duration-200 disabled:opacity-60"
+                      className="flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-full bg-[var(--bg)]/25 border border-white/[0.08] text-[var(--text-mid)] hover:border-white/[0.16] hover:text-white text-[13px] font-semibold transition-all duration-200 disabled:opacity-60"
                     >
                       <span
                         className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
                         style={{ backgroundColor: isAuthenticated ? `${ACCENT}22` : "rgba(255,255,255,0.06)" }}
                       >
-                        <Wallet size={12} className={isAuthenticated ? "" : "text-slate-500"} style={isAuthenticated ? { color: ACCENT } : undefined} />
+                        <Wallet size={12} className={isAuthenticated ? "" : "text-[var(--text-faint-2)]"} style={isAuthenticated ? { color: ACCENT } : undefined} />
                       </span>
                       <span className={isAuthenticated ? "font-mono" : ""} style={isAuthenticated ? { color: ACCENT } : undefined}>
                         {isAuthenticating ? "Connecting…" : displayAddress}
@@ -445,7 +443,7 @@ const Navbar = ({ onSearchChange = () => {} }) => {
               <button
                 onClick={() => setMobileOpen((s) => !s)}
                 aria-label="Toggle menu"
-                className="p-2 rounded-full text-slate-300 hover:text-white hover:bg-white/[0.06]"
+                className="p-2 rounded-full text-[var(--text-mid)] hover:text-white hover:bg-white/[0.06]"
               >
                 {mobileOpen ? <X size={18} /> : <Menu size={18} />}
               </button>
@@ -457,16 +455,16 @@ const Navbar = ({ onSearchChange = () => {} }) => {
       {/* ============ Mobile drawer — single glass layer ============ */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/70" onClick={() => setMobileOpen(false)} aria-hidden="true" />
+          <div className="absolute inset-0 bg-[var(--bg)]/70" onClick={() => setMobileOpen(false)} aria-hidden="true" />
           <div
             className={`relative w-[300px] max-w-[85vw] h-full ${GLASS} rounded-l-[24px] p-5 flex flex-col z-50`}
           >
             <div className="flex items-center justify-between pb-4 mb-2 border-b border-white/[0.08]">
-              <span className="text-sm font-bold text-slate-200">Menu</span>
+              <span className="text-sm font-bold text-[var(--text-bright-2)]">Menu</span>
               <button
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close menu"
-                className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/[0.06]"
+                className="p-1.5 rounded-full text-[var(--text-mid-2)] hover:text-white hover:bg-white/[0.06]"
               >
                 <X size={16} />
               </button>
@@ -481,7 +479,7 @@ const Navbar = ({ onSearchChange = () => {} }) => {
               <Link
                 to="/create"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 p-3.5 rounded-xl font-bold text-sm text-[#030712] mt-2"
+                className="flex items-center gap-2 p-3.5 rounded-xl font-bold text-sm text-[var(--bg)] mt-2"
                 style={{ backgroundColor: ACCENT }}
               >
                 <Plus size={15} strokeWidth={2.5} />
@@ -496,9 +494,9 @@ const Navbar = ({ onSearchChange = () => {} }) => {
                   return (
                     <button
                       onClick={show}
-                      className="w-full px-4 py-3 rounded-xl bg-black/25 border border-white/[0.08] text-slate-200 font-semibold text-sm flex items-center justify-center gap-2"
+                      className="w-full px-4 py-3 rounded-xl bg-[var(--bg)]/25 border border-white/[0.08] text-[var(--text-bright-2)] font-semibold text-sm flex items-center justify-center gap-2"
                     >
-                      <Wallet size={14} className="text-slate-500" />
+                      <Wallet size={14} className="text-[var(--text-faint-2)]" />
                       <span className={isConnected ? "font-mono" : ""} style={isConnected ? { color: ACCENT } : undefined}>
                         {displayAddress}
                       </span>
@@ -515,7 +513,7 @@ const Navbar = ({ onSearchChange = () => {} }) => {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.name}
-                    className="flex items-center justify-center p-2.5 rounded-lg bg-black/20 border border-white/[0.06] text-slate-400 hover:text-[#96d6cd] transition-colors"
+                    className="flex items-center justify-center p-2.5 rounded-lg bg-[var(--bg)]/20 border border-white/[0.06] text-[var(--text-mid-2)] hover:text-[var(--teal)] transition-colors"
                   >
                     <s.icon className="w-4 h-4" />
                   </a>
@@ -529,28 +527,28 @@ const Navbar = ({ onSearchChange = () => {} }) => {
       {/* ============ Search — solid scrim + one glass panel (no stacked transparency) ============ */}
       {searchOpen && (
         <div className="fixed inset-0 z-50 flex justify-center pt-20 sm:pt-28 px-3">
-          <div className="absolute inset-0 bg-[#030712]/85" onClick={() => setSearchOpen(false)} aria-hidden="true" />
+          <div className="absolute inset-0 bg-[var(--bg)]/85" onClick={() => setSearchOpen(false)} aria-hidden="true" />
           <form
             onSubmit={handleSubmitSearch}
             className={`relative w-full max-w-xl max-h-[75vh] ${GLASS} rounded-[22px] p-3 flex flex-col overflow-hidden`}
           >
             <SpecularEdge />
             <div className="flex items-center gap-3 w-full px-2 pb-3 mb-1 border-b border-white/[0.08]">
-              <Search className="text-slate-500 w-4 h-4 shrink-0" />
+              <Search className="text-[var(--text-faint-2)] w-4 h-4 shrink-0" />
               <input
                 ref={searchRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search tokens, wallets, or paste an address…"
-                className="flex-1 bg-transparent outline-none text-slate-100 text-sm placeholder:text-slate-600"
+                className="flex-1 bg-transparent outline-none text-[var(--text-bright)] text-sm placeholder:text-[var(--border-mid)]"
               />
-              <kbd className="hidden sm:block text-[10px] font-mono text-slate-500 bg-white/[0.06] border border-white/[0.08] rounded px-1.5 py-0.5 shrink-0">
+              <kbd className="hidden sm:block text-[10px] font-mono text-[var(--text-faint-2)] bg-white/[0.06] border border-white/[0.08] rounded px-1.5 py-0.5 shrink-0">
                 Esc
               </kbd>
               <button
                 type="button"
                 onClick={() => setSearchOpen(false)}
-                className="p-1 text-slate-500 hover:text-slate-300 shrink-0"
+                className="p-1 text-[var(--text-faint-2)] hover:text-[var(--text-mid)] shrink-0"
                 aria-label="Close search"
               >
                 <X size={16} />

@@ -1,3 +1,26 @@
+// src/pages/Home.jsx
+//
+// PURPOSE
+// The token discovery grid/list — the app's landing page. Trending strip,
+// live trade ticker, filter bar (sort/search/graduated-only/view mode),
+// paginated token grid, and the AI chat widget.
+//
+// DATA FLOW — READ THIS BEFORE "FIXING" THE MISSING DEPENDENCY ARRAY
+// `loadTokens(page, overrides)` is the single fetch function. The effect
+// that calls it only watches `[currentPage]` — deliberately, not an
+// oversight (hence the eslint-disable). Every place that changes sort/
+// search/listedOnly (in the FilterBar handlers below) calls
+// `loadTokens(1, { ...explicit overrides })` directly, at the same time it
+// updates state, rather than relying on a dependency-array effect re-run.
+// This avoids a double-fetch (state update -> effect fires -> fetch) and
+// avoids stale-closure bugs from reading `sort`/`searchTerm`/`listedOnly`
+// out of a effect that fired before the state settled. If you add a new
+// filter control, follow the same pattern: update state AND call
+// `loadTokens` with an explicit override in the same handler.
+//
+// Live updates (new trades bumping a token to the top, buy/sell shake
+// pulses) are entirely owned by `useTokenMovers` — Home just hands it the
+// current page's tokens and renders back whatever it returns.
 import React, { useState, useEffect } from "react";
 import FilterBar from "../components/FilterBar";
 import AIChatSupport from "../components/AIChatSupport";
@@ -5,13 +28,13 @@ import TradeAlertsMarquee from "../components/TradeAlertsMarquee";
 import TrendingTokens from "../components/TrendingTokens";
 import { ChevronLeft, ChevronRight, Twitter, Send, BookOpen } from "lucide-react";
 import TokenList from "../components/TokenList";
+import { TokenCardSkeleton } from "../components/TokenCard";
 import { fetchTokensFromSupabase } from "../api/supabaseTokens";
 import { useTokenMovers } from "../hooks/useTokenMovers";
 import Logo from "../components/Logo";
-import BackgroundGlow from "../components/BackgroundGlow";
 
 /* Shared with Navbar.jsx / TokenCard.jsx / FilterBar.jsx — keep in sync */
-const ACCENT = "#96d6cd";
+const ACCENT = "var(--teal)";
 const NESTED_FILL = "bg-white/[0.04] border border-white/[0.08]";
 
 const TOKENS_PER_PAGE = 12;
@@ -57,12 +80,12 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
           aria-label="Previous page"
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className={`w-9 h-9 flex items-center justify-center rounded-full text-slate-400 disabled:opacity-30 ${NESTED_FILL}`}
+          className={`w-9 h-9 flex items-center justify-center rounded-full text-[var(--text-mid-2)] disabled:opacity-30 ${NESTED_FILL}`}
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
 
-        <div className={`text-[12px] text-slate-400 px-3 py-1.5 rounded-full ${NESTED_FILL}`}>
+        <div className={`text-[12px] text-[var(--text-mid-2)] px-3 py-1.5 rounded-full ${NESTED_FILL}`}>
           Page <span className="font-mono font-semibold" style={{ color: ACCENT }}>{currentPage}</span> of {totalPages}
         </div>
 
@@ -70,7 +93,7 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
           aria-label="Next page"
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className={`w-9 h-9 flex items-center justify-center rounded-full text-slate-400 disabled:opacity-30 ${NESTED_FILL}`}
+          className={`w-9 h-9 flex items-center justify-center rounded-full text-[var(--text-mid-2)] disabled:opacity-30 ${NESTED_FILL}`}
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -85,7 +108,7 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
         aria-label="Previous page"
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className={`flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 disabled:opacity-30 transition-all hover:text-slate-200 ${NESTED_FILL}`}
+        className={`flex items-center justify-center w-8 h-8 rounded-lg text-[var(--text-mid-2)] disabled:opacity-30 transition-all hover:text-[var(--text-bright-2)] ${NESTED_FILL}`}
       >
         <ChevronLeft className="w-3.5 h-3.5" />
       </button>
@@ -102,14 +125,14 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
             }}
             className={`w-8 h-8 rounded-lg text-[12px] font-mono font-semibold transition-all border ${
               p === currentPage
-                ? "text-[#030712] shadow-sm"
-                : "bg-white/[0.03] border-white/[0.08] text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]"
+                ? "text-[var(--bg)] shadow-sm"
+                : "bg-white/[0.03] border-white/[0.08] text-[var(--text-mid-2)] hover:text-[var(--text-bright-2)] hover:bg-white/[0.06]"
             }`}
           >
             {p}
           </button>
         ) : (
-          <span key={`${p}-${idx}`} className="w-5 text-center text-slate-600 text-xs">
+          <span key={`${p}-${idx}`} className="w-5 text-center text-[var(--border-mid)] text-xs">
             …
           </span>
         )
@@ -119,7 +142,7 @@ const Pagination = ({ totalPages, currentPage, onPageChange, isMobile }) => {
         aria-label="Next page"
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className={`flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 disabled:opacity-30 transition-all hover:text-slate-200 ${NESTED_FILL}`}
+        className={`flex items-center justify-center w-8 h-8 rounded-lg text-[var(--text-mid-2)] disabled:opacity-30 transition-all hover:text-[var(--text-bright-2)] ${NESTED_FILL}`}
       >
         <ChevronRight className="w-3.5 h-3.5" />
       </button>
@@ -151,7 +174,7 @@ const Footer = () => (
             Blazely
           </span>
         </div>
-        <p className="text-[13px] text-slate-500 max-w-xs leading-relaxed">
+        <p className="text-[13px] text-[var(--text-faint-2)] max-w-xs leading-relaxed">
           A faster way to discover, trade, and launch tokens across the curve.
         </p>
       </div>
@@ -160,7 +183,7 @@ const Footer = () => (
       <div className="flex flex-col sm:items-end gap-4">
         <nav className="flex flex-wrap gap-x-5 gap-y-2 sm:justify-end">
           {footerLinks.map((link) => (
-            <a key={link.name} href={link.href} className="text-[13px] text-slate-400 hover:text-white transition-colors">
+            <a key={link.name} href={link.href} className="text-[13px] text-[var(--text-mid-2)] hover:text-white transition-colors">
               {link.name}
             </a>
           ))}
@@ -173,7 +196,7 @@ const Footer = () => (
               target="_blank"
               rel="noopener noreferrer"
               aria-label={s.name}
-              className={`p-2 rounded-lg text-slate-500 hover:text-[#96d6cd] hover:border-white/[0.14] transition-colors ${NESTED_FILL}`}
+              className={`p-2 rounded-lg text-[var(--text-faint-2)] hover:text-[var(--teal)] hover:border-white/[0.14] transition-colors ${NESTED_FILL}`}
             >
               <s.icon size={14} />
             </a>
@@ -184,8 +207,8 @@ const Footer = () => (
 
     <div className="border-t border-white/[0.06]">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <p className="text-[11px] text-slate-600">© {new Date().getFullYear()} Blazely. All rights reserved.</p>
-        <p className="text-[11px] text-slate-600 text-center sm:text-right max-w-md">
+        <p className="text-[11px] text-[var(--border-mid)]">© {new Date().getFullYear()} Blazely. All rights reserved.</p>
+        <p className="text-[11px] text-[var(--border-mid)] text-center sm:text-right max-w-md">
           Tokens on the curve are speculative and can lose value quickly. Only trade what you can afford to lose.
         </p>
       </div>
@@ -260,8 +283,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen relative flex flex-col bg-[#030712] text-slate-100">
-      <BackgroundGlow />
+    <div className="relative flex flex-col text-[var(--text-bright)]">
 
       <div className="relative z-10 flex flex-col flex-1">
       <TradeAlertsMarquee />
@@ -306,17 +328,19 @@ export default function Home() {
       </div>
 
       <div className="px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full flex-1 pt-6">
-        {loading ? (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-            {Array.from({ length: TOKENS_PER_PAGE }).map((_, i) => (
-              <div key={`ph-${i}`} className={`h-40 rounded-[24px] animate-pulse ${NESTED_FILL}`} />
-            ))}
-          </div>
-        ) : (
-          <TokenList data={liveTokens} view={viewMode} />
-        )}
+        <div className="bg-[var(--bg-alt)]/20 border border-[var(--border)] rounded-2xl p-4 sm:p-6">
+          {loading ? (
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              {Array.from({ length: TOKENS_PER_PAGE }).map((_, i) => (
+                <TokenCardSkeleton key={`ph-${i}`} />
+              ))}
+            </div>
+          ) : (
+            <TokenList data={liveTokens} view={viewMode} />
+          )}
 
-        <Pagination totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} isMobile={isMobile} />
+          <Pagination totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} isMobile={isMobile} />
+        </div>
         <AIChatSupport />
       </div>
 

@@ -58,7 +58,7 @@ export const SocialConnect = ({ userRow, onUpdate, loading }) => {
               disabled={loading || saving}
               onChange={(e) => handleChange(field.key, e.target.value)}
               className="px-3 py-2 text-sm rounded-lg focus:outline-none transition-colors"
-              style={{ backgroundColor: C.bg, border: `1px solid ${C.borderSoft}`, color: C.bright }}
+              style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--input-text)" }}
             />
           </div>
         ))}

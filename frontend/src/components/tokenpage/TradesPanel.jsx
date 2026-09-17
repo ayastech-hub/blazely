@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { C } from "../../utils/designTokens";
-import { Icon } from "./Icons";
-import { useTokenTrades } from "../../hooks/useTokenTrades";
+import { Check, Copy, Trophy, Filter, Link as LinkIcon } from "lucide-react";
+import { useGraduatedTrades } from "../../hooks/useGraduatedTrades";
 import { useTopTradersForToken } from "../../hooks/useTopTradersForToken";
-import { explorerTxUrl, timeAgo } from "../../utils/format";
+import { explorerTxUrl, timeAgo, formatWei } from "../../utils/format";
 import TxFilterSheet from "./TxFilterSheet";
 
 function CopyBtn({ text }) {
@@ -19,7 +19,7 @@ function CopyBtn({ text }) {
       }}
       style={{ background: "none", border: "none", cursor: "pointer", padding: "2px 4px", color: ok ? C.teal : C.mid, display: "flex", alignItems: "center", borderRadius: 3 }}
     >
-      {ok ? <Icon.Check /> : <Icon.Copy />}
+      {ok ? <Check size={11} /> : <Copy size={11} />}
     </button>
   );
 }
@@ -60,7 +60,7 @@ function TopTradersTable({ tokenAddress }) {
           <div key={t.wallet} style={{ display: "grid", gridTemplateColumns: "26px 1fr 50px 50px 70px 70px 70px", padding: "9px 14px", borderBottom: `1px solid ${C.border}`, alignItems: "center" }}>
             <span style={{ fontSize: 10, color: C.dim, fontFamily: C.mono }}>{t.rank}</span>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              {t.rank === 1 && <Icon.Trophy />}
+              {t.rank === 1 && <Trophy size={12} />}
               <Link to={`/user/${t.wallet}`} style={{ fontSize: 11, color: C.sub, fontFamily: C.mono, textDecoration: "none" }}>{t.wallet.slice(0, 6)}...{t.wallet.slice(-4)}</Link>
             </div>
             <span style={{ textAlign: "right", fontSize: 11, color: C.teal, fontFamily: C.mono, fontWeight: 700 }}>{t.buys}</span>
@@ -75,12 +75,15 @@ function TopTradersTable({ tokenAddress }) {
   );
 }
 
-export default function TradesPanel({ tokenAddress, creatorWallet }) {
+export default function TradesPanel({ tokenAddress, creatorWallet, graduated = false, pairAddress = null }) {
   const [subtab, setSubtab] = useState("Trades");
   const [showFilter, setShowFilter] = useState(false);
   const [txFilter, setTxFilter] = useState({ txType: "All", maker: "", usdMin: "", usdMax: "" });
   const [now, setNow] = useState(Date.now());
-  const { trades, loading } = useTokenTrades(tokenAddress);
+  // For a graduated token this returns pre-graduation curve history merged
+  // with live post-graduation Uniswap swaps; for a non-graduated token it's
+  // equivalent to the plain curve-only trade feed.
+  const { trades, loading } = useGraduatedTrades(tokenAddress, pairAddress, { graduated });
 
   React.useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -97,13 +100,18 @@ export default function TradesPanel({ tokenAddress, creatorWallet }) {
 
   return (
     <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      {graduated && (
+        <div style={{ padding: "4px 14px", fontSize: 8, color: C.mid, fontFamily: C.mono, letterSpacing: "0.06em", background: C.panel, borderBottom: `1px solid ${C.border}` }}>
+          CURVE HISTORY + LIVE UNISWAP SWAPS
+        </div>
+      )}
       <div style={{ display: "flex", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
         {["Trades", "Top Traders"].map((t) => (
           <button key={t} onClick={() => setSubtab(t)} style={{ background: "none", border: "none", whiteSpace: "nowrap", padding: "8px 13px", fontSize: 10, fontWeight: subtab === t ? 700 : 500, color: subtab === t ? C.bright : C.mid, borderBottom: subtab === t ? `2px solid ${C.teal}` : "2px solid transparent", cursor: "pointer", fontFamily: C.mono, letterSpacing: "0.04em" }}>{t}</button>
         ))}
         <div style={{ flex: 1 }} />
         {subtab === "Trades" && (
-          <button onClick={() => setShowFilter(true)} style={{ background: "none", border: "none", color: C.mid, cursor: "pointer", padding: "0 8px" }}><Icon.Filter /></button>
+          <button onClick={() => setShowFilter(true)} style={{ background: "none", border: "none", color: C.mid, cursor: "pointer", padding: "0 8px" }}><Filter size={12} /></button>
         )}
       </div>
 
@@ -122,14 +130,20 @@ export default function TradesPanel({ tokenAddress, creatorWallet }) {
                 <motion.div key={t.id} layout style={{ display: "grid", gridTemplateColumns: "56px 70px 1fr 1fr 86px", padding: "7px 14px", borderBottom: `1px solid ${C.border}`, alignItems: "center" }}>
                   <span style={{ color: C.dim, fontSize: 9, fontFamily: C.mono }}>{timeAgo(t.created_at, now)}</span>
                   <span style={{ fontSize: 10, fontWeight: 700, fontFamily: C.mono, color: t.type === "buy" ? C.teal : C.red }}>{t.type === "buy" ? "Buy" : "Sell"}</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, fontFamily: C.mono, color: C.bright }}>${Number(t.usd_value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, fontFamily: C.mono, color: C.bright }}>
+                    {t.usd_value != null
+                      ? `$${Number(t.usd_value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      : t.source === "uniswap"
+                      ? `${formatWei(t.token_amount, 2)} tok`
+                      : "—"}
+                  </span>
                   <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
                     <Link to={`/user/${t.user_address}`} style={{ fontSize: 9, color: C.mid, fontFamily: C.mono, textDecoration: "none" }}>{t.user_address?.slice(0, 6)}...{t.user_address?.slice(-4)}</Link>
                     <CopyBtn text={t.user_address} />
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
                     <span style={{ fontSize: 9, color: C.dim, fontFamily: C.mono }}>{t.tx_hash ? `${t.tx_hash.slice(0, 6)}...${t.tx_hash.slice(-4)}` : "—"}</span>
-                    {t.tx_hash && <a href={explorerTxUrl(t.tx_hash)} target="_blank" rel="noreferrer" style={{ color: C.mid }}><Icon.Link /></a>}
+                    {t.tx_hash && <a href={explorerTxUrl(t.tx_hash)} target="_blank" rel="noreferrer" style={{ color: C.mid }}><LinkIcon size={11} /></a>}
                   </div>
                 </motion.div>
               ))}

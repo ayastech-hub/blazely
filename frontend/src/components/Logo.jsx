@@ -18,7 +18,7 @@ export default function Logo({ size = 32, className = "" }) {
       */}
       <path
         d="M38 25 H58 C66 25, 68 33, 58 39 C68 43, 66 53, 54 53 H42 L30 75 L44 47 H36 L52 25"
-        stroke="#96d6cd"
+        stroke="var(--teal)"
         strokeWidth="2.5"
         strokeLinejoin="round"
         strokeLinecap="round"
@@ -30,7 +30,7 @@ export default function Logo({ size = 32, className = "" }) {
       */}
       <polygon 
         points="46,47 54,47 41,73" 
-        fill="#111827" 
+        fill="var(--near-black)" 
         fillOpacity="0.4" 
       />
     </svg>

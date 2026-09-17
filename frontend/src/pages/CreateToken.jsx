@@ -79,9 +79,6 @@ import {
   UploadCloud,
   Copy,
   ExternalLink,
-  AlertTriangle,
-  X,
-  Loader2,
   CheckCircle,
   ChevronDown,
   Droplets,
@@ -94,6 +91,18 @@ import {
 import { ConnectKitButton } from "connectkit";
 import { createClient } from "@supabase/supabase-js";
 import { GlassSurface } from "../components/TokenCard";
+import Alert from "../components/ui/Alert";
+import Loading from "../components/ui/Loading";
+import {
+  MAX_TAX_PERCENT,
+  SHORT_DURATION_PRESETS,
+  VESTING_DURATION_PRESETS,
+  Field,
+  InitialBuySection,
+  DurationSelector,
+  FieldLabel,
+  AdvancedFeatureRow,
+} from "../components/createTokenConfig";
 
 // ---------------------------------------------------------------------------------
 // Environment / configuration
@@ -150,27 +159,6 @@ const P0_ETH_PER_TOKEN = 0.000000001;
 const TOKENS_PER_ETH = 1 / P0_ETH_PER_TOKEN;
 
 // ---------------------------------------------------------------------------------
-// ADVANCED CONFIG — UI-only constants (no backend/contract support yet)
-// ---------------------------------------------------------------------------------
-const MAX_TAX_PERCENT = 4;
-
-const SHORT_DURATION_PRESETS = [
-  { key: "1h", label: "1 Hour" },
-  { key: "1d", label: "1 Day" },
-  { key: "1mo", label: "1 Month" },
-  { key: "infinity", label: "Infinity" },
-  { key: "custom", label: "Custom" },
-];
-
-const VESTING_DURATION_PRESETS = [
-  { key: "1mo", label: "1 Month" },
-  { key: "3mo", label: "3 Months" },
-  { key: "6mo", label: "6 Months" },
-  { key: "1y", label: "1 Year" },
-  { key: "custom", label: "Custom" },
-];
-
-// ---------------------------------------------------------------------------------
 // Error message helper
 // ---------------------------------------------------------------------------------
 function decodeContractError(err, contractInterface) {
@@ -215,241 +203,6 @@ function decodeContractError(err, contractInterface) {
   if (err?.reason) return `Transaction failed: ${err.reason}`;
   return "An unexpected error occurred. Please try again.";
 }
-
-// ---------------------------------------------------------------------------------
-// Reusable form field — restyled to the glass system (translucent surface, soft
-// border, teal focus/error states) but same props/behavior as before.
-// ---------------------------------------------------------------------------------
-const Field = ({ label, isError, maxLength, value = "", isTextarea, ...rest }) => {
-  const Comp = isTextarea ? "textarea" : "input";
-  return (
-    <div className="flex flex-col text-[11px] w-full">
-      <div className="flex justify-between items-center text-slate-500 font-bold uppercase tracking-wider mb-1">
-        <span>{label}</span>
-        {maxLength && (
-          <span>
-            {String(value).length}/{maxLength}
-          </span>
-        )}
-      </div>
-      <Comp
-        {...rest}
-        value={value}
-        maxLength={maxLength}
-        className={`w-full p-2.5 bg-black/30 backdrop-blur-md text-slate-200 border rounded-lg font-mono text-xs focus:outline-none transition-colors ${
-          isError ? "border-rose-500/60 focus:border-rose-500" : "border-white/[0.08] focus:border-teal/40"
-        }`}
-      />
-      {isError && <span className="text-rose-400 text-[10px] mt-1">{isError}</span>}
-    </div>
-  );
-};
-
-// ---------------------------------------------------------------------------------
-// Initial buy section — PURE display component. All validation lives in the parent
-// (`ethValidation`), passed down as `errorMessage`, so there is exactly one place that
-// decides whether an ETH amount is valid.
-// ---------------------------------------------------------------------------------
-const InitialBuySection = ({ ethAmount, setEthAmount, walletBalance, errorMessage }) => {
-  const balance = Number(walletBalance || 0);
-
-  const setPercent = (pct) => {
-    if (!balance || balance <= 0) return setEthAmount("");
-    // Leave a small buffer for gas so "MAX" doesn't leave the user unable to pay for gas.
-    const val = Math.max(0, balance - 0.001) * pct;
-    setEthAmount(val.toFixed(6).replace(/\.?0+$/, ""));
-  };
-
-  const stats = useMemo(() => {
-    const eth = parseFloat(ethAmount);
-    if (!eth) return { tokens: "0", pct: "0.00" };
-    return {
-      tokens: (eth * TOKENS_PER_ETH).toLocaleString(undefined, { maximumFractionDigits: 0 }),
-      pct: (((eth * TOKENS_PER_ETH) / TOTAL_SUPPLY) * 100).toFixed(4),
-    };
-  }, [ethAmount]);
-
-  return (
-    <GlassSurface className="rounded-2xl p-3.5">
-      <div className="flex flex-wrap justify-between items-center gap-1 mb-2.5 font-mono text-[11px]">
-        <span className="text-slate-400 font-bold uppercase tracking-wider">Initial Buy (optional)</span>
-        <span className="text-slate-500">BAL: {balance.toFixed(6)} ETH</span>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-2 mb-2.5">
-        <input
-          type="number"
-          inputMode="decimal"
-          placeholder="0.1"
-          step="0.000001"
-          min="0"
-          value={ethAmount}
-          onChange={(e) => setEthAmount(e.target.value)}
-          className={`w-full p-2.5 bg-black/30 backdrop-blur-md text-slate-200 border rounded-lg text-xs focus:outline-none transition-colors ${
-            errorMessage ? "border-rose-500/60" : "border-white/[0.08] focus:border-teal/40"
-          }`}
-        />
-        <div className="flex gap-1.5 shrink-0">
-          {[0.25, 0.5, 1].map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPercent(p)}
-              className="flex-1 sm:flex-initial px-2.5 py-2 bg-white/[0.03] backdrop-blur-md border border-white/[0.08] rounded-lg text-slate-400 hover:text-teal hover:border-teal/30 hover:bg-white/[0.06] transition-all text-[10px] font-bold"
-            >
-              {p === 1 ? "MAX" : `${p * 100}%`}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {errorMessage && <p className="text-rose-400 mb-2 text-[10px] font-mono">{errorMessage}</p>}
-
-      <div className="bg-black/20 border border-white/[0.06] rounded-xl p-2.5 text-[10px] text-slate-400 space-y-1 font-mono">
-        <div className="flex justify-between">
-          <span>EST_TOKENS:</span>
-          <span className="text-slate-200 font-bold">{stats.tokens}</span>
-        </div>
-        <div className="flex justify-between">
-          <span>SUPPLY_FILL:</span>
-          <span className="text-slate-200 font-bold">{stats.pct}%</span>
-        </div>
-        <div className="text-slate-600 text-[9px] pt-1">
-          Estimate only — excludes the 1% protocol fee, actual tokens received will be
-          slightly lower.
-        </div>
-      </div>
-    </GlassSurface>
-  );
-};
-
-// ---------------------------------------------------------------------------------
-// ADVANCED CONFIG — shared presentational pieces (UI only, see file-level note above)
-// ---------------------------------------------------------------------------------
-
-const ToggleSwitch = ({ checked, onChange, label }) => (
-  <button
-    type="button"
-    role="switch"
-    aria-checked={checked}
-    aria-label={label}
-    onClick={() => onChange(!checked)}
-    className={`relative w-[38px] h-[22px] rounded-full transition-colors duration-200 shrink-0 ${
-      checked ? "bg-teal" : "bg-white/[0.14]"
-    }`}
-  >
-    <span
-      className={`absolute top-0.5 left-0.5 w-[18px] h-[18px] rounded-full bg-[#030712] transition-transform duration-200 ${
-        checked ? "translate-x-4" : "translate-x-0"
-      }`}
-    />
-  </button>
-);
-
-const DurationSelector = ({ presets, value, onChange, customValue, customUnit, onCustomValueChange, onCustomUnitChange }) => (
-  <div className="space-y-2">
-    <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-      {presets.map((d) => (
-        <button
-          key={d.key}
-          type="button"
-          onClick={() => onChange(d.key)}
-          className={`py-2 px-2 rounded-lg border text-[10px] font-bold uppercase tracking-wide transition-all ${
-            value === d.key
-              ? "bg-teal/10 border-teal/40 text-teal"
-              : "bg-black/20 border-white/[0.08] text-slate-400 hover:text-slate-200 hover:border-white/[0.14]"
-          }`}
-        >
-          {d.label}
-        </button>
-      ))}
-    </div>
-
-    {value === "custom" && (
-      <div className="flex gap-2">
-        <input
-          type="number"
-          min="1"
-          value={customValue}
-          onChange={(e) => onCustomValueChange(e.target.value)}
-          placeholder="Amount"
-          className="flex-1 p-2 bg-black/30 backdrop-blur-md border border-white/[0.08] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-teal/40"
-        />
-        <select
-          value={customUnit}
-          onChange={(e) => onCustomUnitChange(e.target.value)}
-          className="p-2 bg-black/30 backdrop-blur-md border border-white/[0.08] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-teal/40"
-        >
-          <option value="minutes">Minutes</option>
-          <option value="hours">Hours</option>
-          <option value="days">Days</option>
-          <option value="months">Months</option>
-        </select>
-      </div>
-    )}
-  </div>
-);
-
-const FieldLabel = ({ children }) => (
-  <label className="block text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1.5">
-    {children}
-  </label>
-);
-
-// One collapsible feature row: icon, title, description, enable switch, and an
-// expand/collapse chevron. Fields inside dim + go inert whenever the switch is off,
-// even if the row is expanded — so "expanded but disabled" reads clearly.
-const AdvancedFeatureRow = ({ icon: Icon, title, description, enabled, onEnabledChange, expanded, onToggleExpanded, children }) => (
-  <div className="border border-white/[0.08] rounded-2xl overflow-hidden bg-black/20 backdrop-blur-md">
-    <button
-      type="button"
-      onClick={onToggleExpanded}
-      className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-white/[0.03] transition-colors"
-    >
-      <div
-        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
-          enabled ? "bg-teal/10 border-teal/30 text-teal" : "bg-white/[0.03] border-white/[0.08] text-slate-500"
-        }`}
-      >
-        <Icon size={15} />
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <span className="text-xs font-bold text-slate-200">{title}</span>
-        <p className="text-[10px] text-slate-500 mt-0.5 truncate">{description}</p>
-      </div>
-
-      <div onClick={(e) => e.stopPropagation()} className="shrink-0">
-        <ToggleSwitch checked={enabled} onChange={onEnabledChange} label={`Enable ${title}`} />
-      </div>
-
-      <ChevronDown
-        size={14}
-        className={`shrink-0 text-slate-500 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
-      />
-    </button>
-
-    <AnimatePresence initial={false}>
-      {expanded && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className="overflow-hidden"
-        >
-          <div
-            className={`p-4 pt-3 border-t border-white/[0.06] space-y-3 transition-opacity ${
-              enabled ? "" : "opacity-40 pointer-events-none"
-            }`}
-          >
-            {children}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </div>
-);
 
 // =================================================================================
 // Main component
@@ -814,58 +567,74 @@ const CreateToken = () => {
   };
 
   return (
-    <div className="font-mono min-h-screen bg-[#030712] text-slate-300 p-3 sm:p-8 relative">
+    <div className="font-mono text-[var(--text-mid)] p-3 sm:p-8 relative">
       {/* --- Error toast --- */}
       {error && (
-        <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-50 p-3.5 rounded-2xl bg-rose-950/80 backdrop-blur-xl border border-rose-800/60 text-slate-100 flex items-start gap-3 text-xs sm:max-w-sm shadow-[0_8px_28px_rgba(0,0,0,0.45)]">
-          <AlertTriangle size={14} className="shrink-0 text-rose-400 mt-0.5" />
-          <div className="flex-1">
-            <span className="font-bold uppercase tracking-wider block mb-0.5">Error</span>
-            <p>{error}</p>
-          </div>
-          <button onClick={() => setError(null)} className="text-slate-500 hover:text-slate-200">
-            <X size={14} />
-          </button>
+        <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-[100] sm:max-w-sm">
+          <Alert variant="error" title="Error" onDismiss={() => setError(null)}>
+            {error}
+          </Alert>
         </div>
       )}
 
       {/* --- Wrong network banner --- */}
       {wrongNetwork && (
-        <div className="mb-4 max-w-3xl mx-auto p-3.5 rounded-2xl bg-amber-950/30 backdrop-blur-md border border-amber-800/50 text-amber-400 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <span>You're connected to the wrong network.</span>
-          <button
-            onClick={() => switchChain?.({ chainId: EXPECTED_CHAIN_ID })}
-            className="px-3 py-1.5 rounded-lg border border-amber-700/60 uppercase text-[10px] font-bold hover:bg-amber-900/30 transition-colors"
-          >
-            Switch Network
-          </button>
+        <div className="mb-4 max-w-3xl mx-auto">
+          <Alert variant="warning">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <span>You're connected to the wrong network.</span>
+              <button
+                onClick={() => switchChain?.({ chainId: EXPECTED_CHAIN_ID })}
+                className="px-3 py-1.5 rounded-lg border border-[var(--amber)]/60 uppercase text-[10px] font-bold hover:bg-[var(--amber-deep-2)]/30 transition-colors shrink-0"
+              >
+                Switch Network
+              </button>
+            </div>
+          </Alert>
         </div>
       )}
 
       <div className="max-w-3xl mx-auto">
-        {/* --- Progress tracker --- */}
-        <div className="flex flex-col sm:flex-row gap-1.5 mb-8 p-1.5 rounded-2xl bg-white/[0.02] backdrop-blur-md border border-white/[0.07] text-[10px] font-bold text-slate-500 tracking-widest">
-          {[1, 2, 3].map((n) => (
-            <div
-              key={n}
-              className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-xl transition-colors ${
-                step === n ? "bg-teal/10 border border-teal/30 text-teal" : "bg-white/[0.02] border border-transparent"
-              }`}
-            >
-              <span>[{String(n).padStart(2, "0")}]</span>
-              <span className="uppercase">
-                {n === 1 ? "Details" : n === 2 ? "Submitting" : "Complete"}
-              </span>
-            </div>
-          ))}
-        </div>
+        {/* --- Form (always visible — submitting/success now render as an overlay on top instead of replacing this) --- */}
+        <div className="bg-[var(--bg-alt)]/20 border border-[var(--border)] rounded-2xl p-4 sm:p-6 space-y-4">
+          {/* --- Logo (moved to the top: the first thing you set for a new token) --- */}
+          <GlassSurface className="rounded-[28px] p-4 flex flex-col items-center">
+                  <div className="text-[10px] font-bold text-[var(--text-faint-2)] border-b border-white/[0.07] pb-2 w-full uppercase tracking-wider text-left mb-3">
+                    Logo (optional)
+                  </div>
+                  <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleLogoFile(e.dataTransfer.files?.[0]);
+                    }}
+                    className="w-full max-w-xs mx-auto bg-[var(--bg)]/20 rounded-2xl border border-dashed border-white/[0.14] p-4 flex flex-col items-center justify-center min-h-[140px]"
+                  >
+                    {logoPreview ? (
+                      <img
+                        src={logoPreview}
+                        className="w-20 h-20 rounded-xl border border-white/[0.08] object-cover"
+                        alt="Logo preview"
+                      />
+                    ) : (
+                      <UploadCloud size={24} className="text-[var(--border-mid)] mb-2" />
+                    )}
+                    <label className="mt-2 text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[var(--text-mid)] hover:text-teal hover:border-teal/30 cursor-pointer transition-colors">
+                      Choose file
+                      <input
+                        type="file"
+                        hidden
+                        accept="image/*"
+                        onChange={(e) => handleLogoFile(e.target.files?.[0])}
+                      />
+                    </label>
+                    <span className="text-[9px] text-[var(--border-mid)] mt-2">Max size: 5MB</span>
+                  </div>
+          </GlassSurface>
 
-        {/* --- Step 1: form --- */}
-        {step === 1 && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <GlassSurface className="lg:col-span-2 rounded-[28px] p-4 space-y-4">
-                <div className="text-[10px] font-bold text-slate-500 border-b border-white/[0.07] pb-2 uppercase tracking-wider">
+          {/* --- Core parameters + social links --- */}
+          <GlassSurface className="rounded-[28px] p-4 space-y-4">
+                <div className="text-[10px] font-bold text-[var(--text-faint-2)] border-b border-white/[0.07] pb-2 uppercase tracking-wider">
                   Core Parameters
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -896,7 +665,7 @@ const CreateToken = () => {
                   rows={3}
                 />
 
-                <div className="text-[10px] font-bold text-slate-500 border-b border-white/[0.07] pb-2 pt-2 uppercase tracking-wider">
+                <div className="text-[10px] font-bold text-[var(--text-faint-2)] border-b border-white/[0.07] pb-2 pt-2 uppercase tracking-wider">
                   Social Links
                 </div>
                 <div className="space-y-3">
@@ -925,83 +694,19 @@ const CreateToken = () => {
                     isError={socialErrors.twitter}
                   />
                 </div>
-              </GlassSurface>
+          </GlassSurface>
 
-              <div className="space-y-4 lg:col-span-1">
-                <GlassSurface className="rounded-[28px] p-4 flex flex-col items-center">
-                  <div className="text-[10px] font-bold text-slate-500 border-b border-white/[0.07] pb-2 w-full uppercase tracking-wider text-left mb-3">
-                    Logo (optional)
-                  </div>
-                  <div
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      handleLogoFile(e.dataTransfer.files?.[0]);
-                    }}
-                    className="w-full bg-black/20 rounded-2xl border border-dashed border-white/[0.14] p-4 flex flex-col items-center justify-center min-h-[140px]"
-                  >
-                    {logoPreview ? (
-                      <img
-                        src={logoPreview}
-                        className="w-20 h-20 rounded-xl border border-white/[0.08] object-cover"
-                        alt="Logo preview"
-                      />
-                    ) : (
-                      <UploadCloud size={24} className="text-slate-600 mb-2" />
-                    )}
-                    <label className="mt-2 text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:text-teal hover:border-teal/30 cursor-pointer transition-colors">
-                      Choose file
-                      <input
-                        type="file"
-                        hidden
-                        accept="image/*"
-                        onChange={(e) => handleLogoFile(e.target.files?.[0])}
-                      />
-                    </label>
-                    <span className="text-[9px] text-slate-600 mt-2">Max size: 5MB</span>
-                  </div>
-                </GlassSurface>
-
+          {/* --- Initial buy --- */}
                 <InitialBuySection
                   ethAmount={ethAmount}
                   setEthAmount={setEthAmount}
                   walletBalance={walletBalanceEth}
                   errorMessage={ethValidation.ok ? null : ethValidation.message}
+                  tokensPerEth={TOKENS_PER_ETH}
+                  totalSupply={TOTAL_SUPPLY}
                 />
 
-                {/*
-                  The core bug fix lives here: `disabled` is now ONLY applied when the wallet
-                  is already connected. When disconnected, the button must always be clickable
-                  so the user can actually open the wallet-connect modal.
-                */}
-                <ConnectKitButton.Custom>
-                  {({ show }) => (
-                    <button
-                      onClick={isConnected ? handleDeploy : show}
-                      disabled={isConnected && !isFormValid}
-                      style={
-                        isConnected && !isFormValid
-                          ? {}
-                          : { backgroundColor: "#96d6cd", color: "#030712" }
-                      }
-                      className={`w-full p-3.5 rounded-2xl font-bold text-xs uppercase tracking-widest text-center transition-all ${
-                        isConnected && !isFormValid
-                          ? "bg-white/[0.03] text-slate-600 border border-white/[0.08] cursor-not-allowed"
-                          : "hover:opacity-90"
-                      }`}
-                    >
-                      {isConnected ? "Deploy Token" : "Connect Wallet"}
-                    </button>
-                  )}
-                </ConnectKitButton.Custom>
-                {!isConnected && (
-                  <div className="text-[9px] text-center text-slate-600 uppercase">
-                    Connect a wallet to continue
-                  </div>
-                )}
-              </div>
-            </div>
-
+          {/* --- Advanced configuration — now sits above the deploy button, not below it --- */}
             {/* =========================================================================
                 ADVANCED CONFIGURATION — UI ONLY (no backend/contract wiring yet)
                 Collapsed by default so a simple launch stays a short form; opening this
@@ -1013,25 +718,25 @@ const CreateToken = () => {
                 onClick={() => setAdvancedOpen((p) => !p)}
                 className="w-full flex items-center gap-3 p-4 text-left"
               >
-                <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-slate-400 shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[var(--text-mid-2)] shrink-0">
                   <SlidersHorizontal size={16} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-slate-200" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+                    <span className="text-sm font-medium text-[var(--text-bright-2)]" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
                       Advanced Configuration
                     </span>
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 bg-white/[0.05] px-1.5 py-0.5 rounded">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-faint-2)] bg-white/[0.05] px-1.5 py-0.5 rounded">
                       Optional
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-500 mt-0.5">
+                  <p className="text-[10px] text-[var(--text-faint-2)] mt-0.5">
                     Fees, tax, vesting, and anti-snipe protection — for serious launches.
                   </p>
                 </div>
                 <ChevronDown
                   size={16}
-                  className={`shrink-0 text-slate-500 transition-transform duration-200 ${advancedOpen ? "rotate-180" : ""}`}
+                  className={`shrink-0 text-[var(--text-faint-2)] transition-transform duration-200 ${advancedOpen ? "rotate-180" : ""}`}
                 />
               </button>
 
@@ -1061,9 +766,9 @@ const CreateToken = () => {
                           placeholder="0x..."
                           value={feeReceiver.address}
                           onChange={(e) => setFeeReceiver((p) => ({ ...p, address: e.target.value }))}
-                          className="w-full p-2.5 bg-black/30 backdrop-blur-md border border-white/[0.08] rounded-lg text-xs font-mono text-slate-200 focus:outline-none focus:border-teal/40"
+                          className="w-full p-2.5 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg text-xs font-mono text-[var(--input-text)] focus:outline-none focus:border-[var(--input-border-focus)]"
                         />
-                        <p className="text-[10px] text-slate-500">
+                        <p className="text-[10px] text-[var(--text-faint-2)]">
                           Leave empty to keep fees going to the default treasury address.
                         </p>
                       </AdvancedFeatureRow>
@@ -1089,9 +794,9 @@ const CreateToken = () => {
                                 step="0.1"
                                 value={tax.buyTax}
                                 onChange={(e) => setTax((p) => ({ ...p, buyTax: clampTax(e.target.value) }))}
-                                className="w-full p-2.5 pr-7 bg-black/30 backdrop-blur-md border border-white/[0.08] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-teal/40"
+                                className="w-full p-2.5 pr-7 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg text-xs text-[var(--input-text)] focus:outline-none focus:border-[var(--input-border-focus)]"
                               />
-                              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-bold">%</span>
+                              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-faint-2)] text-[10px] font-bold">%</span>
                             </div>
                           </div>
                           <div>
@@ -1104,9 +809,9 @@ const CreateToken = () => {
                                 step="0.1"
                                 value={tax.sellTax}
                                 onChange={(e) => setTax((p) => ({ ...p, sellTax: clampTax(e.target.value) }))}
-                                className="w-full p-2.5 pr-7 bg-black/30 backdrop-blur-md border border-white/[0.08] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-teal/40"
+                                className="w-full p-2.5 pr-7 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg text-xs text-[var(--input-text)] focus:outline-none focus:border-[var(--input-border-focus)]"
                               />
-                              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-bold">%</span>
+                              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-faint-2)] text-[10px] font-bold">%</span>
                             </div>
                           </div>
                         </div>
@@ -1125,7 +830,7 @@ const CreateToken = () => {
                                 className={`py-2 px-2 rounded-lg border text-[10px] font-bold uppercase tracking-wide transition-all ${
                                   tax.startPeriod === opt.key
                                     ? "bg-teal/10 border-teal/40 text-teal"
-                                    : "bg-black/20 border-white/[0.08] text-slate-400 hover:text-slate-200"
+                                    : "bg-[var(--bg)]/20 border-white/[0.08] text-[var(--text-mid-2)] hover:text-[var(--text-bright-2)]"
                                 }`}
                               >
                                 {opt.label}
@@ -1168,7 +873,7 @@ const CreateToken = () => {
                           onCustomValueChange={(v) => setVault((p) => ({ ...p, customValue: v }))}
                           onCustomUnitChange={(v) => setVault((p) => ({ ...p, customUnit: v }))}
                         />
-                        <p className="text-[10px] text-slate-500">
+                        <p className="text-[10px] text-[var(--text-faint-2)]">
                           Your initial-buy tokens unlock linearly over this period — a common
                           signal of long-term commitment for serious projects.
                         </p>
@@ -1198,9 +903,9 @@ const CreateToken = () => {
                                 maxWalletPercent: Math.min(10, Math.max(0.1, parseFloat(e.target.value) || 0.1)),
                               }))
                             }
-                            className="w-full p-2.5 pr-7 bg-black/30 backdrop-blur-md border border-white/[0.08] rounded-lg text-xs text-slate-200 focus:outline-none focus:border-teal/40"
+                            className="w-full p-2.5 pr-7 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg text-xs text-[var(--input-text)] focus:outline-none focus:border-[var(--input-border-focus)]"
                           />
-                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-bold">%</span>
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-faint-2)] text-[10px] font-bold">%</span>
                         </div>
 
                         <FieldLabel>Protection Duration</FieldLabel>
@@ -1213,7 +918,7 @@ const CreateToken = () => {
                           onCustomValueChange={(v) => setSniper((p) => ({ ...p, customValue: v }))}
                           onCustomUnitChange={(v) => setSniper((p) => ({ ...p, customUnit: v }))}
                         />
-                        <p className="text-[10px] text-slate-500">
+                        <p className="text-[10px] text-[var(--text-faint-2)]">
                           Wallets cannot hold more than this share of supply until protection
                           expires. Addresses on the whitelist below bypass this cap.
                         </p>
@@ -1235,9 +940,9 @@ const CreateToken = () => {
                           placeholder={"0x1234...\n0xabcd... (one per line)"}
                           value={whitelist.wallets}
                           onChange={(e) => setWhitelist((p) => ({ ...p, wallets: e.target.value }))}
-                          className="w-full p-2.5 bg-black/30 backdrop-blur-md border border-white/[0.08] rounded-lg text-xs font-mono text-slate-200 focus:outline-none focus:border-teal/40"
+                          className="w-full p-2.5 bg-[var(--input-bg)] border border-[var(--input-border)] rounded-lg text-xs font-mono text-[var(--input-text)] focus:outline-none focus:border-[var(--input-border-focus)]"
                         />
-                        <p className="text-[10px] text-slate-500">
+                        <p className="text-[10px] text-[var(--text-faint-2)]">
                           One address per line. These wallets bypass the sniper-protection
                           wallet cap above.
                         </p>
@@ -1247,44 +952,92 @@ const CreateToken = () => {
                 )}
               </AnimatePresence>
             </GlassSurface>
-          </div>
-        )}
 
-        {/* --- Step 2 & 3: submitting / success --- */}
-        {step >= 2 && (
-          <GlassSurface className="rounded-[28px] p-6 flex flex-col items-center justify-center text-center">
+          {/* --- Deploy --- */}
+                {/*
+                  The core bug fix lives here: `disabled` is now ONLY applied when the wallet
+                  is already connected. When disconnected, the button must always be clickable
+                  so the user can actually open the wallet-connect modal.
+                */}
+                <ConnectKitButton.Custom>
+                  {({ show }) => (
+                    <button
+                      onClick={isConnected ? handleDeploy : show}
+                      disabled={isConnected && !isFormValid}
+                      style={
+                        isConnected && !isFormValid
+                          ? {}
+                          : { backgroundColor: "var(--teal)", color: "var(--bg)" }
+                      }
+                      className={`w-full p-3.5 rounded-2xl font-bold text-xs uppercase tracking-widest text-center transition-all ${
+                        isConnected && !isFormValid
+                          ? "bg-white/[0.03] text-[var(--border-mid)] border border-white/[0.08] cursor-not-allowed"
+                          : "hover:opacity-90"
+                      }`}
+                    >
+                      {isConnected ? "Deploy Token" : "Connect Wallet"}
+                    </button>
+                  )}
+                </ConnectKitButton.Custom>
+                {!isConnected && (
+                  <div className="text-[9px] text-center text-[var(--border-mid)] uppercase">
+                    Connect a wallet to continue
+                  </div>
+                )}
+        </div>
+
+        {/* --- Submitting / success — an overlay on top of the form, not a separate page/step --- */}
+        <AnimatePresence>
+          {step >= 2 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+              style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                transition={{ duration: 0.2 }}
+                className="w-full max-w-lg"
+              >
+              <GlassSurface className="rounded-[28px] p-6 flex flex-col items-center justify-center text-center">
             {step === 2 && (
-              <div className="py-8 space-y-4">
-                <Loader2 size={32} className="animate-spin text-slate-500 mx-auto" />
-                <p className="text-xs uppercase tracking-wider font-bold max-w-sm text-slate-300">
-                  {loadingLabel || "Processing..."}
-                </p>
+              <div className="py-4">
+                <Loading label={loadingLabel || "Processing..."} size="lg" />
               </div>
             )}
 
             {step === 3 && (
               <div className="w-full max-w-xl space-y-4">
-                <div className="flex flex-col items-center gap-2 mb-2">
-                  <CheckCircle size={32} style={{ color: "#96d6cd" }} />
-                  <span className="text-xs font-black uppercase tracking-widest text-slate-200">
+                <div className="flex flex-col items-center gap-3 mb-2">
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: "rgba(150,214,205,0.12)", border: "1px solid var(--teal)" }}
+                  >
+                    <CheckCircle size={26} style={{ color: "var(--teal)" }} />
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-widest text-[var(--text-bright-2)]">
                     Token Deployed
                   </span>
                 </div>
 
                 {tokenAddress ? (
                   <>
-                    <div className="bg-black/20 border border-white/[0.08] rounded-2xl p-3.5 text-left">
-                      <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    <div className="bg-[var(--bg)]/20 border border-white/[0.08] rounded-2xl p-3.5 text-left">
+                      <div className="text-[9px] font-bold text-[var(--text-faint-2)] uppercase tracking-wider mb-1">
                         Contract Address
                       </div>
                       <div className="flex items-center justify-between gap-3 text-xs">
-                        <span className="font-mono text-slate-300 truncate break-all">
+                        <span className="font-mono text-[var(--text-mid)] truncate break-all">
                           {tokenAddress}
                         </span>
                         <div className="flex gap-1.5 shrink-0">
                           <button
                             onClick={() => navigator.clipboard.writeText(tokenAddress)}
-                            className="p-1.5 rounded-lg border border-white/[0.08] text-slate-400 hover:text-teal hover:border-teal/30 transition-colors"
+                            className="p-1.5 rounded-lg border border-white/[0.08] text-[var(--text-mid-2)] hover:text-teal hover:border-teal/30 transition-colors"
                             title="Copy address"
                           >
                             <Copy size={12} />
@@ -1292,7 +1045,7 @@ const CreateToken = () => {
                           <Link
                             to={`/token/${tokenAddress}`}
                             target="_blank"
-                            className="p-1.5 rounded-lg border border-white/[0.08] text-slate-400 hover:text-teal hover:border-teal/30 transition-colors"
+                            className="p-1.5 rounded-lg border border-white/[0.08] text-[var(--text-mid-2)] hover:text-teal hover:border-teal/30 transition-colors"
                             title="Open token page"
                           >
                             <ExternalLink size={12} />
@@ -1302,7 +1055,7 @@ const CreateToken = () => {
                     </div>
 
                     {/* Purely cosmetic indexing indicator — see the effect above */}
-                    <div className="text-[10px] text-slate-500 uppercase tracking-wide">
+                    <div className="text-[10px] text-[var(--text-faint-2)] uppercase tracking-wide">
                       {indexingStatus === "ready"
                         ? "Metadata indexed — token page is fully ready."
                         : "Finalizing metadata (logo, socials)... your token is already live on-chain."}
@@ -1311,14 +1064,14 @@ const CreateToken = () => {
                     <div className="flex flex-col sm:flex-row gap-2 justify-center pt-2">
                       <button
                         onClick={() => navigate(`/token/${tokenAddress}`)}
-                        style={{ backgroundColor: "#96d6cd", color: "#030712" }}
+                        style={{ backgroundColor: "var(--teal)", color: "var(--bg)" }}
                         className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider hover:opacity-90 transition-opacity"
                       >
                         View Token
                       </button>
                       <button
                         onClick={resetForm}
-                        className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-white/[0.03] border border-white/[0.08] text-slate-400 hover:text-slate-200 hover:border-white/[0.14] transition-colors"
+                        className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-white/[0.03] border border-white/[0.08] text-[var(--text-mid-2)] hover:text-[var(--text-bright-2)] hover:border-white/[0.14] transition-colors"
                       >
                         Create Another
                       </button>
@@ -1327,24 +1080,27 @@ const CreateToken = () => {
                 ) : (
                   // We couldn't decode the token address from the receipt (should be rare) —
                   // give the user the transaction hash instead of routing to a broken page.
-                  <div className="bg-amber-950/30 border border-amber-800/50 rounded-2xl text-amber-400 p-3.5 text-left text-xs space-y-2">
+                  <Alert variant="warning" className="text-left">
                     <p>
                       Your transaction confirmed, but we couldn't automatically detect the new
                       token address. Check the transaction for details:
                     </p>
-                    <p className="font-mono break-all">{creationTxHash}</p>
+                    <p className="font-mono break-all mt-1">{creationTxHash}</p>
                     <button
                       onClick={resetForm}
-                      className="mt-2 px-3 py-1.5 rounded-lg border border-amber-700/60 uppercase text-[10px] font-bold hover:bg-amber-900/30 transition-colors"
+                      className="mt-2 px-3 py-1.5 rounded-lg border border-[var(--amber)]/60 uppercase text-[10px] font-bold hover:bg-[var(--amber-deep-2)]/30 transition-colors"
                     >
                       Create Another
                     </button>
-                  </div>
+                  </Alert>
                 )}
               </div>
             )}
-          </GlassSurface>
-        )}
+              </GlassSurface>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

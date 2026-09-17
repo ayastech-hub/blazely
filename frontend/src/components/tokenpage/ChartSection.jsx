@@ -18,6 +18,7 @@ import AnimatedNumber from "./AnimatedNumber";
 import { supabase } from "../../lib/supabaseClient";
 import { bucketPriceHistory, appendPricePoint } from "../../utils/chartBucketing";
 import { formatUsdPrice } from "../../utils/format";
+import { GLASS } from "../ui/GlassCard";
 
 const TIMEFRAME_LOOKBACK_HOURS = { "5m": 6, "1H": 72, "1D": 720 };
 
@@ -54,8 +55,8 @@ function CandleChart({ candles, height = 260, livePrice }) {
     <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block" }}>
       {grid.map((p) => (
         <g key={p}>
-          <line x1={pad.l} y1={toY(p)} x2={W - pad.r} y2={toY(p)} stroke="#1e293b" strokeWidth="0.5" />
-          <text x={W - pad.r + 3} y={toY(p) + 4} fill="#475569" fontSize="8" fontFamily="monospace">
+          <line x1={pad.l} y1={toY(p)} x2={W - pad.r} y2={toY(p)} stroke="var(--border)" strokeWidth="0.5" />
+          <text x={W - pad.r + 3} y={toY(p) + 4} fill="var(--border-mid)" fontSize="8" fontFamily="monospace">
             {formatUsdPrice(p)}
           </text>
         </g>
@@ -151,7 +152,7 @@ export default function ChartSection({ tokenAddress, livePrice }) {
   }, [tokenAddress, timeframe, metric]);
 
   return (
-    <div style={{ background: C.panel, borderBottom: `1px solid ${C.border}` }}>
+    <div className={GLASS} style={{ borderBottom: `1px solid ${C.border}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 14px", borderBottom: `1px solid ${C.border}` }}>
         {["5m", "1H", "1D"].map((tf) => (
           <button

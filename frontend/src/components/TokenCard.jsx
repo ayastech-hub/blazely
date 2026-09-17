@@ -1,22 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Globe, Send, AtSign, CheckCircle2, Sparkles } from "lucide-react";
 import { getPublicUrlSafe } from "../api/supabaseTokens";
+import AnimatedNumber from "./tokenpage/AnimatedNumber";
+import { ACCENT, GLASS, NESTED_FILL, GlassCard, GlassSurface } from "./ui/GlassCard";
 
-/* ============================================================
-   Shared design tokens — kept identical to Navbar.jsx so every
-   surface in the app reads as one system, not a patchwork.
-   ============================================================ */
-const ACCENT = "#96d6cd";
-
-const GLASS =
-  "border border-white/[0.08] bg-white/[0.06] backdrop-blur-2xl backdrop-saturate-[1.6] backdrop-brightness-105 shadow-[0_10px_40px_-8px_rgba(0,0,0,0.6)]";
-
-// Nested elements inside a glass surface use a SOLID fill, never another
-// blur layer — stacking backdrop-blur inside backdrop-blur muddies the
-// effect and costs paint performance for no visual gain.
-const NESTED_FILL = "bg-black/25 border border-white/[0.08]";
+/* ACCENT, GLASS, NESTED_FILL, GlassCard/GlassSurface now come from ./ui/GlassCard —
+   see that file for why this used to be a duplication risk. */
 
 /* -------------------- Telemetry Formatters -------------------- */
 
@@ -75,34 +66,17 @@ export function useResolvedLogo(token) {
   return logoSrc;
 }
 
-/* -------------------- Glass primitives -------------------- */
+/* GlassSurface (and GlassCard) now come from ./ui/GlassCard, re-exported
+   below so existing `import { GlassSurface } from "../components/TokenCard"`
+   call sites (CreateToken.jsx, createTokenConfig.jsx) don't need to change. */
+export { GlassSurface, GlassCard };
 
-export function GlassSurface({ children, className = "", isNew, glowTint }) {
-  return (
-    <div
-      className={`relative overflow-hidden transition-all duration-500 ${GLASS} ${
-        isNew
-          ? "border-[#96d6cd]/40 shadow-[0_0_0_1px_rgba(150,214,205,0.15),0_10px_40px_-8px_rgba(150,214,205,0.22)]"
-          : ""
-      } hover:bg-white/[0.09] hover:border-white/[0.14] ${className}`}
-      style={{
-        backgroundImage: glowTint
-          ? `radial-gradient(120% 100% at 12% 0%, ${glowTint}, transparent 55%)`
-          : undefined,
-      }}
-    >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-      <div className="relative z-10 h-full">{children}</div>
-    </div>
-  );
-}
-
-export function TokenLogo({ token, logoSrc, size = "w-16 h-16", textSize = "text-2xl", accent = false }) {
+export function TokenLogo({ token, logoSrc, size = "w-[68px] h-[68px]", textSize = "text-2xl", accent = false }) {
   return (
     <div className="relative shrink-0">
       <div
-        className={`${size} bg-black/30 border rounded-2xl flex items-center justify-center overflow-hidden ${
-          accent ? "border-[#96d6cd]/40" : "border-white/[0.1]"
+        className={`${size} bg-[var(--bg)]/40 border rounded-2xl flex items-center justify-center overflow-hidden transition-colors ${
+          accent ? "border-[var(--teal)]/50" : "border-white/[0.1] group-hover:border-white/[0.18]"
         }`}
       >
         {logoSrc ? (
@@ -115,21 +89,18 @@ export function TokenLogo({ token, logoSrc, size = "w-16 h-16", textSize = "text
             }}
           />
         ) : (
-          <span
-            className={`${textSize} font-medium text-slate-500`}
-            style={{ fontFamily: "'Fraunces', Georgia, serif" }}
-          >
+          <span className={`${textSize} font-bold text-[var(--text-faint-2)]`}>
             {token.symbol?.charAt(0).toUpperCase() || "T"}
           </span>
         )}
       </div>
       {accent && (
         <span
-          className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-[#0b0f19] flex items-center justify-center"
+          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full border-2 border-[var(--bg-alt)] flex items-center justify-center"
           style={{ backgroundColor: ACCENT }}
           aria-hidden="true"
         >
-          <Sparkles size={8} className="text-[#030712]" strokeWidth={2.5} />
+          <Sparkles size={9} className="text-[var(--bg)]" strokeWidth={2.5} />
         </span>
       )}
     </div>
@@ -145,7 +116,7 @@ export function SocialLink({ href, icon, label }) {
       rel="noopener noreferrer"
       aria-label={label}
       onClick={(e) => e.stopPropagation()}
-      className={`p-1.5 rounded-lg text-slate-500 hover:text-[#96d6cd] hover:border-[#96d6cd]/30 transition-colors duration-200 ${NESTED_FILL}`}
+      className={`p-1.5 rounded-lg text-[var(--text-faint-2)] hover:text-[var(--teal)] hover:border-[var(--teal)]/30 transition-colors duration-200 ${NESTED_FILL}`}
     >
       {icon}
     </a>
@@ -165,23 +136,51 @@ export function SocialLinks({ token }) {
 }
 
 export function MetricGroup({ label, value, currency }) {
+  const numeric = Number(value) || 0;
   return (
-    <div
-      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] ${NESTED_FILL}`}
-    >
-      <span className="text-slate-500 font-medium">{label}</span>
-      <span className="text-slate-100 font-semibold tabular-nums font-mono">
-        {compactNumberShort(value, currency)}
-      </span>
+    <div className={`flex-1 min-w-0 px-3 py-2 rounded-xl ${NESTED_FILL}`}>
+      <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-faint-2)] mb-0.5">
+        {label}
+      </div>
+      <div className="text-[13px] font-bold tabular-nums font-mono text-[var(--text-bright)] truncate">
+        <AnimatedNumber value={numeric} format={(v) => compactNumberShort(v, currency)} />
+      </div>
     </div>
   );
 }
 
+// Brief color pulse on the price line whenever the live value moves — the
+// enterprise-dashboard convention for "this number just updated" without
+// needing a chart. Direction-aware: green on the way up, rose on the way down.
+export function usePriceFlash(value) {
+  const prevRef = useRef(value);
+  const [flash, setFlash] = useState(null); // "up" | "down" | null
+
+  useEffect(() => {
+    const prev = prevRef.current;
+    if (value != null && prev != null && Number(value) !== Number(prev)) {
+      setFlash(Number(value) > Number(prev) ? "up" : "down");
+      const t = setTimeout(() => setFlash(null), 700);
+      prevRef.current = value;
+      return () => clearTimeout(t);
+    }
+    prevRef.current = value;
+  }, [value]);
+
+  return flash;
+}
+
 // UI-only placeholder for a timeframe change value. No data wiring yet —
-// intentionally rendered as a neutral dash until the metric is available.
+// every token card on DexScreener/pump.fun-style platforms has a colored
+// % badge right next to the price, so this is styled as that same
+// first-class element (neutral until real data lands), not an afterthought.
 export function ChangeValue({ className = "" }) {
   return (
-    <span className={`text-[11px] text-slate-500 font-semibold tabular-nums font-mono ${className}`}>—</span>
+    <span
+      className={`text-[11px] font-bold tabular-nums font-mono px-1.5 py-0.5 rounded-md text-[var(--text-faint-2)] ${NESTED_FILL} ${className}`}
+    >
+      —
+    </span>
   );
 }
 
@@ -202,11 +201,11 @@ export function CurveOrStatus({ token }) {
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1.5">
+      <div className="flex items-center justify-between text-[11px] text-[var(--text-faint-2)] mb-1.5">
         <span>Bonding curve</span>
-        <span className="font-mono font-semibold text-slate-300 tabular-nums">{progress.toFixed(1)}%</span>
+        <span className="font-mono font-semibold text-[var(--text-mid)] tabular-nums">{progress.toFixed(1)}%</span>
       </div>
-      <div className="w-full h-1.5 bg-black/30 overflow-hidden rounded-full">
+      <div className="w-full h-1.5 bg-[var(--bg)]/30 overflow-hidden rounded-full">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{
@@ -220,6 +219,34 @@ export function CurveOrStatus({ token }) {
   );
 }
 
+/* -------------------- Loading skeleton -------------------- */
+
+// Enterprise-grade loading state: same footprint as the real card (logo
+// circle, name/symbol lines, two metric chips, a progress bar) so the grid
+// doesn't reflow when data arrives, with a shimmer sweep instead of a static
+// gray block.
+export function TokenCardSkeleton() {
+  return (
+    <div className={`h-full rounded-[24px] p-5 flex flex-col justify-between ${GLASS}`}>
+      <div className="flex gap-3.5 items-start w-full mb-4">
+        <div className="w-[68px] h-[68px] rounded-2xl shrink-0 brand-shimmer" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="h-4 w-3/4 rounded-md brand-shimmer" />
+          <div className="h-3 w-1/3 rounded-md brand-shimmer" />
+          <div className="h-3.5 w-1/2 rounded-md brand-shimmer" />
+        </div>
+      </div>
+      <div className="flex gap-1.5 mb-4">
+        <div className="h-11 flex-1 rounded-xl brand-shimmer" />
+        <div className="h-11 flex-1 rounded-xl brand-shimmer" />
+      </div>
+      <div className="border-t border-white/[0.06] pt-3.5">
+        <div className="h-1.5 w-full rounded-full brand-shimmer" />
+      </div>
+    </div>
+  );
+}
+
 /* -------------------- Core Component (grid card) -------------------- */
 
 export default function TokenCard({ token, index = 0, isNew = false }) {
@@ -228,6 +255,7 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
   const displayMarketcap = token.market_cap_eth ?? token.marketcap_eth ?? 0;
   const displayVolume = token.volume_eth ?? 0;
   const displayPrice = token.price_usd ?? null;
+  const priceFlash = usePriceFlash(displayPrice);
 
   return (
     <motion.div
@@ -235,60 +263,76 @@ export default function TokenCard({ token, index = 0, isNew = false }) {
       initial="hidden"
       animate={isNew ? { ...shakeKeyframes, opacity: 1, y: 0, filter: "blur(0px)" } : "visible"}
       custom={index}
+      whileHover={{ y: -3 }}
+      transition={{ type: "spring", stiffness: 300, damping: 22 }}
       className="w-full h-full"
     >
       <Link to={`/token/${token.address}`} className="block group h-full">
         <GlassSurface
           isNew={isNew}
           glowTint={isNew ? "rgba(150,214,205,0.12)" : undefined}
-          className="h-full rounded-[24px] p-5 flex flex-col justify-between group-hover:-translate-y-0.5"
+          className="h-full rounded-[24px] p-5 flex flex-col justify-between"
         >
-          {/* Header — logo now anchors the card instead of competing with text */}
-          <div className="flex gap-3.5 items-center min-w-0 w-full mb-4">
+          {/* Header — logo anchors the card; name/symbol use the app's
+              standard sans+mono pairing (the previous serif name font
+              didn't match how the same token renders on its own page) */}
+          <div className="flex gap-3.5 items-start min-w-0 w-full mb-4">
             <TokenLogo token={token} logoSrc={logoSrc} accent={isNew} />
 
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 min-w-0">
-                <h3
-                  className="text-[15px] font-medium text-slate-100 truncate group-hover:text-white transition-colors leading-tight"
-                  style={{ fontFamily: "'Fraunces', Georgia, serif" }}
-                >
-                  {token.name}
-                </h3>
-                {isNew && (
-                  <span
-                    className="shrink-0 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
-                    style={{ backgroundColor: `${ACCENT}22`, color: ACCENT }}
-                  >
-                    New
-                  </span>
-                )}
+              <div className="flex items-start justify-between gap-2 min-w-0">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <h3 className="text-[15px] font-semibold text-[var(--text-bright)] truncate group-hover:text-white transition-colors leading-tight">
+                      {token.name}
+                    </h3>
+                    {isNew && (
+                      <span
+                        className="shrink-0 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+                        style={{ backgroundColor: `${ACCENT}22`, color: ACCENT }}
+                      >
+                        New
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-[var(--text-faint-2)] font-semibold font-mono truncate mt-0.5">
+                    ${token.symbol ?? "—"}
+                  </p>
+                </div>
+                <SocialLinks token={token} />
               </div>
 
-              <p className="text-[11px] text-slate-500 font-semibold font-mono truncate mt-0.5">
-                ${token.symbol ?? "—"}
-              </p>
-
               {displayPrice !== null && (
-                <p className="text-[13px] font-bold font-mono mt-1" style={{ color: ACCENT }}>
-                  ${Number(displayPrice).toFixed(8)}
-                </p>
+                <div className="flex items-center gap-1.5 mt-1.5">
+                  <motion.p
+                    animate={
+                      priceFlash === "up"
+                        ? { color: ["var(--green-2)", ACCENT] }
+                        : priceFlash === "down"
+                        ? { color: ["var(--rose)", ACCENT] }
+                        : {}
+                    }
+                    transition={{ duration: 0.7, ease: "easeOut" }}
+                    className="text-[13px] font-bold font-mono"
+                    style={{ color: ACCENT }}
+                  >
+                    ${Number(displayPrice).toFixed(8)}
+                  </motion.p>
+                  <ChangeValue />
+                </div>
               )}
             </div>
           </div>
 
-          {/* Metrics — solid nested chips, single glass layer */}
-          <div className="flex flex-wrap items-center gap-1.5 mb-4">
-            <MetricGroup label="MCAP" value={displayMarketcap} currency="ETH" />
-            <MetricGroup label="VOL" value={displayVolume} currency="ETH" />
+          {/* Metrics — clean two-column stat grid, label above value */}
+          <div className="flex items-stretch gap-1.5 mb-4">
+            <MetricGroup label="Market Cap" value={displayMarketcap} currency="ETH" />
+            <MetricGroup label="Volume" value={displayVolume} currency="ETH" />
           </div>
 
-          {/* Footer — status/progress + socials on one line */}
-          <div className="flex items-center gap-3 w-full border-t border-white/[0.06] pt-3.5">
-            <div className="flex-1 min-w-0">
-              <CurveOrStatus token={token} />
-            </div>
-            <SocialLinks token={token} />
+          {/* Footer — status/progress now gets the full width to itself */}
+          <div className="w-full border-t border-white/[0.06] pt-3.5">
+            <CurveOrStatus token={token} />
           </div>
         </GlassSurface>
       </Link>

@@ -5,8 +5,8 @@ import { buyEmitter } from "../utils/buyEmitter";
 import { supabase } from "../lib/supabaseClient";
 
 /* Shared with Navbar.jsx / TokenCard.jsx — keep in sync */
-const ACCENT = "#96d6cd";
-const NESTED_FILL = "bg-black/25 border border-white/[0.08]";
+const ACCENT = "var(--teal)";
+const NESTED_FILL = "bg-[var(--bg)]/25 border border-white/[0.08]";
 
 const shortenAddr = (a = "") =>
   typeof a === "string" && a.length > 8
@@ -98,11 +98,11 @@ export default function TradeAlertsMarquee({
   return (
     <div className="w-full h-10 flex items-center text-[11px] select-none relative overflow-hidden box-border border-b border-white/[0.08] bg-white/[0.02] backdrop-blur-xl">
       {/* Live indicator — just the dot, no status label */}
-      <div className="h-full flex items-center px-3.5 shrink-0 z-10 border-r border-white/[0.08] bg-black/20">
+      <div className="h-full flex items-center px-3.5 shrink-0 z-10 border-r border-white/[0.08] bg-[var(--bg)]/20">
         <span
           className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${isLive ? "animate-pulse" : ""}`}
           style={{
-            backgroundColor: isLive ? ACCENT : "#475569",
+            backgroundColor: isLive ? ACCENT : "var(--border-mid)",
             boxShadow: isLive ? `0 0 6px ${ACCENT}99` : "none",
           }}
         />
@@ -124,22 +124,22 @@ export default function TradeAlertsMarquee({
                   transition={{ type: "spring", stiffness: 260, damping: 24, mass: 0.8 }}
                   className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg font-mono ${NESTED_FILL}`}
                 >
-                  <span className="text-slate-500 font-medium">{shortenAddr(alert.user)}</span>
+                  <span className="text-[var(--text-faint-2)] font-medium">{shortenAddr(alert.user)}</span>
 
                   <span
                     className={`font-bold text-[10px] px-1.5 py-0.5 rounded-md ${
-                      isBuy ? "bg-[#96d6cd]/10" : "bg-rose-500/10 text-rose-400"
+                      isBuy ? "bg-[var(--teal)]/10" : "bg-[var(--rose)]/10 text-[var(--rose)]"
                     }`}
                     style={isBuy ? { color: ACCENT } : undefined}
                   >
                     {isBuy ? "Buy" : "Sell"}
                   </span>
 
-                  <span className="text-slate-100 font-semibold">{Number(alert.eth || 0).toFixed(4)} ETH</span>
+                  <span className="text-[var(--text-bright)] font-semibold">{Number(alert.eth || 0).toFixed(4)} ETH</span>
 
-                  <ArrowRight size={11} className="text-slate-600" />
+                  <ArrowRight size={11} className="text-[var(--border-mid)]" />
 
-                  <span className="text-slate-400 hover:text-[#96d6cd] transition-colors cursor-pointer">
+                  <span className="text-[var(--text-mid-2)] hover:text-[var(--teal)] transition-colors cursor-pointer">
                     {shortenAddr(alert.token)}
                   </span>
 
@@ -148,7 +148,7 @@ export default function TradeAlertsMarquee({
                     target="_blank"
                     rel="noreferrer"
                     aria-label="View transaction"
-                    className="text-slate-600 hover:text-slate-300 transition-colors border-l border-white/[0.08] pl-1.5 ml-0.5"
+                    className="text-[var(--border-mid)] hover:text-[var(--text-mid)] transition-colors border-l border-white/[0.08] pl-1.5 ml-0.5"
                   >
                     <ExternalLink size={11} />
                   </a>
@@ -158,7 +158,7 @@ export default function TradeAlertsMarquee({
           </AnimatePresence>
 
           {alerts.length === 0 && (
-            <div className="text-slate-600 text-[11px]">Waiting for trades…</div>
+            <div className="text-[var(--border-mid)] text-[11px]">Waiting for trades…</div>
           )}
         </div>
       </div>

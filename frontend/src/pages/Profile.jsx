@@ -1,8 +1,31 @@
 // src/pages/Profile.jsx
+//
+// PURPOSE
+// The connected wallet's own profile: identity header, wallet/portfolio
+// stats, and five tabs (Created, Portfolio, Networks, History, Dev Tools).
+// See PublicProfile.jsx for the read-only version of this same layout used
+// when viewing someone else's wallet (shares tab components — CreatedTokensTab,
+// PortfolioAssetsTab, TransactionHistoryTab — but not this file itself).
+//
+// STRUCTURE NOTE
+// Tab content renders directly on the page, not inside another bordered
+// container — this was deliberately un-done after an earlier pass wrapped
+// everything in an extra box. Each tab's own items still have their own
+// card styling; only the outer wrapper was removed. Keep it that way —
+// don't re-add a container around the tab content.
+//
+// AUTH NOTE
+// `address`/`isConnected` come from wagmi directly (not the WalletContext
+// SIWE session) because this page only needs to know "is a wallet plugged
+// in" to decide what to render — it doesn't perform any write that needs
+// the verified identity itself. Every actual write this page triggers
+// (edit profile, edit token, unfollow, etc.) goes through hooks that hit
+// Supabase, where RLS (supabase/migrations/) is the real enforcement layer
+// regardless of what this component believes `address` is.
 import React, { useState, useEffect, useMemo } from "react";
 import { useAccount, useBalance } from "wagmi";
 import { formatEther } from "viem";
-import { User, TrendingUp, Sparkles, Shield, Edit3, Check, Copy, History, Users, ArrowUpRight, Wallet } from "lucide-react";
+import { User, TrendingUp, Sparkles, Shield, Edit3, Check, Copy, History, Users, ArrowUpRight, Wallet, Wrench } from "lucide-react";
 import { ConnectKitButton } from "connectkit";
 
 import { useProfileData } from "../hooks/useProfileData";
@@ -13,6 +36,7 @@ import CreatedTokensTab from "../tabP/CreatedTokensTab";
 import PortfolioAssetsTab from "../tabP/PortfolioAssetsTab";
 import TransactionHistoryTab from "../tabP/TransactionHistoryTab";
 import NetworksTab from "../tabP/NetworksTab";
+import DevToolsTab from "../tabP/DevToolsTab";
 import { DashboardCard, Modal, ModalCloseButton, Toast } from "../tabP/ProfileComponents";
 import { SocialConnect } from "../tabP/SocialConnect";
 import { SocialMetrics } from "../tabP/SocialMetrics";
@@ -22,6 +46,7 @@ const TABS = [
   { id: "portfolio", label: "Portfolio", icon: TrendingUp },
   { id: "networks", label: "Networks", icon: Users },
   { id: "history", label: "History", icon: History },
+  { id: "devtools", label: "Dev Tools", icon: Wrench },
 ];
 
 const validateDisplayName = (s = "") => /^[A-Za-z0-9 ]{1,30}$/.test(s);
@@ -182,7 +207,7 @@ const Profile = () => {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: C.bg }}>
+      <div className="min-h-[60vh] flex items-center justify-center p-4" style={{ backgroundColor: C.bg }}>
         <div
           className="max-w-sm w-full p-8 rounded-2xl text-center space-y-5"
           style={{ backgroundColor: C.panelSoft, border: `1px solid ${C.borderSoft}`, boxShadow: C.shadowCard }}
@@ -218,7 +243,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen p-4 sm:p-6 lg:p-8" style={{ backgroundColor: C.bg }}>
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
         {error && (
           <div
@@ -234,19 +259,19 @@ const Profile = () => {
           className="p-6 sm:p-7 rounded-2xl"
           style={{ backgroundColor: C.panelSoft, border: `1px solid ${C.borderSoft}`, boxShadow: C.shadowCard }}
         >
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="flex items-center gap-4 min-w-0">
+          <div className="flex flex-col items-center text-center lg:flex-row lg:items-center lg:text-left justify-between gap-6">
+            <div className="flex flex-col items-center lg:flex-row lg:items-center gap-4 min-w-0 w-full lg:w-auto">
               <div
                 className="w-16 h-16 rounded-full flex items-center justify-center shrink-0"
                 style={{ background: `linear-gradient(135deg, ${C.tealDim}, ${C.panel})`, border: `1px solid ${C.tealBorder}` }}
               >
                 <User size={26} style={{ color: C.teal }} />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 w-full lg:w-auto">
                 <h1 className="text-lg font-semibold truncate" style={{ color: C.bright }}>
                   {user?.display_name || shortenAddress(address, 6)}
                 </h1>
-                <div className="flex items-center gap-2 text-sm font-mono mt-0.5" style={{ color: C.sub }}>
+                <div className="flex items-center justify-center lg:justify-start gap-2 text-sm font-mono mt-0.5" style={{ color: C.sub }}>
                   <span className="truncate">{shortenAddress(address, 6)}</span>
                   <button onClick={copyAddress} className="p-0.5 transition-colors hover:text-white" style={{ color: C.sub }}>
                     {copied ? <Check size={13} style={{ color: C.teal }} /> : <Copy size={13} />}
@@ -262,15 +287,15 @@ const Profile = () => {
                     <ArrowUpRight size={13} />
                   </a>
                 </div>
-                <div className="mt-2">
+                <div className="mt-2 flex justify-center lg:justify-start">
                   <SocialMetrics followingCount={following.length} watchlistCount={watchlist.length} />
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-stretch gap-3">
+            <div className="grid grid-cols-2 lg:flex lg:flex-wrap items-stretch gap-3 w-full lg:w-auto">
               <div
-                className="px-4 py-3 rounded-xl flex-1 min-w-[140px] sm:flex-none"
+                className="px-4 py-3 rounded-xl lg:flex-1 lg:min-w-[140px] lg:flex-none"
                 style={{ backgroundColor: C.panel, border: `1px solid ${C.borderSoft}` }}
               >
                 <div className="flex items-center gap-1.5 mb-1">
@@ -287,7 +312,7 @@ const Profile = () => {
                 </span>
               </div>
               <div
-                className="px-4 py-3 rounded-xl flex-1 min-w-[140px] sm:flex-none"
+                className="px-4 py-3 rounded-xl lg:flex-1 lg:min-w-[140px] lg:flex-none"
                 style={{ backgroundColor: C.panel, border: `1px solid ${C.borderSoft}` }}
               >
                 <div className="flex items-center gap-1.5 mb-1">
@@ -302,7 +327,7 @@ const Profile = () => {
               </div>
               <button
                 onClick={() => setIsEditProfileOpen(true)}
-                className="px-4 py-3 sm:py-0 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors hover:bg-white/5 flex-1 min-w-[140px] sm:flex-none sm:min-w-0"
+                className="col-span-2 lg:col-span-1 px-4 py-3 lg:py-0 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors hover:bg-white/5 lg:flex-1 lg:min-w-[140px] lg:flex-none"
                 style={{ backgroundColor: C.panel, border: `1px solid ${C.borderSoft}`, color: C.mid }}
               >
                 <Edit3 size={14} />
@@ -312,28 +337,35 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-1 border-b overflow-x-auto" style={{ borderColor: C.borderSoft }}>
-          {TABS.map((t) => {
-            const active = activeTab === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab(t.id)}
-                className="relative px-4 py-3 text-sm font-medium flex items-center gap-2 transition-colors shrink-0"
-                style={{ color: active ? C.bright : C.sub }}
-              >
-                <t.icon size={15} style={{ color: active ? C.teal : C.faint }} />
-                {t.label}
-                {active && (
-                  <span
-                    className="absolute left-0 right-0 -bottom-px h-0.5 rounded-full"
-                    style={{ backgroundColor: C.teal }}
-                  />
-                )}
-              </button>
-            );
-          })}
+        {/* Tabs — pill chips in a horizontally scrollable row. With 5 tabs
+            these need a clearer "there's more, swipe me" affordance on
+            mobile than a plain underline bar gives. */}
+        <div className="relative -mx-4 sm:-mx-6 lg:mx-0">
+          <div className="flex items-center gap-2 overflow-x-auto px-4 sm:px-6 lg:px-0 pb-1 scrollbar-hide">
+            {TABS.map((t) => {
+              const active = activeTab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setActiveTab(t.id)}
+                  className="shrink-0 px-4 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 transition-colors border"
+                  style={
+                    active
+                      ? { backgroundColor: C.tealDim, borderColor: C.tealBorder, color: C.bright }
+                      : { backgroundColor: C.panel, borderColor: C.borderSoft, color: C.sub }
+                  }
+                >
+                  <t.icon size={15} style={{ color: active ? C.teal : C.faint }} />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+          {/* Fade hint on mobile signaling there's more to scroll to the right */}
+          <div
+            className="lg:hidden pointer-events-none absolute right-0 top-0 bottom-1 w-8"
+            style={{ background: `linear-gradient(to right, transparent, ${C.bg})` }}
+          />
         </div>
 
         {/* Tab content */}
@@ -375,6 +407,7 @@ const Profile = () => {
               onLoadMore={loadMoreTransactions}
             />
           )}
+          {activeTab === "devtools" && <DevToolsTab address={address} />}
         </div>
       </div>
 
@@ -399,7 +432,7 @@ const Profile = () => {
                   onChange={(e) => setNameInput(e.target.value)}
                   placeholder="Your name"
                   className="flex-1 px-3 py-2 text-sm rounded-lg focus:outline-none"
-                  style={{ backgroundColor: C.bg, border: `1px solid ${C.borderSoft}`, color: C.bright }}
+                  style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--input-text)" }}
                 />
                 <button
                   onClick={saveName}
@@ -446,7 +479,7 @@ const Profile = () => {
                     placeholder={f === "website" ? "https://yourproject.com" : `https://${f}.com/yourcommunity`}
                     onChange={(e) => setTokenUpdateForm((p) => ({ ...p, [f]: e.target.value }))}
                     className="px-3 py-2 text-sm rounded-lg focus:outline-none"
-                    style={{ backgroundColor: C.bg, border: `1px solid ${C.borderSoft}`, color: C.bright }}
+                    style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--input-text)" }}
                   />
                 </div>
               ))}
@@ -474,7 +507,7 @@ const Profile = () => {
                   value={tokenUpdateForm.description}
                   onChange={(e) => setTokenUpdateForm((p) => ({ ...p, description: e.target.value }))}
                   className="px-3 py-2 text-sm rounded-lg focus:outline-none resize-none"
-                  style={{ backgroundColor: C.bg, border: `1px solid ${C.borderSoft}`, color: C.bright }}
+                  style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--input-text)" }}
                 />
               </div>
 

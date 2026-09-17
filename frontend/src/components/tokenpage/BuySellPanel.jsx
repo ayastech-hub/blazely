@@ -3,6 +3,7 @@ import { C } from "../../utils/designTokens";
 import { useBuySellLogic } from "../../hooks/useBuySellLogic";
 import { ConnectKitButton } from "connectkit";
 import { Loader2, CheckCircle } from "lucide-react";
+import { GLASS } from "../ui/GlassCard";
 
 function Label({ children }) {
   return (
@@ -37,8 +38,8 @@ export default function BuySellPanel({ token }) {
   const accDim = isBuy ? C.tealDim : C.redDim;
 
   return (
-    <div style={{ background: C.panel }}>
-      <div style={{ display: "flex", padding: "6px 10px", gap: 4, background: C.bgDeep, borderBottom: `1px solid ${C.border}` }}>
+    <div className={GLASS}>
+      <div style={{ display: "flex", padding: "6px 10px", gap: 4, background: C.panel2, borderBottom: `1px solid ${C.border}` }}>
         {["Buy", "Sell"].map((t) => {
           const active = activeTab === t;
           const c = t === "Buy" ? C.teal : C.red;
@@ -71,7 +72,7 @@ export default function BuySellPanel({ token }) {
 
       <div style={{ padding: "10px 10px 6px" }}>
         <Label>{isBuy ? "PAY (ETH)" : `SELL ${token?.symbol ?? "TOKEN"}`}</Label>
-        <div style={{ display: "flex", alignItems: "center", background: C.bgDeep, border: `1px solid ${C.borderHi}`, borderRadius: 5, padding: "8px 10px", marginBottom: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", background: C.panel2, border: `1px solid ${C.borderHi}`, borderRadius: 5, padding: "8px 10px", marginBottom: 6 }}>
           <span style={{ color: C.mid, marginRight: 6, fontSize: 12, fontFamily: C.mono }}>{isBuy ? "Ξ" : ""}</span>
           <input
             value={amount}
@@ -114,7 +115,7 @@ export default function BuySellPanel({ token }) {
 
         <div
           style={{
-            background: C.bgDeep,
+            background: C.panel2,
             border: `1px solid ${C.border}`,
             borderRadius: 4,
             padding: "7px 10px",
@@ -190,12 +191,12 @@ export default function BuySellPanel({ token }) {
                 background:
                   !isConnected || !isButtonDisabled
                     ? isBuy
-                      ? `linear-gradient(135deg, ${C.teal} 0%, #5eead4 100%)`
-                      : `linear-gradient(135deg, ${C.red} 0%, #fda4af 100%)`
+                      ? `linear-gradient(135deg, ${C.teal} 0%, var(--teal-mid) 100%)`
+                      : `linear-gradient(135deg, ${C.red} 0%, var(--rose-soft) 100%)`
                     : C.panel2,
                 border: "none",
                 borderRadius: 5,
-                color: !isConnected || !isButtonDisabled ? "#030712" : C.dim,
+                color: !isConnected || !isButtonDisabled ? "var(--bg)" : C.dim,
                 fontWeight: 800,
                 fontSize: 11,
                 cursor: isConnected && isButtonDisabled ? "not-allowed" : "pointer",

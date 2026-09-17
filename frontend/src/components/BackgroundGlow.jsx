@@ -11,15 +11,15 @@ export default function BackgroundGlow() {
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
       <div
         className="absolute -top-40 -left-40 w-[560px] h-[560px] rounded-full opacity-[0.14] blur-[140px]"
-        style={{ backgroundColor: "#96d6cd" }}
+        style={{ backgroundColor: "var(--teal)" }}
       />
       <div
         className="absolute top-1/3 -right-40 w-[520px] h-[520px] rounded-full opacity-[0.12] blur-[140px]"
-        style={{ backgroundColor: "#a855f7" }}
+        style={{ backgroundColor: "var(--accent-purple)" }}
       />
       <div
         className="absolute bottom-0 left-1/4 w-[480px] h-[480px] rounded-full opacity-[0.08] blur-[140px]"
-        style={{ backgroundColor: "#96d6cd" }}
+        style={{ backgroundColor: "var(--teal)" }}
       />
     </div>
   );

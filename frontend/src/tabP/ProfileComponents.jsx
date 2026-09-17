@@ -2,6 +2,7 @@
 import React from "react";
 import { Check, Search, X } from "lucide-react";
 import { C } from "../utils/designForProfile";
+import { GLASS } from "../components/ui/GlassCard";
 
 export const DashboardCard = ({
   title,
@@ -17,11 +18,8 @@ export const DashboardCard = ({
   searchPlaceholder = "Search...",
   headerAction,
 }) => (
-  <div
-    className="h-full flex flex-col min-h-[420px] p-5 sm:p-6"
-    style={{ backgroundColor: C.panelSoft, border: `1px solid ${C.borderSoft}`, borderRadius: C.radiusCard, boxShadow: C.shadowCard }}
-  >
-    <div className="flex items-start justify-between mb-5 gap-3 shrink-0">
+  <div className="flex flex-col">
+    <div className="flex items-start justify-between mb-4 gap-3 shrink-0">
       <div className="flex items-center gap-3">
         <div
           className="w-9 h-9 flex items-center justify-center rounded-xl shrink-0"
@@ -61,22 +59,22 @@ export const DashboardCard = ({
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           className="w-full px-3 py-2.5 pl-9 text-sm rounded-xl focus:outline-none transition-colors font-sans"
-          style={{ backgroundColor: C.bg, border: `1px solid ${C.borderSoft}`, color: C.bright }}
-          onFocus={(e) => (e.target.style.borderColor = C.tealBorder)}
-          onBlur={(e) => (e.target.style.borderColor = C.borderSoft)}
+          style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--input-text)" }}
+          onFocus={(e) => (e.target.style.borderColor = "var(--input-border-focus)")}
+          onBlur={(e) => (e.target.style.borderColor = "var(--input-border)")}
         />
         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: C.faint }} />
       </div>
     )}
 
-    <div className="flex-grow overflow-y-auto space-y-2 pr-1 -mr-1">
+    <div>
       {isLoading ? (
-        <div className="flex items-center justify-center h-full py-16">
+        <div className="flex items-center justify-center py-16">
           <div className="animate-spin rounded-full h-6 w-6 border-2" style={{ borderColor: C.teal, borderTopColor: "transparent" }} />
         </div>
       ) : data.length === 0 ? (
         <div
-          className="text-center py-16 h-full flex flex-col items-center justify-center border border-dashed rounded-xl"
+          className="text-center py-16 flex flex-col items-center justify-center border border-dashed rounded-xl"
           style={{ borderColor: C.borderDashed }}
         >
           {searchTerm ? (
@@ -101,11 +99,10 @@ export const DashboardCard = ({
 export const Modal = ({ isOpen, onClose, children }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-[var(--bg)]/60 backdrop-blur-sm" onClick={onClose} />
       <div
-        className="relative z-10 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto pointer-events-auto"
-        style={{ backgroundColor: C.panel, border: `1px solid ${C.borderSoft}`, borderRadius: C.radiusCard }}
+        className={`relative z-10 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto pointer-events-auto rounded-2xl ${GLASS}`}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

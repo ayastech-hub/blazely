@@ -1,6 +1,6 @@
 import React from "react";
 import { C } from "../../utils/designTokens";
-import { Icon } from "./Icons";
+import { Info, Globe, X, Send } from "lucide-react";
 import { formatWei, shortenAddress, timeAgo, formatCompact } from "../../utils/format";
 import { usePrices } from "../../hooks/usePrices";
 import { ethToUsd } from "../../utils/priceConversion";
@@ -27,7 +27,7 @@ export default function InfoPanel({ token, metrics }) {
     <div style={{ flex: 1, overflowY: "auto", padding: "16px 18px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
         <span style={{ color: C.teal }}>
-          <Icon.Info />
+          <Info size={12} />
         </span>
         <span style={{ fontSize: 10, fontWeight: 700, color: C.bright, fontFamily: C.mono, letterSpacing: "0.08em" }}>TOKEN INFO</span>
       </div>
@@ -73,7 +73,7 @@ export default function InfoPanel({ token, metrics }) {
             rel="noreferrer"
             style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: C.teal, fontFamily: C.mono, fontWeight: 600, background: C.tealDim, border: `1px solid ${C.teal}`, borderRadius: 5, padding: "6px 12px", textDecoration: "none" }}
           >
-            <Icon.Globe /> Website
+            <Globe size={12} /> Website
           </a>
         )}
         {token.twitter && (
@@ -83,7 +83,7 @@ export default function InfoPanel({ token, metrics }) {
             rel="noreferrer"
             style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: C.sub, fontFamily: C.mono, fontWeight: 600, background: C.panel2, border: `1px solid ${C.border}`, borderRadius: 5, padding: "6px 12px", textDecoration: "none" }}
           >
-            <Icon.X /> Twitter
+            <X size={12} /> Twitter
           </a>
         )}
         {token.telegram && (
@@ -93,7 +93,7 @@ export default function InfoPanel({ token, metrics }) {
             rel="noreferrer"
             style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: C.sub, fontFamily: C.mono, fontWeight: 600, background: C.panel2, border: `1px solid ${C.border}`, borderRadius: 5, padding: "6px 12px", textDecoration: "none" }}
           >
-            <Icon.TG /> Telegram
+            <Send size={12} /> Telegram
           </a>
         )}
       </div>

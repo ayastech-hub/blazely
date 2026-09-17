@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { C } from "../../utils/designTokens";
-import { Icon } from "./Icons";
+import { Check, Copy, X, Globe, Send } from "lucide-react";
 import AnimatedNumber from "./AnimatedNumber";
 import { formatCompact, formatWei, resolveLogoUrl, shortenAddress, timeAgo } from "../../utils/format";
 import { supabase } from "../../lib/supabaseClient";
 import { usePrices } from "../../hooks/usePrices";
 import { ethToUsd, tokenPriceUsdFromMetrics } from "../../utils/priceConversion";
+import { GLASS } from "../ui/GlassCard";
 
 function CopyBtn({ text }) {
   const [ok, setOk] = useState(false);
@@ -18,7 +19,7 @@ function CopyBtn({ text }) {
       }}
       style={{ background: "none", border: "none", cursor: "pointer", padding: "2px 4px", color: ok ? C.teal : C.mid, display: "flex", alignItems: "center", borderRadius: 3 }}
     >
-      {ok ? <Icon.Check /> : <Icon.Copy />}
+      {ok ? <Check size={11} /> : <Copy size={11} />}
     </button>
   );
 }
@@ -65,7 +66,7 @@ function InfoPopup({ onClose, metrics, token }) {
   );
 }
 
-export default function TokenHeaderBar({ token, metrics }) {
+export default function TokenHeaderBar({ token, metrics, liveStats }) {
   const [showInfo, setShowInfo] = useState(false);
 
   const { ethUsd, isStale } = usePrices();
@@ -81,8 +82,13 @@ const marketCapUsd = ethToUsd(
   ethUsd
 );
 
+// Graduated tokens trade on Uniswap, not the bonding curve our own indexer
+// watches — once graduated, prefer the live Dexscreener market cap (passed
+// in as `liveStats` by TokenInfoPage) over the stale pre-graduation figure.
+const displayMarketCapUsd = liveStats?.marketCap || marketCapUsd;
+
   return (
-    <div style={{ background: C.panel, borderBottom: `1px solid ${C.border}`, position: "relative" }}>
+    <div className={GLASS} style={{ borderBottom: `1px solid ${C.border}`, position: "relative" }}>
       <div style={{ height: 2, background: `linear-gradient(90deg,transparent,${C.teal},transparent)`, opacity: 0.5 }} />
       <div style={{ padding: "14px 14px 12px", display: "flex", alignItems: "flex-start", gap: 14 }}>
         <div
@@ -91,7 +97,7 @@ const marketCapUsd = ethToUsd(
             height: 56,
             borderRadius: 10,
             flexShrink: 0,
-            background: "linear-gradient(135deg,#0d1320,#030712)",
+            background: "linear-gradient(135deg,var(--panel),var(--bg))",
             border: `1px solid ${C.borderHi}`,
             overflow: "hidden",
           }}
@@ -126,7 +132,7 @@ const marketCapUsd = ethToUsd(
               alignItems: "center",
               gap: 4,
               marginBottom: 6,
-              background: C.bgDeep,
+              background: C.panel2,
               border: `1px solid ${C.border}`,
               borderRadius: 4,
               padding: "3px 7px",
@@ -139,17 +145,17 @@ const marketCapUsd = ethToUsd(
           <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
             {token?.twitter && (
               <a href={token.twitter} target="_blank" rel="noreferrer" style={socialStyle}>
-                <Icon.X /> X
+                <X size={12} /> X
               </a>
             )}
             {token?.website && (
               <a href={token.website} target="_blank" rel="noreferrer" style={socialStyle}>
-                <Icon.Globe /> Web
+                <Globe size={12} /> Web
               </a>
             )}
             {token?.telegram && (
               <a href={token.telegram} target="_blank" rel="noreferrer" style={socialStyle}>
-                <Icon.TG /> TG
+                <Send size={12} /> TG
               </a>
             )}
           </div>
@@ -158,9 +164,9 @@ const marketCapUsd = ethToUsd(
           <button onClick={() => setShowInfo((v) => !v)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 3, padding: 0 }}>
             <span style={{ fontFamily: C.mono, fontSize: 15, fontWeight: 700, color: C.bright, letterSpacing: "-0.5px" }}>
               <AnimatedNumber
-  value={marketCapUsd ?? marketCapEth}
+  value={displayMarketCapUsd ?? marketCapEth}
   format={(v) =>
-    marketCapUsd != null
+    displayMarketCapUsd != null
       ? `$${formatCompact(v)}`
       : `${formatCompact(v)} ETH`
   }
@@ -169,6 +175,14 @@ const marketCapUsd = ethToUsd(
             <span style={{ fontSize: 9, color: C.mid }}>{showInfo ? "▲" : "▾"}</span>
           </button>
           <span style={{ fontSize: 8, color: C.mid, fontFamily: C.mono }}>MARKET CAP</span>
+          {liveStats?.volume24h != null && (
+            <>
+              <span style={{ fontFamily: C.mono, fontSize: 12, fontWeight: 700, color: C.teal, marginTop: 4 }}>
+                ${formatCompact(liveStats.volume24h)}
+              </span>
+              <span style={{ fontSize: 8, color: C.mid, fontFamily: C.mono }}>24H VOL</span>
+            </>
+          )}
         </div>
       </div>
       {showInfo && <InfoPopup onClose={() => setShowInfo(false)} metrics={metrics} token={token} />}
@@ -180,7 +194,7 @@ const socialStyle = {
   display: "flex",
   alignItems: "center",
   gap: 4,
-  color: "#64748b",
+  color: "var(--text-faint-2)",
   fontSize: 9,
   fontFamily: C.mono,
   fontWeight: 600,

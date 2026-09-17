@@ -29,17 +29,17 @@ export default function SocialLinks({ creatorWallet, telegram, twitter, website 
   };
 
   return (
-    <div className="font-mono text-xs bg-[#0b0f19]/40 p-3 rounded-sm border border-slate-900 text-slate-300 flex flex-col gap-2.5">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-slate-900/60 pb-2">
+    <div className="font-mono text-xs bg-[var(--bg-alt)]/40 p-3 rounded-sm border border-[var(--border)] text-[var(--text-mid)] flex flex-col gap-2.5">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--border)]/60 pb-2">
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">CREATOR:</span>
-          <span className="text-slate-200 font-bold uppercase tracking-wide">{shortenAddress(creatorWallet)}</span>
+          <span className="text-[10px] text-[var(--text-faint-2)] font-bold uppercase tracking-wider">CREATOR:</span>
+          <span className="text-[var(--text-bright-2)] font-bold uppercase tracking-wide">{shortenAddress(creatorWallet)}</span>
         </div>
         <div className="flex items-center gap-3 text-[10px] font-bold tracking-widest mt-0.5 sm:mt-0">
           <button
             onClick={copyToClipboard}
-            style={{ color: copied ? "#96d6cd" : "" }}
-            className="flex items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors uppercase"
+            style={{ color: copied ? "var(--teal)" : "" }}
+            className="flex items-center gap-1 text-[var(--text-faint-2)] hover:text-[var(--text-mid)] transition-colors uppercase"
           >
             <Copy size={11} />
             <span>{copied ? "COPIED" : "COPY"}</span>
@@ -48,7 +48,7 @@ export default function SocialLinks({ creatorWallet, telegram, twitter, website 
             href={explorerAddressUrl(creatorWallet)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors uppercase"
+            className="flex items-center gap-1 text-[var(--text-faint-2)] hover:text-[var(--text-mid)] transition-colors uppercase"
           >
             <ExternalLink size={11} />
             <span>EXPLORER</span>
@@ -57,12 +57,12 @@ export default function SocialLinks({ creatorWallet, telegram, twitter, website 
       </div>
 
       <div className="flex items-center gap-2 text-[10px] font-bold tracking-wider flex-wrap">
-        <span className="text-slate-500 uppercase text-[9px] mr-1">CHANNELS:</span>
+        <span className="text-[var(--text-faint-2)] uppercase text-[9px] mr-1">CHANNELS:</span>
         {telegram && <ChannelLink href={telegram} icon={<Send size={10} />} label="TG" />}
         {twitter && <ChannelLink href={twitter} icon={<Twitter size={10} />} label="X" />}
         {website && <ChannelLink href={website} icon={<Globe size={10} />} label="WEB" />}
         {!telegram && !twitter && !website && (
-          <span className="text-slate-600 italic font-normal text-[9px] uppercase tracking-normal">
+          <span className="text-[var(--border-mid)] italic font-normal text-[9px] uppercase tracking-normal">
             [ no social links provided ]
           </span>
         )}
@@ -76,8 +76,8 @@ const ChannelLink = ({ href, icon, label }) => (
     href={href}
     target="_blank"
     rel="noopener noreferrer"
-    style={{ color: "#96d6cd", borderColor: "#96d6cd20" }}
-    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#96d6cd]/5 border rounded-none transition-opacity hover:opacity-80"
+    style={{ color: "var(--teal)", borderColor: "var(--teal)20" }}
+    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-[var(--teal)]/5 border rounded-none transition-opacity hover:opacity-80"
   >
     {icon}
     <span>[{label}]</span>

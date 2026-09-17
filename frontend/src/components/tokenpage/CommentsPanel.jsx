@@ -8,7 +8,7 @@
  */
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { C } from "../../utils/designTokens";
-import { Icon } from "./Icons";
+import { Send } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useWallet } from "../../context/WalletContext";
 import { timeAgo } from "../../utils/format";
@@ -147,7 +147,7 @@ export default function CommentsPanel({ tokenAddress, creatorWallet }) {
             border: `1px solid ${text.trim() && wallet ? C.teal : C.border}`,
             borderRadius: 5,
             padding: "8px 13px",
-            color: text.trim() && wallet ? "#030712" : C.dim,
+            color: text.trim() && wallet ? "var(--bg)" : C.dim,
             fontSize: 10,
             fontWeight: 700,
             cursor: text.trim() && wallet ? "pointer" : "not-allowed",
@@ -157,7 +157,7 @@ export default function CommentsPanel({ tokenAddress, creatorWallet }) {
             fontFamily: C.mono,
           }}
         >
-          <Icon.Send />
+          <Send size={12} />
         </button>
       </div>
     </div>

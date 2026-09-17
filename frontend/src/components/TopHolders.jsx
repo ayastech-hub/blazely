@@ -74,7 +74,7 @@ export default function TopHolders({ tokenAddress, circulatingSupply }) {
 
   if (!tokenAddress) {
     return (
-      <div className="font-mono text-[10px] text-slate-600 uppercase tracking-widest py-4">
+      <div className="font-mono text-[10px] text-[var(--border-mid)] uppercase tracking-widest py-4">
         NULL DESCRIPTOR // TARGET_ADDRESS_MISSING
       </div>
     );
@@ -82,7 +82,7 @@ export default function TopHolders({ tokenAddress, circulatingSupply }) {
 
   if (loading) {
     return (
-      <div className="font-mono text-[10px] text-slate-500 uppercase tracking-widest py-4 animate-pulse">
+      <div className="font-mono text-[10px] text-[var(--text-faint-2)] uppercase tracking-widest py-4 animate-pulse">
         SYNCHRONIZING_LEDGER_BALANCES...
       </div>
     );
@@ -90,7 +90,7 @@ export default function TopHolders({ tokenAddress, circulatingSupply }) {
 
   if (holders.length === 0) {
     return (
-      <div className="font-mono text-[10px] text-slate-600 uppercase tracking-widest py-4 border border-dashed border-slate-900/60 bg-[#0b0f19]/10 text-center">
+      <div className="font-mono text-[10px] text-[var(--border-mid)] uppercase tracking-widest py-4 border border-dashed border-[var(--border)]/60 bg-[var(--bg-alt)]/10 text-center">
         NULL DESCRIPTOR // NO DISTRIBUTION DATA AVAILABLE
       </div>
     );
@@ -99,33 +99,33 @@ export default function TopHolders({ tokenAddress, circulatingSupply }) {
   const supply = Number(circulatingSupply) || null;
 
   return (
-    <div className="font-mono text-xs bg-[#0b0f19]/40 p-3 rounded-sm border border-slate-900 text-slate-300">
-      <div className="flex justify-between items-end mb-2.5 border-b border-slate-900 pb-1.5 text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+    <div className="font-mono text-xs bg-[var(--bg-alt)]/40 p-3 rounded-sm border border-[var(--border)] text-[var(--text-mid)]">
+      <div className="flex justify-between items-end mb-2.5 border-b border-[var(--border)] pb-1.5 text-[9px] text-[var(--text-faint-2)] font-bold uppercase tracking-wider">
         <span>DISTRIBUTION_INDEX</span>
         <span>{supply ? "% SUPPLY" : "BALANCE"}</span>
       </div>
 
-      <div className="divide-y divide-slate-900/40 max-h-[280px] overflow-y-auto pr-1 scrollbar-none">
+      <div className="divide-y divide-[var(--border)]/40 max-h-[280px] overflow-y-auto pr-1 scrollbar-none">
         {holders.map((h, i) => {
           const rank = String(i + 1).padStart(2, "0");
           const pct = supply ? ((Number(h.balance) / supply) * 100).toFixed(2) : null;
           return (
             <div
               key={h.wallet_address}
-              className="flex items-center justify-between py-1.5 hover:bg-[#0b0f19]/30 transition-colors"
+              className="flex items-center justify-between py-1.5 hover:bg-[var(--bg-alt)]/30 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <span className="text-[9px] text-slate-600 font-bold">[{rank}]</span>
+                <span className="text-[9px] text-[var(--border-mid)] font-bold">[{rank}]</span>
                 <a
                   href={explorerAddressUrl(h.wallet_address)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-slate-300 hover:text-slate-100 underline decoration-slate-900 hover:decoration-slate-700 uppercase tracking-wide transition-colors"
+                  className="text-[var(--text-mid)] hover:text-[var(--text-bright)] underline decoration-slate-900 hover:decoration-slate-700 uppercase tracking-wide transition-colors"
                 >
                   {shortenAddress(h.wallet_address)}
                 </a>
               </div>
-              <div style={{ color: i === 0 ? "#96d6cd" : "" }} className="font-bold text-right text-slate-200">
+              <div style={{ color: i === 0 ? "var(--teal)" : "" }} className="font-bold text-right text-[var(--text-bright-2)]">
                 {pct !== null ? `${pct}%` : formatCompact(h.balance)}
               </div>
             </div>
