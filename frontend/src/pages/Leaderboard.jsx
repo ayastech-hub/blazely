@@ -25,7 +25,7 @@ function RankBadge({ rank }) {
     <span
       className={`inline-flex items-center justify-center w-7 h-7 rounded-md text-xs font-medium tabular-nums ${
         isTop
-          ? "bg-teal/10 text-teal border border-teal/25"
+          ? "bg-teal/10 text-teal border border-teal/20"
           : "text-[var(--text-faint-2)]"
       }`}
       style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -49,11 +49,11 @@ function LeaderboardRow({ t, idx, ethUsd }) {
     >
       <Link
         to={`/token/${t.address}`}
-        className="group flex items-center gap-4 px-4 py-3.5 rounded-xl border border-transparent hover:border-[var(--border-hi)]/50 hover:bg-[var(--panel-alt)]/40 transition-all duration-200"
+        className="group flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-white/[0.03] transition-all duration-200"
       >
         <RankBadge rank={idx + 1} />
 
-        <div className="w-9 h-9 rounded-lg bg-[var(--bg)] border border-[var(--border-hi)]/60 flex items-center justify-center overflow-hidden shrink-0">
+        <div className="w-9 h-9 rounded-lg bg-[var(--bg)]/60 border border-white/[0.06] flex items-center justify-center overflow-hidden shrink-0">
           {t.logo ? (
             <img src={t.logo} className="w-full h-full object-cover" alt="" />
           ) : (
@@ -119,7 +119,7 @@ export default function Leaderboard() {
   }, [sortBy]);
 
   return (
-    <div className="relative max-w-[900px] mx-auto px-4 sm:px-6 py-12 sm:py-16">
+    <div className="relative max-w-[900px] mx-auto py-10 sm:py-14">
       {/* Soft ambient */}
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[480px] h-[280px] rounded-full pointer-events-none"
@@ -154,8 +154,8 @@ export default function Leaderboard() {
               onClick={() => setSortBy(key)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
                 sortBy === key
-                  ? "bg-teal/10 text-teal border border-teal/30"
-                  : "text-[var(--text-faint-2)] border border-transparent hover:text-[var(--text-mid)] hover:border-[var(--border-hi)]/40"
+                  ? "bg-teal/10 text-teal border border-teal/20"
+                  : "text-[var(--text-faint-2)] border border-transparent hover:text-[var(--text-mid)] hover:bg-white/[0.03]"
               }`}
             >
               {label}
@@ -176,7 +176,7 @@ export default function Leaderboard() {
         </div>
 
         {/* List */}
-        <div className="rounded-2xl border border-[var(--border)]/60 bg-[var(--panel-alt)]/20 overflow-hidden">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
           {loading ? (
             <div className="py-20">
               <Loading label="Loading…" />
@@ -186,7 +186,7 @@ export default function Leaderboard() {
               No tokens yet
             </div>
           ) : (
-            <div className="divide-y divide-[var(--border)]/40">
+            <div className="divide-y divide-white/[0.04]">
               {tokens.map((t, i) => (
                 <LeaderboardRow key={t.address} t={t} idx={i} ethUsd={ethUsd} />
               ))}

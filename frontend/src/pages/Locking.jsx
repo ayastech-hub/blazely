@@ -27,7 +27,7 @@ function progress(lockDate, unlockDate) {
 }
 
 const inputClass =
-  "w-full px-3.5 py-2.5 rounded-lg bg-[var(--bg)] border border-[var(--border-hi)]/60 text-sm text-[var(--text-bright-2)] placeholder:text-[var(--text-faint-2)] focus:border-teal/40 focus:outline-none transition-colors";
+  "w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg)]/50 border border-white/[0.06] text-sm text-[var(--text-bright-2)] placeholder:text-[var(--text-faint-2)] focus:border-teal/30 focus:outline-none transition-colors";
 
 const labelClass = "block text-xs text-[var(--text-mid-2)] mb-1.5";
 
@@ -136,7 +136,7 @@ export default function Locking() {
   });
 
   return (
-    <div className="max-w-[1000px] mx-auto px-4 sm:px-6 py-12 sm:py-16">
+    <div className="max-w-[1000px] mx-auto py-10 sm:py-14">
       {/* Header */}
       <div className="mb-10">
         <h1
@@ -184,7 +184,7 @@ export default function Locking() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Create form */}
         <div className="lg:col-span-2">
-          <div className="rounded-2xl border border-[var(--border)]/60 bg-[var(--panel-alt)]/25 p-5 sm:p-6 space-y-4">
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 sm:p-6 space-y-4">
             <h2 className="text-sm font-medium text-[var(--text-bright-2)]">New lock</h2>
 
             <div>
@@ -296,7 +296,7 @@ export default function Locking() {
             </select>
           </div>
 
-          <div className="rounded-2xl border border-[var(--border)]/60 bg-[var(--panel-alt)]/20 overflow-hidden">
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
             {loading && locks.length === 0 ? (
               <div className="py-16">
                 <Loading label="Loading…" />
@@ -309,14 +309,14 @@ export default function Locking() {
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-[var(--border)]/40">
+              <div className="divide-y divide-white/[0.04]">
                 {filtered.map((lock) => {
                   const m = progress(lock.lockDate, lock.unlockDate);
                   return (
-                    <div key={lock.id} className="p-4 sm:p-5 hover:bg-[var(--panel-alt)]/30 transition-colors">
+                    <div key={lock.id} className="p-4 sm:p-5 hover:bg-white/[0.03] transition-colors">
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-8 h-8 rounded-lg bg-[var(--bg)] border border-[var(--border-hi)]/50 flex items-center justify-center text-xs font-medium text-teal shrink-0">
+                          <div className="w-8 h-8 rounded-lg bg-[var(--bg)]/60 border border-white/[0.06] flex items-center justify-center text-xs font-medium text-teal shrink-0">
                             {lock.tokenSymbol?.[0] || "?"}
                           </div>
                           <div className="min-w-0">
@@ -361,7 +361,7 @@ export default function Locking() {
                         <button
                           onClick={() => unlock(lock.id)}
                           disabled={loading}
-                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium bg-green/10 text-[var(--green-2)] border border-green/20 hover:bg-green/15 transition-colors disabled:opacity-40"
+                          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium bg-green/10 text-[var(--green-2)] border border-green/15 hover:bg-green/15 transition-colors disabled:opacity-40"
                         >
                           <Unlock size={13} />
                           Unlock
