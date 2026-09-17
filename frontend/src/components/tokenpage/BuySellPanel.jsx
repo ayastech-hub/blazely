@@ -1,17 +1,10 @@
+// src/components/tokenpage/BuySellPanel.jsx — v2
+// Clean buy / sell panel. High-end, minimal chrome.
 import React, { useState } from "react";
-import { C } from "../../utils/designTokens";
 import { useBuySellLogic } from "../../hooks/useBuySellLogic";
 import { ConnectKitButton } from "connectkit";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { GLASS } from "../ui/GlassCard";
-
-function Label({ children }) {
-  return (
-    <div style={{ fontSize: 9, color: C.mid, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 6, fontFamily: C.mono }}>
-      {children}
-    </div>
-  );
-}
 
 export default function BuySellPanel({ token }) {
   const [showSlippage, setShowSlippage] = useState(false);
@@ -34,15 +27,20 @@ export default function BuySellPanel({ token }) {
   } = useBuySellLogic(token);
 
   const isBuy = activeTab === "Buy";
-  const acc = isBuy ? C.teal : C.red;
-  const accDim = isBuy ? C.tealDim : C.redDim;
+  const accent = isBuy ? "teal" : "rose";
+  const accentText = isBuy ? "text-teal" : "text-rose";
+  const accentBg = isBuy ? "bg-teal/10 border-teal/30" : "bg-rose/10 border-rose/30";
+  const accentBtn = isBuy
+    ? "bg-teal text-[var(--bg)] hover:brightness-110"
+    : "bg-rose text-white hover:brightness-110";
 
   return (
-    <div className={GLASS}>
-      <div style={{ display: "flex", padding: "6px 10px", gap: 4, background: C.panel2, borderBottom: `1px solid ${C.border}` }}>
+    <div className={`${GLASS} rounded-2xl overflow-hidden`}>
+      {/* Tabs */}
+      <div className="flex p-1.5 gap-1 border-b border-white/[0.06]">
         {["Buy", "Sell"].map((t) => {
           const active = activeTab === t;
-          const c = t === "Buy" ? C.teal : C.red;
+          const isBuyTab = t === "Buy";
           return (
             <button
               key={t}
@@ -50,54 +48,70 @@ export default function BuySellPanel({ token }) {
                 setActiveTab(t);
                 setAmount("");
               }}
-              style={{
-                flex: 1,
-                padding: "8px 0",
-                borderRadius: 5,
-                background: active ? (t === "Buy" ? C.tealDim : C.redDim) : "transparent",
-                border: `1px solid ${active ? c : C.border}`,
-                color: active ? c : C.mid,
-                fontSize: 10,
-                fontWeight: 800,
-                cursor: "pointer",
-                letterSpacing: "0.12em",
-                fontFamily: C.mono,
-              }}
+              className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                active
+                  ? isBuyTab
+                    ? "bg-teal/10 text-teal border border-teal/25"
+                    : "bg-rose/10 text-rose border border-rose/25"
+                  : "text-[var(--text-faint-2)] border border-transparent hover:text-[var(--text-mid)]"
+              }`}
             >
-              {t.toUpperCase()}
+              {t}
             </button>
           );
         })}
       </div>
 
-      <div style={{ padding: "10px 10px 6px" }}>
-        <Label>{isBuy ? "PAY (ETH)" : `SELL ${token?.symbol ?? "TOKEN"}`}</Label>
-        <div style={{ display: "flex", alignItems: "center", background: C.panel2, border: `1px solid ${C.borderHi}`, borderRadius: 5, padding: "8px 10px", marginBottom: 6 }}>
-          <span style={{ color: C.mid, marginRight: 6, fontSize: 12, fontFamily: C.mono }}>{isBuy ? "Ξ" : ""}</span>
-          <input
-            value={amount}
-            onChange={handleAmountChange}
-            placeholder="0.00"
-            style={{ flex: 1, background: "none", border: "none", outline: "none", color: C.bright, fontSize: 16, fontWeight: 700, fontFamily: C.mono }}
-          />
-          <div style={{ borderLeft: `1px solid ${C.border}`, paddingLeft: 8, textAlign: "right" }}>
-            <div style={{ fontSize: 7, color: C.mid, fontFamily: C.mono }}>BAL</div>
+      <div className="p-4 space-y-3.5">
+        {/* Amount */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] text-[var(--text-mid-2)]">
+              {isBuy ? "You pay" : "You sell"}
+            </span>
             <button
+              type="button"
               onClick={() => setAmount(getInputBalance().toString())}
-              style={{ fontSize: 9, color: C.teal, fontWeight: 600, fontFamily: C.mono, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+              className="text-[11px] text-[var(--text-faint-2)] hover:text-teal transition-colors tabular-nums"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}
             >
-              {getInputBalance().toFixed(4)}
+              Bal {getInputBalance().toFixed(4)}
             </button>
+          </div>
+          <div className="flex items-center gap-2 px-3.5 py-3 rounded-xl bg-[var(--bg)]/50 border border-white/[0.08] focus-within:border-teal/30 transition-colors">
+            {isBuy && (
+              <span
+                className="text-[var(--text-faint-2)] text-sm"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              >
+                Ξ
+              </span>
+            )}
+            <input
+              value={amount}
+              onChange={handleAmountChange}
+              placeholder="0.00"
+              className="flex-1 bg-transparent border-none outline-none text-[var(--text-bright)] text-lg font-medium tabular-nums placeholder:text-[var(--text-faint-2)]"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}
+            />
+            <span
+              className="text-xs text-[var(--text-faint-2)] shrink-0"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}
+            >
+              {isBuy ? "ETH" : token?.symbol ?? "TOKEN"}
+            </span>
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
+        {/* Presets */}
+        <div className="flex gap-1.5">
           {isBuy
             ? fixedPresets.map((p) => (
                 <button
                   key={p.value}
                   onClick={() => setPresetAmount(p.value)}
-                  style={{ flex: 1, padding: "5px 0", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 3, color: C.mid, fontSize: 8, fontWeight: 700, cursor: "pointer", fontFamily: C.mono }}
+                  className="flex-1 py-1.5 rounded-lg text-[11px] text-[var(--text-mid-2)] border border-white/[0.06] hover:border-teal/25 hover:text-teal transition-colors"
+                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
                 >
                   {p.label}
                 </button>
@@ -106,55 +120,46 @@ export default function BuySellPanel({ token }) {
                 <button
                   key={pct}
                   onClick={() => setAmount(((getInputBalance() * pct) / 100).toString())}
-                  style={{ flex: 1, padding: "5px 0", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 3, color: C.mid, fontSize: 8, fontWeight: 700, cursor: "pointer", fontFamily: C.mono }}
+                  className="flex-1 py-1.5 rounded-lg text-[11px] text-[var(--text-mid-2)] border border-white/[0.06] hover:border-rose/25 hover:text-rose transition-colors"
+                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
                 >
                   {pct}%
                 </button>
               ))}
         </div>
 
-        <div
-          style={{
-            background: C.panel2,
-            border: `1px solid ${C.border}`,
-            borderRadius: 4,
-            padding: "7px 10px",
-            marginBottom: 8,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            fontFamily: C.mono,
-          }}
-        >
-          <span style={{ fontSize: 8, color: C.mid }}>RECEIVE (est.)</span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: acc }}>≈ {getReceiveSymbol()}</span>
+        {/* Receive estimate */}
+        <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[var(--bg)]/30 border border-white/[0.05]">
+          <span className="text-[11px] text-[var(--text-faint-2)]">You receive</span>
+          <span
+            className={`text-sm font-medium tabular-nums ${accentText}`}
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          >
+            ≈ {getReceiveSymbol()}
+          </span>
         </div>
 
-        <div style={{ marginBottom: 8 }}>
+        {/* Slippage */}
+        <div>
           <button
+            type="button"
             onClick={() => setShowSlippage((v) => !v)}
-            style={{ fontSize: 9, color: C.mid, background: "none", border: "none", cursor: "pointer", fontFamily: C.mono, padding: 0, marginBottom: showSlippage ? 6 : 0 }}
+            className="text-[11px] text-[var(--text-faint-2)] hover:text-[var(--text-mid)] transition-colors"
           >
-            Slippage: {slippage}% ▾
+            Slippage {slippage}%
           </button>
           {showSlippage && (
-            <div style={{ display: "flex", gap: 4 }}>
+            <div className="flex gap-1.5 mt-2">
               {[0.1, 0.5, 1.0].map((s) => (
                 <button
                   key={s}
                   onClick={() => setSlippage(s)}
-                  style={{
-                    flex: 1,
-                    padding: "5px 0",
-                    background: slippage === s ? C.tealDim : "transparent",
-                    border: `1px solid ${slippage === s ? C.teal : C.border}`,
-                    borderRadius: 3,
-                    color: slippage === s ? C.teal : C.mid,
-                    fontSize: 8,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    fontFamily: C.mono,
-                  }}
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] transition-colors ${
+                    slippage === s
+                      ? "bg-teal/10 text-teal border border-teal/30"
+                      : "text-[var(--text-mid-2)] border border-white/[0.06] hover:border-white/[0.1]"
+                  }`}
+                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
                 >
                   {s}%
                 </button>
@@ -163,56 +168,42 @@ export default function BuySellPanel({ token }) {
           )}
         </div>
 
+        {/* Message */}
         {transactionMessage && (
           <div
-            style={{
-              marginBottom: 8,
-              padding: "7px 10px",
-              borderRadius: 4,
-              fontSize: 10,
-              fontFamily: C.mono,
-              background: transactionMessage.type === "error" ? "rgba(251,113,133,0.08)" : C.tealDim,
-              color: transactionMessage.type === "error" ? C.red : C.teal,
-              border: `1px solid ${transactionMessage.type === "error" ? C.red : C.teal}`,
-            }}
+            className={`px-3 py-2.5 rounded-xl text-xs ${
+              transactionMessage.type === "error"
+                ? "bg-rose/10 text-rose border border-rose/20"
+                : "bg-teal/10 text-teal border border-teal/20"
+            }`}
           >
             {transactionMessage.text}
           </div>
         )}
 
+        {/* CTA */}
         <ConnectKitButton.Custom>
-          {({ isConnected, show }) => (
-            <button
-              onClick={() => (isConnected ? handleSwap() : show())}
-              disabled={isConnected && isButtonDisabled}
-              style={{
-                width: "100%",
-                padding: "11px 0",
-                background:
-                  !isConnected || !isButtonDisabled
-                    ? isBuy
-                      ? `linear-gradient(135deg, ${C.teal} 0%, var(--teal-mid) 100%)`
-                      : `linear-gradient(135deg, ${C.red} 0%, var(--rose-soft) 100%)`
-                    : C.panel2,
-                border: "none",
-                borderRadius: 5,
-                color: !isConnected || !isButtonDisabled ? "var(--bg)" : C.dim,
-                fontWeight: 800,
-                fontSize: 11,
-                cursor: isConnected && isButtonDisabled ? "not-allowed" : "pointer",
-                letterSpacing: "0.1em",
-                fontFamily: C.mono,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-              }}
-            >
-              {["pending", "approving", "confirming"].includes(buttonStatus.type) && <Loader2 size={13} className="animate-spin" />}
-              {buttonStatus.type === "success" && <CheckCircle size={13} />}
-              {isConnected ? buttonStatus.text.toUpperCase() : "CONNECT WALLET"}
-            </button>
-          )}
+          {({ isConnected, show }) => {
+            const busy = ["pending", "approving", "confirming"].includes(buttonStatus.type);
+            const success = buttonStatus.type === "success";
+            const disabled = isConnected && isButtonDisabled;
+
+            return (
+              <button
+                onClick={() => (isConnected ? handleSwap() : show())}
+                disabled={disabled}
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
+                  disabled
+                    ? "bg-[var(--panel)] text-[var(--text-faint-2)] cursor-not-allowed"
+                    : accentBtn
+                }`}
+              >
+                {busy && <Loader2 size={15} className="animate-spin" />}
+                {success && <CheckCircle2 size={15} />}
+                {isConnected ? buttonStatus.text : "Connect wallet"}
+              </button>
+            );
+          }}
         </ConnectKitButton.Custom>
       </div>
     </div>
