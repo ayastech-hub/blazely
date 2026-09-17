@@ -4,7 +4,7 @@
 
 ---
 
-## Executive Summary
+## Executive Summary h
 
 **Blazely** is a production-grade decentralized token launchpad that eliminates the cold-start liquidity problem plaguing new token launches. By combining a Solidity bonding-curve smart contract, a realtime on-chain event indexer, and a terminal-aesthetic trading terminal, Blazely enables anyone to deploy a token in a single transaction with instant, continuous price discovery — no manual liquidity seeding, no market makers, no DEX listing fees.
 
