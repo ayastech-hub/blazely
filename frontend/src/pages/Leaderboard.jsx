@@ -1,257 +1,192 @@
-//src/pages/Leaderboard.jsx
-//
-// PURPOSE
-// Ranks all tokens by market cap or 24h volume. Two sort modes, toggled by
-// the pills above the list; the page re-queries Supabase on every sort
-// change rather than sorting client-side (see the effect below) — fine at
-// current token counts, but if this table grows large, switch to a
-// server-side `order by` + `limit` in the Supabase query instead of
-// fetching everything and sorting in JS.
-//
-// DATA FLOW
-// 1. Fetches every row from `tokens` joined with `token_metrics_latest`.
-// 2. `normalizeToken()` (api/supabaseTokens.js) reshapes each row — notably
-//    it produces `market_cap_eth` / `volume_eth` (raw wei, correctly
-//    labeled) AND a legacy `marketcap_usd` / `volume_24h` pair that is
-//    NOT actually converted to USD despite the name (a "temporary
-//    compatibility" leftover the file itself flags for removal). This page
-//    used to display those mislabeled fields directly — a real bug, now
-//    fixed: `LeaderboardRow` computes the real USD figures itself from the
-//    correctly-labeled ETH fields + the live price from `usePrices()`.
-// 3. Sorting uses the raw ETH wei fields, not a USD conversion — multiplying
-//    every value by the same positive exchange rate never changes relative
-//    order, so this sorts correctly even before the live price has loaded.
-//
-// KNOWN GAPS (not fixed here, flagging for whoever picks this up)
-// - No pagination — fetches every token on every sort change. Fine today,
-//   won't be once the token count is large.
-// - `formatNumberCompact` duplicates logic that already exists in
-//   `utils/format.js` (`formatCompact`) — worth consolidating.
+// src/pages/Leaderboard.jsx — v2
+// Clean ranking by market cap or volume. Minimal, high-end layout.
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Loading from "../components/ui/Loading";
 import { supabase } from "../lib/supabaseClient";
-import { Star, ChevronRight, TrendingUp, BarChart3 } from "lucide-react";
-import { normalizeToken } from "../api/supabaseTokens"; // Using your API normalization
+import { normalizeToken } from "../api/supabaseTokens";
 import { usePrices } from "../hooks/usePrices";
 import { ethToUsd } from "../utils/priceConversion";
 import { formatWei } from "../utils/format";
 
-const formatNumberCompact = (num) => {
-  if (num === null || num === undefined) return "$0.00";
-  const number = Number(num);
-  if (isNaN(number) || number === 0) return "$0.00";
+function formatUsd(num) {
+  if (num == null || isNaN(num) || num === 0) return "—";
+  const abs = Math.abs(num);
+  if (abs < 1000) return `$${abs.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  const units = ["", "K", "M", "B", "T"];
+  const i = Math.min(units.length - 1, Math.floor(Math.log10(abs) / 3));
+  return `$${(abs / 1000 ** i).toFixed(1)}${units[i]}`;
+}
 
-  const abs = Math.abs(number);
-  if (abs < 1000)
-    return `$${abs.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  const suffixes = ["", "K", "M", "B", "T"];
-  const i = Math.max(0, Math.min(suffixes.length - 1, Math.floor(Math.log10(abs) / 3)));
-  const scaled = abs / Math.pow(1000, i);
-  let numericDisplay = Math.round(scaled * 10) / 10;
-  return `$${numericDisplay.toFixed(1)}${suffixes[i]}`;
-};
+function RankBadge({ rank }) {
+  const isTop = rank <= 3;
+  return (
+    <span
+      className={`inline-flex items-center justify-center w-7 h-7 rounded-md text-xs font-medium tabular-nums ${
+        isTop
+          ? "bg-teal/10 text-teal border border-teal/25"
+          : "text-[var(--text-faint-2)]"
+      }`}
+      style={{ fontFamily: "'JetBrains Mono', monospace" }}
+    >
+      {rank}
+    </span>
+  );
+}
 
-const LeaderboardRow = ({ t, idx, ethUsd }) => {
-  const marketcapUsd = ethUsd != null ? ethToUsd(Number(formatWei(t.market_cap_eth, 18)), ethUsd) : null;
-  const volumeUsd = ethUsd != null ? ethToUsd(Number(formatWei(t.volume_eth, 18)), ethUsd) : null;
+function LeaderboardRow({ t, idx, ethUsd }) {
+  const marketcapUsd =
+    ethUsd != null ? ethToUsd(Number(formatWei(t.market_cap_eth, 18)), ethUsd) : null;
+  const volumeUsd =
+    ethUsd != null ? ethToUsd(Number(formatWei(t.volume_eth, 18)), ethUsd) : null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8, filter: "blur(6px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      transition={{ duration: 0.5, delay: idx * 0.05, ease: [0.16, 1, 0.3, 1] }}
-      className="relative block"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: Math.min(idx * 0.03, 0.4), ease: [0.16, 1, 0.3, 1] }}
     >
       <Link
         to={`/token/${t.address}`}
-        className="relative flex items-center rounded-xl border border-[var(--border-hi)]/60 bg-[var(--panel-alt)]/40 backdrop-blur-sm p-4 transition-all duration-300 hover:bg-[var(--panel-deep)]/60 hover:border-teal/20 group"
+        className="group flex items-center gap-4 px-4 py-3.5 rounded-xl border border-transparent hover:border-[var(--border-hi)]/50 hover:bg-[var(--panel-alt)]/40 transition-all duration-200"
       >
-        <div className="w-full grid grid-cols-12 gap-4 items-center">
-          {/* Rank numeral — editorial serif */}
-          <div className="col-span-1 pl-1">
-            <span
-              className="font-light text-[var(--border-mid)] group-hover:text-teal transition-colors duration-300"
-              style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 20, lineHeight: 1 }}
-            >
-              {idx + 1}
+        <RankBadge rank={idx + 1} />
+
+        <div className="w-9 h-9 rounded-lg bg-[var(--bg)] border border-[var(--border-hi)]/60 flex items-center justify-center overflow-hidden shrink-0">
+          {t.logo ? (
+            <img src={t.logo} className="w-full h-full object-cover" alt="" />
+          ) : (
+            <span className="text-xs font-medium text-[var(--text-faint-2)]">
+              {t.symbol?.[0] || "?"}
             </span>
-          </div>
+          )}
+        </div>
 
-          {/* Token identity */}
-          <div className="col-span-8 md:col-span-5 flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-[var(--bg)] border border-[var(--border-hi)] flex items-center justify-center overflow-hidden">
-              {t.logo ? (
-                <img src={t.logo} className="w-full h-full object-cover" alt={t.name} />
-              ) : (
-                <span
-                  className="text-xs font-medium text-[var(--text-faint-2)]"
-                  style={{ fontFamily: "'Fraunces', Georgia, serif" }}
-                >
-                  {t.symbol?.[0] || "?"}
-                </span>
-              )}
-            </div>
-            <div className="min-w-0">
-              <div
-                className="text-sm font-medium text-[var(--text-bright-2)] truncate group-hover:text-white transition-colors"
-                style={{ fontFamily: "'Fraunces', Georgia, serif" }}
-              >
-                {t.name}
-              </div>
-              <div
-                className="text-[11px] text-[var(--border-mid)]"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-              >
-                {t.address.slice(0, 6)}...{t.address.slice(-4)}
-              </div>
-            </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium text-[var(--text-bright-2)] truncate group-hover:text-white transition-colors">
+            {t.name}
           </div>
-
-          {/* Volume */}
           <div
-            className="hidden md:flex md:col-span-3 justify-end text-sm text-[var(--text-mid-2)] tabular-nums"
+            className="text-[11px] text-[var(--text-faint-2)] mt-0.5"
             style={{ fontFamily: "'JetBrains Mono', monospace" }}
           >
-            {formatNumberCompact(volumeUsd)}
+            {t.symbol}
           </div>
+        </div>
 
-          {/* Market cap */}
-          <div
-            className="col-span-3 md:col-span-2 flex justify-end text-sm font-semibold text-[var(--text-bright-2)] tabular-nums"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-          >
-            {formatNumberCompact(marketcapUsd)}
-          </div>
+        <div
+          className="hidden sm:block text-right text-sm tabular-nums text-[var(--text-mid-2)] w-24"
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        >
+          {formatUsd(volumeUsd)}
+        </div>
 
-          {/* Chevron */}
-          <div className="col-span-1 hidden md:flex justify-end pr-1">
-            <ChevronRight
-              size={14}
-              className="text-[var(--border-hi)] group-hover:text-teal group-hover:translate-x-1 transition-all duration-300"
-            />
-          </div>
+        <div
+          className="text-right text-sm font-medium tabular-nums text-[var(--text-bright-2)] w-24"
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        >
+          {formatUsd(marketcapUsd)}
         </div>
       </Link>
     </motion.div>
   );
-};
+}
 
 export default function Leaderboard() {
   const [tokens, setTokens] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState("marketcap_usd");
+  const [sortBy, setSortBy] = useState("marketcap");
   const { ethUsd } = usePrices();
 
   useEffect(() => {
-    const fetchLeaderboardData = async () => {
+    const fetchData = async () => {
       setLoading(true);
-      // Fetching from the main 'tokens' table with the metrics join
       const { data, error } = await supabase
         .from("tokens")
         .select(`*, token_metrics_latest(*)`);
 
       if (!error && data) {
         const normalized = data.map(normalizeToken);
-        // Sort by the raw ETH amounts, not a USD conversion — multiplying by
-        // a positive exchange rate never changes relative order, so this
-        // gives the identical sort as sorting by USD would, without needing
-        // the (possibly still-loading) live price for correctness here.
-        const sortField = sortBy === "marketcap_usd" ? "market_cap_eth" : "volume_eth";
-        const sorted = [...normalized].sort(
-          (a, b) => Number(b[sortField] || 0) - Number(a[sortField] || 0)
+        const field = sortBy === "marketcap" ? "market_cap_eth" : "volume_eth";
+        setTokens(
+          [...normalized].sort((a, b) => Number(b[field] || 0) - Number(a[field] || 0))
         );
-        setTokens(sorted);
       }
       setLoading(false);
     };
-    fetchLeaderboardData();
+    fetchData();
   }, [sortBy]);
 
   return (
-    <div className="text-[var(--text-bright)] px-4 sm:px-6 lg:px-8 py-12 relative overflow-hidden">
-      {/* Ambient background */}
+    <div className="relative max-w-[900px] mx-auto px-4 sm:px-6 py-12 sm:py-16">
+      {/* Soft ambient */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(ellipse, rgba(150,214,205,0.04) 0%, transparent 70%)", filter: "blur(80px)" }}
-      />
-      <div
-        className="absolute inset-0 pointer-events-none opacity-20"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[480px] h-[280px] rounded-full pointer-events-none"
         style={{
-          backgroundImage: `radial-gradient(circle at center, rgba(148,163,184,0.06) 1px, transparent 1px)`,
-          backgroundSize: "26px 26px",
+          background: "radial-gradient(ellipse, rgba(150,214,205,0.05) 0%, transparent 70%)",
+          filter: "blur(60px)",
         }}
       />
 
-      <div className="relative max-w-[1200px] mx-auto">
-        {/* Header — editorial */}
+      <div className="relative">
+        {/* Header */}
         <div className="mb-10">
-          <div
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 mb-6 rounded-full border border-[var(--border-hi)]/60 bg-[var(--panel-alt)]/50 backdrop-blur-sm"
+          <h1
+            className="text-3xl sm:text-4xl text-[var(--text-bright)] tracking-tight"
+            style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 400 }}
           >
-            <BarChart3 size={11} className="text-teal" />
-            <span
-              className="text-[10px] uppercase tracking-[0.22em] text-[var(--text-mid-2)] font-medium"
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            >
-              Live Leaderboard
-            </span>
-          </div>
-          <h2
-            className="text-4xl sm:text-5xl text-[var(--text-bright)]"
-            style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 400, letterSpacing: "-0.03em", lineHeight: 1 }}
-          >
-            Top tokens by{" "}
-            <span
-              className="italic font-light"
-              style={{
-                background: "linear-gradient(135deg, var(--teal) 0%, var(--teal-mid) 100%)",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              {sortBy === "marketcap_usd" ? "market cap" : "volume"}
-            </span>
-          </h2>
+            Leaderboard
+          </h1>
+          <p className="mt-2 text-sm text-[var(--text-mid-2)]">
+            Ranked by {sortBy === "marketcap" ? "market cap" : "24h volume"}
+          </p>
         </div>
 
-        <div className="bg-[var(--bg-alt)]/20 border border-[var(--border)] rounded-2xl p-4 sm:p-6">
-          {/* Sort toggle — premium pills */}
-          <div className="flex justify-end gap-2 mb-6">
+        {/* Sort */}
+        <div className="flex gap-1.5 mb-6">
+          {[
+            { key: "marketcap", label: "Market Cap" },
+            { key: "volume", label: "Volume" },
+          ].map(({ key, label }) => (
             <button
-              onClick={() => setSortBy("marketcap_usd")}
-              className={`px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-widest transition-all duration-300 ${
-                sortBy === "marketcap_usd"
+              key={key}
+              onClick={() => setSortBy(key)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                sortBy === key
                   ? "bg-teal/10 text-teal border border-teal/30"
-                  : "bg-[var(--panel-alt)]/50 text-[var(--text-faint-2)] border border-[var(--border-hi)]/50 hover:text-[var(--text-mid)] hover:border-[var(--border-mid)]"
+                  : "text-[var(--text-faint-2)] border border-transparent hover:text-[var(--text-mid)] hover:border-[var(--border-hi)]/40"
               }`}
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
             >
-              Market Cap
+              {label}
             </button>
-            <button
-              onClick={() => setSortBy("volume_24h")}
-              className={`px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-widest transition-all duration-300 ${
-                sortBy === "volume_24h"
-                  ? "bg-teal/10 text-teal border border-teal/30"
-                  : "bg-[var(--panel-alt)]/50 text-[var(--text-faint-2)] border border-[var(--border-hi)]/50 hover:text-[var(--text-mid)] hover:border-[var(--border-mid)]"
-              }`}
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            >
-              Volume
-            </button>
-          </div>
+          ))}
+        </div>
 
-          {/* Rows */}
+        {/* Column labels */}
+        <div
+          className="hidden sm:flex items-center gap-4 px-4 pb-2 mb-1 text-[10px] uppercase tracking-wider text-[var(--text-faint-2)]"
+          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+        >
+          <span className="w-7 text-center">#</span>
+          <span className="w-9" />
+          <span className="flex-1">Token</span>
+          <span className="w-24 text-right">Volume</span>
+          <span className="w-24 text-right">MCap</span>
+        </div>
+
+        {/* List */}
+        <div className="rounded-2xl border border-[var(--border)]/60 bg-[var(--panel-alt)]/20 overflow-hidden">
           {loading ? (
-            <Loading label="Loading leaderboard..." />
+            <div className="py-20">
+              <Loading label="Loading…" />
+            </div>
+          ) : tokens.length === 0 ? (
+            <div className="py-20 text-center text-sm text-[var(--text-faint-2)]">
+              No tokens yet
+            </div>
           ) : (
-            <div className="space-y-2.5">
+            <div className="divide-y divide-[var(--border)]/40">
               {tokens.map((t, i) => (
                 <LeaderboardRow key={t.address} t={t} idx={i} ethUsd={ethUsd} />
               ))}
@@ -259,18 +194,14 @@ export default function Leaderboard() {
           )}
         </div>
 
-        {/* Footer ticker line */}
-        <div
-          className="mt-8 pt-4 border-t border-[var(--border)]/50 flex items-center justify-between"
-          style={{ fontFamily: "'JetBrains Mono', monospace" }}
-        >
-          <span className="text-[9px] uppercase tracking-widest text-[var(--border-hi)]">
-            SYS.LEADERBOARD // {tokens.length} TOKENS
-          </span>
-          <span className="text-[9px] uppercase tracking-widest text-[var(--border-hi)]">
-            SORT: {sortBy.toUpperCase()}
-          </span>
-        </div>
+        {!loading && tokens.length > 0 && (
+          <p
+            className="mt-5 text-[10px] text-[var(--text-faint-2)] text-right"
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          >
+            {tokens.length} tokens
+          </p>
+        )}
       </div>
     </div>
   );
