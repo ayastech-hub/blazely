@@ -5,6 +5,7 @@ import { useBuySellLogic } from "../../hooks/useBuySellLogic";
 import { ConnectKitButton } from "connectkit";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { GLASS } from "../ui/GlassCard";
+import LiquidTabs from "../ui/LiquidTabs";
 
 export default function BuySellPanel({ token }) {
   const [showSlippage, setShowSlippage] = useState(false);
@@ -36,30 +37,21 @@ export default function BuySellPanel({ token }) {
 
   return (
     <div className={`${GLASS} rounded-2xl overflow-hidden`}>
-      {/* Tabs */}
-      <div className="flex p-1.5 gap-1 border-b border-white/[0.06]">
-        {["Buy", "Sell"].map((t) => {
-          const active = activeTab === t;
-          const isBuyTab = t === "Buy";
-          return (
-            <button
-              key={t}
-              onClick={() => {
-                setActiveTab(t);
-                setAmount("");
-              }}
-              className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
-                active
-                  ? isBuyTab
-                    ? "bg-teal/10 text-teal border border-teal/25"
-                    : "bg-rose/10 text-rose border border-rose/25"
-                  : "text-[var(--text-faint-2)] border border-transparent hover:text-[var(--text-mid)]"
-              }`}
-            >
-              {t}
-            </button>
-          );
-        })}
+      {/* Tabs — liquid glass */}
+      <div className="p-2">
+        <LiquidTabs
+          size="full"
+          variant="buySell"
+          value={activeTab}
+          onChange={(id) => {
+            setActiveTab(id);
+            setAmount("");
+          }}
+          items={[
+            { id: "Buy", label: "Buy" },
+            { id: "Sell", label: "Sell" },
+          ]}
+        />
       </div>
 
       <div className="p-4 space-y-3.5">

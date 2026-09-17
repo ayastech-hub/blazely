@@ -14,6 +14,7 @@
  */
 import React, { useEffect, useState } from "react";
 import { C } from "../../utils/designTokens";
+import LiquidTabs from "../ui/LiquidTabs";
 import AnimatedNumber from "./AnimatedNumber";
 import { supabase } from "../../lib/supabaseClient";
 import { bucketPriceHistory, appendPricePoint } from "../../utils/chartBucketing";
@@ -154,25 +155,16 @@ export default function ChartSection({ tokenAddress, livePrice }) {
   return (
     <div className={GLASS} style={{ borderBottom: `1px solid ${C.border}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 14px", borderBottom: `1px solid ${C.border}` }}>
-        {["5m", "1H", "1D"].map((tf) => (
-          <button
-            key={tf}
-            onClick={() => setTimeframe(tf)}
-            style={{
-              padding: "3px 8px",
-              background: timeframe === tf ? C.tealDim : "transparent",
-              border: `1px solid ${timeframe === tf ? C.teal : "transparent"}`,
-              borderRadius: 4,
-              color: timeframe === tf ? C.teal : C.mid,
-              fontSize: 9,
-              fontWeight: 700,
-              cursor: "pointer",
-              fontFamily: C.mono,
-            }}
-          >
-            {tf}
-          </button>
-        ))}
+        <LiquidTabs
+          size="sm"
+          value={timeframe}
+          onChange={setTimeframe}
+          items={[
+            { id: "5m", label: "5m" },
+            { id: "1H", label: "1H" },
+            { id: "1D", label: "1D" },
+          ]}
+        />
         <div style={{ flex: 1 }} />
         <button
           onClick={() => setMetric("PRICE")}

@@ -30,6 +30,7 @@ import { ConnectKitButton } from "connectkit";
 
 import { useProfileData } from "../hooks/useProfileData";
 import { C } from "../utils/designForProfile";
+import LiquidTabs from "../components/ui/LiquidTabs";
 import { shortenAddress, explorerAddressUrl, formatUsd } from "../utils/formatProfile";
 
 import CreatedTokensTab from "../tabP/CreatedTokensTab";
@@ -337,34 +338,21 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Tabs — pill chips in a horizontally scrollable row. With 5 tabs
-            these need a clearer "there's more, swipe me" affordance on
-            mobile than a plain underline bar gives. */}
-        <div className="relative -mx-4 sm:-mx-6 lg:mx-0">
-          <div className="flex items-center gap-2 overflow-x-auto px-4 sm:px-6 lg:px-0 pb-1 scrollbar-hide">
-            {TABS.map((t) => {
-              const active = activeTab === t.id;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => setActiveTab(t.id)}
-                  className="shrink-0 px-4 py-2.5 rounded-full text-sm font-medium flex items-center gap-2 transition-colors border"
-                  style={
-                    active
-                      ? { backgroundColor: C.tealDim, borderColor: C.tealBorder, color: C.bright }
-                      : { backgroundColor: C.panel, borderColor: C.borderSoft, color: C.sub }
-                  }
-                >
-                  <t.icon size={15} style={{ color: active ? C.teal : C.faint }} />
+        {/* Tabs — liquid glass */}
+        <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
+          <LiquidTabs
+            size="md"
+            value={activeTab}
+            onChange={setActiveTab}
+            items={TABS.map((t) => ({
+              id: t.id,
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <t.icon size={14} />
                   {t.label}
-                </button>
-              );
-            })}
-          </div>
-          {/* Fade hint on mobile signaling there's more to scroll to the right */}
-          <div
-            className="lg:hidden pointer-events-none absolute right-0 top-0 bottom-1 w-8"
-            style={{ background: `linear-gradient(to right, transparent, ${C.bg})` }}
+                </span>
+              ),
+            }))}
           />
         </div>
 

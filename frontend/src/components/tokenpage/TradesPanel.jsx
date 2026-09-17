@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { C } from "../../utils/designTokens";
+import LiquidTabs from "../ui/LiquidTabs";
 import { Check, Copy, Trophy, Filter, Link as LinkIcon } from "lucide-react";
 import { useGraduatedTrades } from "../../hooks/useGraduatedTrades";
 import { useTopTradersForToken } from "../../hooks/useTopTradersForToken";
@@ -106,9 +107,17 @@ export default function TradesPanel({ tokenAddress, creatorWallet, graduated = f
         </div>
       )}
       <div style={{ display: "flex", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-        {["Trades", "Top Traders"].map((t) => (
-          <button key={t} onClick={() => setSubtab(t)} style={{ background: "none", border: "none", whiteSpace: "nowrap", padding: "8px 13px", fontSize: 10, fontWeight: subtab === t ? 700 : 500, color: subtab === t ? C.bright : C.mid, borderBottom: subtab === t ? `2px solid ${C.teal}` : "2px solid transparent", cursor: "pointer", fontFamily: C.mono, letterSpacing: "0.04em" }}>{t}</button>
-        ))}
+        <div style={{ padding: "6px 8px" }}>
+          <LiquidTabs
+            size="sm"
+            value={subtab}
+            onChange={setSubtab}
+            items={[
+              { id: "Trades", label: "Trades" },
+              { id: "Top Traders", label: "Top Traders" },
+            ]}
+          />
+        </div>
         <div style={{ flex: 1 }} />
         {subtab === "Trades" && (
           <button onClick={() => setShowFilter(true)} style={{ background: "none", border: "none", color: C.mid, cursor: "pointer", padding: "0 8px" }}><Filter size={12} /></button>

@@ -32,6 +32,7 @@ import { useTokenPageData } from "../hooks/useTokenPageData";
 import { useDexscreenerStats } from "../hooks/useDexscreenerStats";
 import Loading from "../components/ui/Loading";
 import { C } from "../utils/designTokens";
+import LiquidTabs from "../components/ui/LiquidTabs";
 
 import TokenHeaderBar from "../components/tokenpage/TokenHeaderBar";
 import ChartSection from "../components/tokenpage/ChartSection";
@@ -171,20 +172,26 @@ creatorWallet={token.creator_wallet}  circulatingSupply={metrics?.circulating_su
               <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} graduated={token.graduated} pairAddress={token.liquidity_pair} />
             </div>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-              <div style={{ display: "flex", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-                {RIGHT_TABS.map((t) => (
-                  <button key={t} onClick={() => setTab(t)} style={{ background: "none", border: "none", padding: "9px 13px", fontSize: 10, fontWeight: tab === t ? 700 : 500, color: tab === t ? C.bright : C.mid, borderBottom: tab === t ? `2px solid ${C.teal}` : "2px solid transparent", cursor: "pointer", fontFamily: C.mono }}>{t}</button>
-                ))}
+              <div style={{ padding: "8px 10px", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+                <LiquidTabs
+                  size="sm"
+                  value={tab}
+                  onChange={setTab}
+                  items={RIGHT_TABS.map((t) => ({ id: t, label: t }))}
+                />
               </div>
               {renderRightPanel()}
             </div>
           </>
         ) : (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
-            <div style={{ display: "flex", overflowX: "auto", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-              {MOBILE_TABS.map((t) => (
-                <button key={t} onClick={() => setTab(t)} style={{ background: "none", border: "none", padding: "9px 12px", fontSize: 10, fontWeight: tab === t ? 700 : 500, color: tab === t ? C.bright : C.mid, borderBottom: tab === t ? `2px solid ${C.teal}` : "2px solid transparent", cursor: "pointer", flexShrink: 0, fontFamily: C.mono }}>{t}</button>
-              ))}
+            <div style={{ padding: "8px 10px", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0, overflowX: "auto" }}>
+              <LiquidTabs
+                size="sm"
+                value={tab}
+                onChange={setTab}
+                items={MOBILE_TABS.map((t) => ({ id: t, label: t }))}
+              />
             </div>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", minHeight: 0 }}>
               {tab === "Trades" ? <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} graduated={token.graduated} pairAddress={token.liquidity_pair} /> : renderRightPanel()}

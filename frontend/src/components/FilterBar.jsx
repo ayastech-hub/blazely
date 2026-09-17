@@ -12,6 +12,7 @@ import {
   LayoutGrid,
   Rows3,
 } from "lucide-react";
+import LiquidTabs from "./ui/LiquidTabs";
 
 /* Shared with Navbar.jsx / TokenCard.jsx / TrendingTokens.jsx — keep in sync */
 const ACCENT = "var(--teal)";
@@ -208,37 +209,16 @@ const DesktopDropdown = ({ options, selectedValue, onSelect, label, children, wi
 
 /* ---------- VIEW MODE TOGGLE (grid / list) — desktop only ---------- */
 const ViewModeToggle = ({ viewMode, onChange }) => (
-  <div className={`hidden md:flex items-center gap-0.5 p-0.5 rounded ${NESTED_FILL}`}>
-    <button
-      type="button"
-      onClick={() => onChange("grid")}
-      aria-pressed={viewMode === "grid"}
-      aria-label="Grid view"
-      style={{
-        backgroundColor: viewMode === "grid" ? ACCENT : "",
-        color: viewMode === "grid" ? "var(--bg)" : "",
-      }}
-      className={`h-8 w-8 flex items-center justify-center rounded transition-all ${
-        viewMode === "grid" ? "font-bold" : "text-[var(--text-mid-2)] hover:text-[var(--text-bright-2)]"
-      }`}
-    >
-      <LayoutGrid className="w-3.5 h-3.5" />
-    </button>
-    <button
-      type="button"
-      onClick={() => onChange("list")}
-      aria-pressed={viewMode === "list"}
-      aria-label="List view"
-      style={{
-        backgroundColor: viewMode === "list" ? ACCENT : "",
-        color: viewMode === "list" ? "var(--bg)" : "",
-      }}
-      className={`h-8 w-8 flex items-center justify-center rounded transition-all ${
-        viewMode === "list" ? "font-bold" : "text-[var(--text-mid-2)] hover:text-[var(--text-bright-2)]"
-      }`}
-    >
-      <Rows3 className="w-3.5 h-3.5" />
-    </button>
+  <div className="hidden md:block">
+    <LiquidTabs
+      size="sm"
+      value={viewMode}
+      onChange={onChange}
+      items={[
+        { id: "grid", label: <LayoutGrid className="w-3.5 h-3.5" /> },
+        { id: "list", label: <Rows3 className="w-3.5 h-3.5" /> },
+      ]}
+    />
   </div>
 );
 

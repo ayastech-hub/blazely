@@ -6,6 +6,7 @@ import { User, TrendingUp, Sparkles, History, Check, Copy, ArrowUpRight, Users, 
 
 import { usePublicProfileData } from "../hooks/usePublicProfileData";
 import { C } from "../utils/designForProfile";
+import LiquidTabs from "../components/ui/LiquidTabs";
 import { shortenAddress, explorerAddressUrl, formatUsd } from "../utils/formatProfile";
 
 import CreatedTokensTab from "../tabP/CreatedTokensTab";
@@ -196,25 +197,22 @@ const PublicProfile = ({ walletAddress }) => {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-1 border-b overflow-x-auto" style={{ borderColor: C.borderSoft }}>
-          {TABS.map((t) => {
-            const active = activeTab === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab(t.id)}
-                className="relative px-4 py-3 text-sm font-medium flex items-center gap-2 transition-colors shrink-0"
-                style={{ color: active ? C.bright : C.sub }}
-              >
-                <t.icon size={15} style={{ color: active ? C.teal : C.faint }} />
-                {t.label}
-                {active && (
-                  <span className="absolute left-0 right-0 -bottom-px h-0.5 rounded-full" style={{ backgroundColor: C.teal }} />
-                )}
-              </button>
-            );
-          })}
+        {/* Tabs — liquid glass */}
+        <div className="overflow-x-auto scrollbar-hide">
+          <LiquidTabs
+            size="md"
+            value={activeTab}
+            onChange={setActiveTab}
+            items={TABS.map((t) => ({
+              id: t.id,
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <t.icon size={14} />
+                  {t.label}
+                </span>
+              ),
+            }))}
+          />
         </div>
 
         {/* Tab content */}

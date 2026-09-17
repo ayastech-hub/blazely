@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Loading from "../components/ui/Loading";
+import LiquidTabs from "../components/ui/LiquidTabs";
 import { supabase } from "../lib/supabaseClient";
 import { normalizeToken } from "../api/supabaseTokens";
 import { usePrices } from "../hooks/usePrices";
@@ -143,24 +144,17 @@ export default function Leaderboard() {
           </p>
         </div>
 
-        {/* Sort */}
-        <div className="flex gap-1.5 mb-6">
-          {[
-            { key: "marketcap", label: "Market Cap" },
-            { key: "volume", label: "Volume" },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setSortBy(key)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
-                sortBy === key
-                  ? "bg-teal/10 text-teal border border-teal/20"
-                  : "text-[var(--text-faint-2)] border border-transparent hover:text-[var(--text-mid)] hover:bg-white/[0.03]"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        {/* Sort — liquid glass */}
+        <div className="mb-6">
+          <LiquidTabs
+            size="sm"
+            value={sortBy}
+            onChange={setSortBy}
+            items={[
+              { id: "marketcap", label: "Market Cap" },
+              { id: "volume", label: "Volume" },
+            ]}
+          />
         </div>
 
         {/* Column labels */}
