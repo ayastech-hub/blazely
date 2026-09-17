@@ -452,49 +452,59 @@ const Navbar = ({ onSearchChange = () => {} }) => {
         </div>
       </div>
 
-      {/* ============ Mobile drawer — single glass layer ============ */}
+      {/* ============ Mobile drawer ============ */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-[var(--bg)]/70" onClick={() => setMobileOpen(false)} aria-hidden="true" />
+        <div className="lg:hidden fixed inset-0 z-50">
           <div
-            className={`relative w-[300px] max-w-[85vw] h-full ${GLASS} rounded-l-[24px] p-5 flex flex-col z-50`}
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            className="absolute right-0 top-0 bottom-0 w-[min(100vw,320px)] flex flex-col bg-[var(--panel)] shadow-[-8px_0_32px_rgba(0,0,0,0.5)]"
+            style={{ paddingTop: "max(12px, env(safe-area-inset-top))", paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
           >
-            <div className="flex items-center justify-between pb-4 mb-2 border-b border-white/[0.08]">
-              <span className="text-sm font-bold text-[var(--text-bright-2)]">Menu</span>
+            <div className="flex items-center justify-between px-5 py-3">
+              <span className="text-[15px] font-semibold text-[var(--text-bright)]">Menu</span>
               <button
+                type="button"
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close menu"
-                className="p-1.5 rounded-full text-[var(--text-mid-2)] hover:text-white hover:bg-white/[0.06]"
+                className="p-2 rounded-full text-[var(--text-mid-2)] hover:text-[var(--text-bright)] hover:bg-[var(--panel-raised)]"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
 
-            <nav className="flex-1 space-y-1 overflow-y-auto">
+            <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
               {navLinks.map((link) => (
-                <Link key={link.name} to={link.path} onClick={() => setMobileOpen(false)} className={getMobileLinkClass(link.path, link.end)}>
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  onClick={() => setMobileOpen(false)}
+                  className={getMobileLinkClass(link.path, link.end)}
+                >
                   <span>{link.name}</span>
                 </Link>
               ))}
               <Link
                 to="/create"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 p-3.5 rounded-xl font-bold text-sm text-[var(--bg)] mt-2"
-                style={{ backgroundColor: ACCENT }}
+                className="flex items-center gap-2 px-3.5 py-3 rounded-xl text-sm font-semibold text-[var(--bg)] bg-[var(--teal)] mt-2"
               >
-                <Plus size={15} strokeWidth={2.5} />
-                Launch token
+                Create token
               </Link>
             </nav>
 
-            <div className="pt-4 border-t border-white/[0.08] space-y-3">
+            <div className="px-4 pt-3 space-y-3 border-t border-[var(--border)]/40">
               <ConnectKitButton.Custom>
                 {({ isConnected, show, address, ensName }) => {
-                  const displayAddress = ensName || (address ? formatAddress(address) : "Connect wallet");
+                  const displayAddress = ensName || (address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "Connect wallet");
                   return (
                     <button
+                      type="button"
                       onClick={show}
-                      className="w-full px-4 py-3 rounded-xl bg-[var(--bg)]/25 border border-white/[0.08] text-[var(--text-bright-2)] font-semibold text-sm flex items-center justify-center gap-2"
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold bg-[var(--panel-raised)] text-[var(--text-bright)]"
                     >
                       <Wallet size={14} className="text-[var(--text-faint-2)]" />
                       <span className={isConnected ? "font-mono" : ""} style={isConnected ? { color: ACCENT } : undefined}>
@@ -505,7 +515,7 @@ const Navbar = ({ onSearchChange = () => {} }) => {
                 }}
               </ConnectKitButton.Custom>
 
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2 pb-1">
                 {socialLinks.map((s) => (
                   <a
                     key={s.name}
@@ -513,7 +523,7 @@ const Navbar = ({ onSearchChange = () => {} }) => {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.name}
-                    className="flex items-center justify-center p-2.5 rounded-lg bg-[var(--bg)]/20 border border-white/[0.06] text-[var(--text-mid-2)] hover:text-[var(--teal)] transition-colors"
+                    className="flex items-center justify-center p-2.5 rounded-xl bg-[var(--panel-raised)] text-[var(--text-mid-2)] hover:text-[var(--teal)] transition-colors"
                   >
                     <s.icon className="w-4 h-4" />
                   </a>

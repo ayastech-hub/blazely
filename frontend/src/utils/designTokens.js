@@ -12,16 +12,16 @@ export const C = {
   bg: "#0a0a0c",
   bgDeep: "#0a0a0c",
   bgAlt: "#111114",
-  panel: "#16161a",
-  panel2: "#16161a",
-  panelAlt: "#16161a",
-  panelSoft: "rgba(22, 22, 26, 0.85)",
-  panelRaised: "#1c1c22",
+  panel: "#1f1f26",
+  panel2: "#1f1f26",
+  panelAlt: "#1f1f26",
+  panelSoft: "rgba(31, 31, 38, 0.95)",
+  panelRaised: "#2a2a32",
 
   /* Borders */
-  border: "#2a2a32",
+  border: "#2e2e38",
   borderSoft: "rgba(42, 42, 50, 0.6)",
-  borderHi: "#3a3a45",
+  borderHi: "#3d3d48",
   borderDashed: "#2a2a32",
 
   /* Brand */

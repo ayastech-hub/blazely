@@ -288,7 +288,7 @@ export default function Home() {
       <div className="relative z-10 flex flex-col flex-1">
       <TradeAlertsMarquee />
 
-      <div className="pt-10 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full">
+      <div className="pt-8 sm:pt-10 px-3 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full">
         <TrendingTokens />
       </div>
 
@@ -327,8 +327,8 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full flex-1 pt-6">
-        <div className="bg-[var(--bg-alt)]/20 border border-[var(--border)] rounded-2xl p-4 sm:p-6">
+      <div className="px-3 sm:px-6 lg:px-8 max-w-[1600px] mx-auto w-full flex-1 pt-4 sm:pt-6">
+        <div className="sm:p-0">
           {loading ? (
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {Array.from({ length: TOKENS_PER_PAGE }).map((_, i) => (

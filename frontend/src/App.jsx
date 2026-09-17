@@ -73,7 +73,7 @@ export default function App() {
         <BackgroundGlow />
         <Navbar />
         <WalletAuthBanner />
-        <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-24">
+        <main className="flex-1 w-full max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-24">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/create" element={<CreateToken />} />

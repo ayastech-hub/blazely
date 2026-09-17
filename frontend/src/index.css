@@ -30,25 +30,25 @@
   --bg-main: var(--bg);
   --bg-alt: #111114;
   --bg-alt-2: #111114;
-  --panel: #16161a;
-  --panel-alt: #16161a;
-  --panel-soft: #16161a;
-  --panel-raised: #1c1c22;
+  --panel: #1f1f26;
+  --panel-alt: #1f1f26;
+  --panel-soft: #1f1f26;
+  --panel-raised: #2a2a32;
   --panel-deep: #111114;
-  --panel-deep-2: #16161a;
+  --panel-deep-2: #1f1f26;
   --bg-deep-2: #0a0a0c;
   --bg-deep-3: #0a0a0c;
   --bg-deep-4: #0a0a0c;
   --bg-deep-5: #0a0a0c;
   --near-black: #111114;
   --pure-black: #000000;
-  --bg-card: rgba(22, 22, 26, 0.85);
-  --bg-deck: rgba(22, 22, 26, 0.95);
+  --bg-card: rgba(31, 31, 38, 0.95);
+  --bg-deck: rgba(31, 31, 38, 0.98);
 
   ---- Borders ----
-  --border: #2a2a32;
-  --border-soft: #2a2a32;
-  --border-hi: #3a3a45;
+  --border: #2e2e38;
+  --border-soft: #2e2e38;
+  --border-hi: #3d3d48;
   --border-mid: #4a4a55;
   --border-slate: rgba(42, 42, 50, 0.5);
 
@@ -115,25 +115,25 @@
   --bg-main: var(--bg);
   --bg-alt: #111114;
   --bg-alt-2: #111114;
-  --panel: #16161a;
-  --panel-alt: #16161a;
-  --panel-soft: #16161a;
-  --panel-raised: #1c1c22;
+  --panel: #1f1f26;
+  --panel-alt: #1f1f26;
+  --panel-soft: #1f1f26;
+  --panel-raised: #2a2a32;
   --panel-deep: #111114;
-  --panel-deep-2: #16161a;
+  --panel-deep-2: #1f1f26;
   --bg-deep-2: #0a0a0c;
   --bg-deep-3: #0a0a0c;
   --bg-deep-4: #0a0a0c;
   --bg-deep-5: #0a0a0c;
   --near-black: #111114;
   --pure-black: #000000;
-  --bg-card: rgba(22, 22, 26, 0.85);
-  --bg-deck: rgba(22, 22, 26, 0.95);
+  --bg-card: rgba(31, 31, 38, 0.95);
+  --bg-deck: rgba(31, 31, 38, 0.98);
 
   /* ---- Borders ---- */
-  --border: #2a2a32;
-  --border-soft: #2a2a32;
-  --border-hi: #3a3a45;
+  --border: #2e2e38;
+  --border-soft: #2e2e38;
+  --border-hi: #3d3d48;
   --border-mid: #4a4a55;
   --border-slate: rgba(42, 42, 50, 0.5);
 
