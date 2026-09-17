@@ -26,42 +26,42 @@
   --accent-purple: #a855f7;
 
   ---- Backgrounds / surfaces ----
-  --bg: #030712;
+  --bg: #0a0a0c;
   --bg-main: var(--bg);
-  --bg-alt: #0b0f19;
-  --bg-alt-2: #0b0f1c;
-  --panel: #0d1320;
-  --panel-alt: #0a0f1c;
-  --panel-soft: #0d1220;
-  --panel-raised: #10182a;
-  --panel-deep: #0e1424;
-  --panel-deep-2: #0f1114;
-  --bg-deep-2: #060e1a;
-  --bg-deep-3: #040d0a;
-  --bg-deep-4: #030a0f;
-  --bg-deep-5: #02040a;
-  --near-black: #111827;
+  --bg-alt: #111114;
+  --bg-alt-2: #111114;
+  --panel: #16161a;
+  --panel-alt: #16161a;
+  --panel-soft: #16161a;
+  --panel-raised: #1c1c22;
+  --panel-deep: #111114;
+  --panel-deep-2: #16161a;
+  --bg-deep-2: #0a0a0c;
+  --bg-deep-3: #0a0a0c;
+  --bg-deep-4: #0a0a0c;
+  --bg-deep-5: #0a0a0c;
+  --near-black: #111114;
   --pure-black: #000000;
-  --bg-card: rgba(11, 15, 25, 0.4);
-  --bg-deck: rgba(14, 20, 36, 0.8);
+  --bg-card: rgba(22, 22, 26, 0.85);
+  --bg-deck: rgba(22, 22, 26, 0.95);
 
   ---- Borders ----
-  --border: #1e293b;
-  --border-soft: #1b2333;
-  --border-hi: #334155;
-  --border-mid: #475569;
-  --border-slate: rgba(30, 41, 59, 0.4);
+  --border: #2a2a32;
+  --border-soft: #2a2a32;
+  --border-hi: #3a3a45;
+  --border-mid: #4a4a55;
+  --border-slate: rgba(42, 42, 50, 0.5);
 
   ---- Text ----
-  --text-bright: #f1f5f9;
-  --text-bright-2: #e2e8f0;
-  --text-mid: #cbd5e1;
-  --text-mid-2: #94a3b8;
-  --text-sub: #a3b1c6;
-  --text-sub-2: #9aa4b2;
-  --text-faint: #6b7890;
-  --text-faint-2: #64748b;
-  --text-dim: #4b5568;
+  --text-bright: #f0f0f3;
+  --text-bright-2: #e8e8ec;
+  --text-mid: #c4c4cc;
+  --text-mid-2: #a0a0ab;
+  --text-sub: #a0a0ab;
+  --text-sub-2: #8a8a94;
+  --text-faint: #6e6e78;
+  --text-faint-2: #6e6e78;
+  --text-dim: #55555e;
   --text-muted: var(--text-faint-2);
 
   ---- Status / semantic ----
@@ -109,44 +109,44 @@
   --accent-purple: #a78bfa;
 
   /* ---- Backgrounds / surfaces ----
-     A single cool blue-slate hue stepped evenly by lightness, matching the
-     teal accent's cool cast, instead of several unrelated near-blacks. */
-  --bg: #05070d;
+     Neutral dark-grey ramp (not pure black, not blue-slate soup).
+     Page bg slightly lighter than void so cards lift clearly. */
+  --bg: #0a0a0c;
   --bg-main: var(--bg);
-  --bg-alt: #090d16;
-  --bg-alt-2: #0a0e18;
-  --panel: #0d121d;
-  --panel-alt: #0a0f19;
-  --panel-soft: #0e1420;
-  --panel-raised: #131b29;
-  --panel-deep: #0b1017;
-  --panel-deep-2: #0e1319;
-  --bg-deep-2: #070b13;
-  --bg-deep-3: #05090f;
-  --bg-deep-4: #04070c;
-  --bg-deep-5: #030509;
-  --near-black: #101725;
+  --bg-alt: #111114;
+  --bg-alt-2: #111114;
+  --panel: #16161a;
+  --panel-alt: #16161a;
+  --panel-soft: #16161a;
+  --panel-raised: #1c1c22;
+  --panel-deep: #111114;
+  --panel-deep-2: #16161a;
+  --bg-deep-2: #0a0a0c;
+  --bg-deep-3: #0a0a0c;
+  --bg-deep-4: #0a0a0c;
+  --bg-deep-5: #0a0a0c;
+  --near-black: #111114;
   --pure-black: #000000;
-  --bg-card: rgba(10, 14, 22, 0.4);
-  --bg-deck: rgba(13, 19, 32, 0.8);
+  --bg-card: rgba(22, 22, 26, 0.85);
+  --bg-deck: rgba(22, 22, 26, 0.95);
 
   /* ---- Borders ---- */
-  --border: #1c2536;
-  --border-soft: #182031;
-  --border-hi: #2e394c;
-  --border-mid: #414f66;
-  --border-slate: rgba(28, 37, 54, 0.4);
+  --border: #2a2a32;
+  --border-soft: #2a2a32;
+  --border-hi: #3a3a45;
+  --border-mid: #4a4a55;
+  --border-slate: rgba(42, 42, 50, 0.5);
 
   /* ---- Text ---- */
-  --text-bright: #f4f7fb;
-  --text-bright-2: #e5eaf2;
-  --text-mid: #cbd4e1;
-  --text-mid-2: #93a1b8;
-  --text-sub: #a1aec3;
-  --text-sub-2: #97a2b3;
-  --text-faint: #6d7a93;
-  --text-faint-2: #66748c;
-  --text-dim: #4a5568;
+  --text-bright: #f0f0f3;
+  --text-bright-2: #e8e8ec;
+  --text-mid: #c4c4cc;
+  --text-mid-2: #a0a0ab;
+  --text-sub: #a0a0ab;
+  --text-sub-2: #8a8a94;
+  --text-faint: #6e6e78;
+  --text-faint-2: #6e6e78;
+  --text-dim: #55555e;
   --text-muted: var(--text-faint-2);
 
   /* ---- Status / semantic ---- */
@@ -171,7 +171,7 @@
      a bright focus ring, so it reads as "editable" without breaking the
      dark theme. */
   --input-bg: var(--panel-raised);
-  --input-bg-hover: #182234;
+  --input-bg-hover: #22222a;
   --input-border: var(--border-hi);
   --input-border-focus: var(--teal);
   --input-text: var(--text-bright);
