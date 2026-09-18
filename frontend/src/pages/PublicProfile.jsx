@@ -102,7 +102,7 @@ const PublicProfile = ({ walletAddress }) => {
 
   return (
     <div className="min-h-screen p-4 sm:p-6 lg:p-8" style={{ backgroundColor: C.bg }}>
-      <div className="w-full max-w-6xl mx-auto space-y-6">
+      <div className="w-full w-full max-w-6xl mx-auto space-y-6">
         {error && (
           <div
             className="p-3.5 rounded-xl text-sm"

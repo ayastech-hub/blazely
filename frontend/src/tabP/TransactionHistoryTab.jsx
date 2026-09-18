@@ -1,14 +1,15 @@
-// Compact row style matched to tokenpage/TradesPanel.jsx
+// Compact rows: AGE · TYPE · TOKEN · ETH · USD · TX
 import React from "react";
 import { Link } from "react-router-dom";
-import { Link as LinkIcon } from "lucide-react";
 import { C } from "../utils/designForProfile";
 import { formatUnits, timeAgo, explorerTxUrl } from "../utils/formatProfile";
 import Loading from "../components/ui/Loading";
 
+const COLS = "40px 34px minmax(48px,1fr) 56px 56px 48px";
+
 const colHdr = {
   display: "grid",
-  gridTemplateColumns: "40px 34px 64px 56px 48px",
+  gridTemplateColumns: COLS,
   padding: "5px 10px",
   fontSize: 9,
   color: C.mid,
@@ -16,7 +17,24 @@ const colHdr = {
   fontFamily: C.mono,
   letterSpacing: "0.07em",
   borderBottom: `1px solid ${C.border}`,
+  gap: 4,
 };
+
+function fmtUsd(v) {
+  if (v == null || v === "" || Number.isNaN(Number(v))) return "—";
+  const n = Number(v);
+  if (Math.abs(n) >= 1000) return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+  if (Math.abs(n) >= 1) return `$${n.toFixed(2)}`;
+  return `$${n.toFixed(4)}`;
+}
+
+function fmtEth(raw) {
+  try {
+    return formatUnits(raw, 18, { maxFractionDigits: 4 });
+  } catch {
+    return "—";
+  }
+}
 
 const TransactionHistoryTab = ({
   transactions = [],
@@ -24,7 +42,6 @@ const TransactionHistoryTab = ({
   loadingMore = false,
   hasMore = false,
   onLoadMore = () => {},
-  address = null,
 }) => {
   if (loading && !transactions.length) {
     return (
@@ -49,6 +66,7 @@ const TransactionHistoryTab = ({
         <span>TYPE</span>
         <span>TOKEN</span>
         <span style={{ textAlign: "right" }}>ETH</span>
+        <span style={{ textAlign: "right" }}>USD</span>
         <span>TX</span>
       </div>
 
@@ -61,7 +79,7 @@ const TransactionHistoryTab = ({
               key={r.id || r.tx_hash || `${r.token_address}-${r.created_at}`}
               style={{
                 display: "grid",
-                gridTemplateColumns: "40px 34px 64px 56px 48px",
+                gridTemplateColumns: COLS,
                 padding: "5px 10px",
                 borderBottom: `1px solid ${C.border}`,
                 alignItems: "center",
@@ -70,13 +88,7 @@ const TransactionHistoryTab = ({
               }}
             >
               <span style={{ color: C.dim, fontSize: 9 }}>{timeAgo(r.created_at)}</span>
-              <span
-                style={{
-                  fontSize: 9,
-                  fontWeight: 700,
-                  color: isBuy ? C.teal : C.rose,
-                }}
-              >
+              <span style={{ fontSize: 9, fontWeight: 700, color: isBuy ? C.teal : C.rose }}>
                 {isBuy ? "Buy" : "Sell"}
               </span>
               <Link
@@ -94,7 +106,10 @@ const TransactionHistoryTab = ({
                 {r.token_symbol || (r.token_address ? `${r.token_address.slice(0, 4)}…` : "—")}
               </Link>
               <span style={{ fontSize: 10, color: C.bright, textAlign: "right", fontWeight: 600 }}>
-                {formatUnits(r.eth_amount, 18)}
+                {fmtEth(r.eth_amount)}
+              </span>
+              <span style={{ fontSize: 10, color: C.mid, textAlign: "right", fontWeight: 500 }}>
+                {fmtUsd(r.usd_value)}
               </span>
               {tx ? (
                 <a

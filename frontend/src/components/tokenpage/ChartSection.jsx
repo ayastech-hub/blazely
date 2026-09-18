@@ -90,7 +90,7 @@ function CandleChart({ candles, height = 260, livePrice }) {
   );
 }
 
-export default function ChartSection({ tokenAddress, livePrice }) {
+export default function ChartSection({ tokenAddress, livePrice, height = 260 }) {
   const [timeframe, setTimeframe] = useState("5m");
   const [metric, setMetric] = useState("PRICE");
   const [candles, setCandles] = useState([]);
@@ -191,7 +191,7 @@ export default function ChartSection({ tokenAddress, livePrice }) {
         </span>
       </div>
 
-      <CandleChart candles={candles} height={260} livePrice={metric === "PRICE" ? livePrice : null} />
+      <CandleChart candles={candles} height={height} livePrice={metric === "PRICE" ? livePrice : null} />
     </div>
   );
 }

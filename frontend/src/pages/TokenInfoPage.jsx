@@ -141,7 +141,7 @@ creatorWallet={token.creator_wallet}  circulatingSupply={metrics?.circulating_su
       </motion.button>
 
       <TokenHeaderBar token={token} metrics={metrics} liveStats={token.graduated ? liveStats : null} />
-      <ChartSection tokenAddress={token.address} livePrice={priceUsd} />
+      <ChartSection tokenAddress={token.address} livePrice={priceUsd} height={isDesktop ? 260 : 150} />
 
       {token.graduated && (
         <div style={{ padding: "6px 14px", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -193,7 +193,7 @@ creatorWallet={token.creator_wallet}  circulatingSupply={metrics?.circulating_su
                 items={MOBILE_TABS.map((t) => ({ id: t, label: t }))}
               />
             </div>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0, background: C.panel }}>
+            <div style={{ flex: 1.7, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: "52vh", background: C.panel }}>
               {tab === "Trades" ? <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} graduated={token.graduated} pairAddress={token.liquidity_pair} /> : renderRightPanel()}
             </div>
           </div>

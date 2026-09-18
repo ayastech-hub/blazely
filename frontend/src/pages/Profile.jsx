@@ -242,8 +242,8 @@ const Profile = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-6xl mx-auto space-y-4 sm:space-y-6 px-0">
+    <div className="px-1 py-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-6xl mx-auto space-y-4 sm:space-y-6">
         {error && (
           <div
             className="p-3.5 rounded-xl text-sm"

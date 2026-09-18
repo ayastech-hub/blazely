@@ -54,10 +54,10 @@ export default function LiquidTabs({
   const pad = size === "sm" ? "p-0.5" : size === "full" ? "p-1" : "p-1";
   const btnPad =
     size === "sm"
-      ? "px-3 py-1.5 text-[11px] max-sm:px-3.5 max-sm:py-2 max-sm:text-[15px]"
+      ? "px-3 py-1.5 text-[12px]"
       : size === "full"
       ? "px-4 py-2.5 text-sm"
-      : "px-3.5 py-2 text-xs max-sm:text-[14px] max-sm:py-2.5";
+      : "px-3.5 py-2 text-[12px]";
 
   return (
     <div
