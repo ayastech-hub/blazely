@@ -1,17 +1,22 @@
-// src/tabP/TransactionHistoryTab.jsx
-//
-// Row styling matches components/tokenpage/TradesPanel.jsx (the trades feed
-// on the token detail page) — compact monospace grid rows instead of a
-// padded <table>, so the same kind of data reads consistently whether
-// you're looking at it from a token's page or from your own profile.
+// Compact row style matched to tokenpage/TradesPanel.jsx
 import React from "react";
-import { History, RefreshCw, Link as LinkIcon } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Link as LinkIcon } from "lucide-react";
 import { C } from "../utils/designForProfile";
-import { shortenAddress, formatUnits, timeAgo, explorerTxUrl } from "../utils/formatProfile";
+import { formatUnits, timeAgo, explorerTxUrl } from "../utils/formatProfile";
 import Loading from "../components/ui/Loading";
 
-const GRID_COLS = "72px 56px 1fr 1fr 90px";
+const colHdr = {
+  display: "grid",
+  gridTemplateColumns: "44px 40px 1fr 72px 56px",
+  padding: "5px 10px",
+  fontSize: 9,
+  color: C.mid,
+  fontWeight: 700,
+  fontFamily: C.mono,
+  letterSpacing: "0.07em",
+  borderBottom: `1px solid ${C.border}`,
+};
 
 const TransactionHistoryTab = ({
   transactions = [],
@@ -19,116 +24,112 @@ const TransactionHistoryTab = ({
   loadingMore = false,
   hasMore = false,
   onLoadMore = () => {},
-  onRefresh = () => {},
   address = null,
 }) => {
-  return (
-    <div className="flex flex-col">
-      <div className="flex items-center justify-between mb-4 shrink-0">
-        <div />
+  if (loading && !transactions.length) {
+    return (
+      <div className="py-12">
+        <Loading label="Loading…" />
+      </div>
+    );
+  }
 
-        <button
-          onClick={onRefresh}
-          disabled={loading || !address}
-          className="p-2 flex items-center gap-1.5 text-xs font-medium rounded-lg transition-colors hover:bg-white/5"
-          style={{ backgroundColor: C.panel, border: `1px solid ${C.borderSoft}`, color: C.mid }}
-        >
-          <RefreshCw size={13} className={loading ? "animate-spin" : ""} style={{ color: loading ? C.teal : undefined }} />
-          <span>Refresh</span>
-        </button>
+  if (!transactions.length) {
+    return (
+      <div className="py-16 text-center text-xs" style={{ color: C.faint, fontFamily: C.mono }}>
+        No transactions yet
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-0">
+      <div style={colHdr}>
+        <span>AGE</span>
+        <span>TYPE</span>
+        <span>TOKEN</span>
+        <span style={{ textAlign: "right" }}>ETH</span>
+        <span>TX</span>
       </div>
 
-      {!address ? (
-        <div className="text-center py-14 border border-dashed rounded-xl" style={{ borderColor: C.borderDashed }}>
-          <span className="text-sm" style={{ color: C.sub }}>
-            Connect your wallet to see your history
-          </span>
-        </div>
-      ) : loading ? (
-        <Loading label="Loading transactions..." />
-      ) : transactions.length === 0 ? (
-        <div
-          className="text-center py-14 border border-dashed rounded-xl flex flex-col items-center justify-center gap-2"
-          style={{ borderColor: C.borderDashed }}
-        >
-          <History size={20} style={{ color: C.faint }} />
-          <span className="text-sm" style={{ color: C.sub }}>
-            No transactions yet
-          </span>
-        </div>
-      ) : (
-        <div className="overflow-x-auto -mx-1 px-1">
-          <div
-            className="grid text-[10px] uppercase tracking-wide font-medium border-b pb-2 mb-1 min-w-[560px]"
-            style={{ gridTemplateColumns: GRID_COLS, color: C.faint, borderColor: C.borderSoft }}
-          >
-            <span>Token</span>
-            <span>Type</span>
-            <span className="text-right">Amount</span>
-            <span className="text-right">Value</span>
-            <span>Tx / When</span>
-          </div>
-
-          <div className="min-w-[560px]">
-            {transactions.map((r) => (
-              <div
-                key={r.tx_hash}
-                className="grid items-center py-2.5 border-b transition-colors hover:bg-white/[0.02]"
-                style={{ gridTemplateColumns: GRID_COLS, borderColor: C.borderSoft }}
+      <div className="overflow-y-auto flex-1" style={{ maxHeight: "60vh" }}>
+        {transactions.map((r) => {
+          const isBuy = r.type?.toLowerCase() === "buy";
+          const tx = r.tx_hash || "";
+          return (
+            <div
+              key={r.id || r.tx_hash || `${r.token_address}-${r.created_at}`}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "44px 40px 1fr 72px 56px",
+                padding: "5px 10px",
+                borderBottom: `1px solid ${C.border}`,
+                alignItems: "center",
+                gap: 4,
+                fontFamily: C.mono,
+              }}
+            >
+              <span style={{ color: C.dim, fontSize: 9 }}>{timeAgo(r.created_at)}</span>
+              <span
+                style={{
+                  fontSize: 9,
+                  fontWeight: 700,
+                  color: isBuy ? C.teal : C.rose,
+                }}
               >
-                <Link to={`/token/${r.token_address}`} className="text-xs font-semibold font-mono truncate" style={{ color: C.bright }}>
-                  {r.token_symbol || shortenAddress(r.token_address)}
-                </Link>
-                <span
-                  className="text-[11px] font-bold font-mono"
-                  style={{ color: r.type?.toLowerCase() === "buy" ? C.teal : C.rose }}
-                >
-                  {r.type?.toLowerCase() === "buy" ? "Buy" : "Sell"}
-                </span>
-                <span className="text-xs font-mono text-right tabular-nums" style={{ color: C.bright }}>
-                  {formatUnits(r.token_amount, 18)}
-                </span>
-                <span className="text-xs font-mono text-right tabular-nums" style={{ color: C.bright }}>
-                  {/* usd_value is never populated by the indexer today — ETH is the reliable value here. */}
-                  {formatUnits(r.eth_amount, 18)} ETH
-                </span>
-                <div className="flex items-center gap-2 min-w-0">
-                  <a
-                    href={explorerTxUrl(r.tx_hash)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] font-mono shrink-0"
-                    style={{ color: C.sub }}
-                  >
-                    {shortenAddress(r.tx_hash)}
-                    <LinkIcon size={10} />
-                  </a>
-                  <span className="text-[10px] font-mono truncate" style={{ color: C.faint }}>
-                    {timeAgo(r.created_at)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-center pt-5 shrink-0">
-            {hasMore ? (
-              <button
-                onClick={onLoadMore}
-                disabled={loadingMore}
-                className="px-4 py-2 text-xs font-medium rounded-lg transition-colors hover:bg-white/5"
-                style={{ backgroundColor: C.panel, border: `1px solid ${C.borderSoft}`, color: C.mid }}
-              >
-                {loadingMore ? "Loading..." : "Load more"}
-              </button>
-            ) : (
-              <span className="text-xs" style={{ color: C.faint }}>
-                You've reached the end
+                {isBuy ? "Buy" : "Sell"}
               </span>
-            )}
-          </div>
-        </div>
-      )}
+              <Link
+                to={`/token/${r.token_address}`}
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: C.bright,
+                  textDecoration: "none",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {r.token_symbol || (r.token_address ? `${r.token_address.slice(0, 4)}…` : "—")}
+              </Link>
+              <span style={{ fontSize: 10, color: C.bright, textAlign: "right", fontWeight: 600 }}>
+                {formatUnits(r.eth_amount, 18)}
+              </span>
+              {tx ? (
+                <a
+                  href={explorerTxUrl(tx)}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: 9, color: C.dim, textDecoration: "none" }}
+                >
+                  {`${tx.slice(0, 4)}…${tx.slice(-3)}`}
+                </a>
+              ) : (
+                <span style={{ fontSize: 9, color: C.dim }}>—</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center justify-center pt-3 pb-1 shrink-0">
+        {hasMore ? (
+          <button
+            type="button"
+            onClick={onLoadMore}
+            disabled={loadingMore}
+            className="px-3 py-1.5 text-[11px] font-medium rounded-lg"
+            style={{ backgroundColor: C.panelRaised, color: C.mid }}
+          >
+            {loadingMore ? "Loading…" : "Load more"}
+          </button>
+        ) : (
+          <span className="text-[10px]" style={{ color: C.faint }}>
+            End
+          </span>
+        )}
+      </div>
     </div>
   );
 };

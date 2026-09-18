@@ -93,34 +93,36 @@ export default function TradesPanel({ tokenAddress, creatorWallet, graduated = f
       </div>
 
       <>
-          <div style={colHdr("56px 70px 1fr 1fr 86px")}>
+          <div style={colHdr("44px 40px 1fr 64px 56px")}>
             <span>AGE</span>
             <span>TYPE</span>
             <span>VALUE</span>
             <span>TRADER</span>
             <span>TX</span>
           </div>
-          <div style={{ overflowY: "auto", flex: 1, paddingBottom: "80px" }}>
+          <div style={{ overflowY: "auto", flex: 1, paddingBottom: "16px" }}>
             <AnimatePresence mode="popLayout">
               {visibleTrades.map((t) => (
-                <motion.div key={t.id} layout style={{ display: "grid", gridTemplateColumns: "56px 70px 1fr 1fr 86px", padding: "7px 14px", borderBottom: `1px solid ${C.border}`, alignItems: "center" }}>
+                <motion.div key={t.id} layout style={{ display: "grid", gridTemplateColumns: "44px 40px 1fr 64px 56px", padding: "5px 10px", borderBottom: `1px solid ${C.border}`, alignItems: "center", gap: 4 }}>
                   <span style={{ color: C.dim, fontSize: 9, fontFamily: C.mono }}>{timeAgo(t.created_at, now)}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, fontFamily: C.mono, color: t.type === "buy" ? C.teal : C.red }}>{t.type === "buy" ? "Buy" : "Sell"}</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, fontFamily: C.mono, color: C.bright }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, fontFamily: C.mono, color: t.type === "buy" ? C.teal : C.red }}>{t.type === "buy" ? "Buy" : "Sell"}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, fontFamily: C.mono, color: C.bright, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {t.usd_value != null
                       ? `$${Number(t.usd_value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                       : t.source === "uniswap"
                       ? `${formatWei(t.token_amount, 2)} tok`
                       : "—"}
                   </span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                    <Link to={`/user/${t.user_address}`} style={{ fontSize: 9, color: C.mid, fontFamily: C.mono, textDecoration: "none" }}>{t.user_address?.slice(0, 6)}...{t.user_address?.slice(-4)}</Link>
-                    <CopyBtn text={t.user_address} />
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                    <span style={{ fontSize: 9, color: C.dim, fontFamily: C.mono }}>{t.tx_hash ? `${t.tx_hash.slice(0, 6)}...${t.tx_hash.slice(-4)}` : "—"}</span>
-                    {t.tx_hash && <a href={explorerTxUrl(t.tx_hash)} target="_blank" rel="noreferrer" style={{ color: C.mid }}><LinkIcon size={11} /></a>}
-                  </div>
+                  <Link to={`/user/${t.user_address}`} style={{ fontSize: 9, color: C.mid, fontFamily: C.mono, textDecoration: "none" }}>
+                    {t.user_address ? `${t.user_address.slice(0, 4)}…${t.user_address.slice(-3)}` : "—"}
+                  </Link>
+                  {t.tx_hash ? (
+                    <a href={explorerTxUrl(t.tx_hash)} target="_blank" rel="noreferrer" style={{ fontSize: 9, color: C.dim, fontFamily: C.mono, textDecoration: "none" }}>
+                      {`${t.tx_hash.slice(0, 4)}…${t.tx_hash.slice(-3)}`}
+                    </a>
+                  ) : (
+                    <span style={{ fontSize: 9, color: C.dim, fontFamily: C.mono }}>—</span>
+                  )}
                 </motion.div>
               ))}
             </AnimatePresence>
