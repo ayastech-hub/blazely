@@ -15,6 +15,7 @@ const TIMEFRAME_SECONDS = {
   "5m": 5 * 60,
   "1H": 60 * 60,
   "1D": 24 * 60 * 60,
+  "All": 4 * 60 * 60, // 4h buckets for full history
 };
 
 /**

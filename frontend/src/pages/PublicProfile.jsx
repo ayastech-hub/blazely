@@ -102,7 +102,7 @@ const PublicProfile = ({ walletAddress }) => {
 
   return (
     <div className="min-h-screen p-4 sm:p-6 lg:p-8" style={{ backgroundColor: C.bg }}>
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="w-full max-w-6xl mx-auto space-y-6">
         {error && (
           <div
             className="p-3.5 rounded-xl text-sm"
@@ -198,9 +198,9 @@ const PublicProfile = ({ walletAddress }) => {
         </div>
 
         <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: C.panel }}>
-          <div className="flex justify-center px-3 pt-3 pb-2 sm:px-5 sm:pt-4">
+          <div className="flex justify-center px-2 pt-3 pb-2 sm:px-5 sm:pt-4">
             <LiquidTabs
-              size="sm"
+              size="md"
               value={activeTab}
               onChange={setActiveTab}
               className="w-full max-w-md mx-auto"
@@ -215,7 +215,7 @@ const PublicProfile = ({ walletAddress }) => {
               }))}
             />
           </div>
-          <div className="px-3 pb-4 sm:px-5 sm:pb-6 pt-1 min-h-[200px]">
+          <div className="px-2 pb-4 sm:px-5 sm:pb-6 pt-1 min-h-[200px]">
             {activeTab === "created" && (
               <CreatedTokensTab
                 data={filteredCreatedTokens}

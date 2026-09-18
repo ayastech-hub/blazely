@@ -2,10 +2,8 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { C } from "../../utils/designTokens";
-import LiquidTabs from "../ui/LiquidTabs";
 import { Check, Copy, Trophy, Filter, Link as LinkIcon } from "lucide-react";
 import { useGraduatedTrades } from "../../hooks/useGraduatedTrades";
-import { useTopTradersForToken } from "../../hooks/useTopTradersForToken";
 import { explorerTxUrl, timeAgo, formatWei } from "../../utils/format";
 import TxFilterSheet from "./TxFilterSheet";
 
@@ -39,45 +37,7 @@ const colHdr = (cols) => ({
   flexShrink: 0,
 });
 
-function TopTradersTable({ tokenAddress }) {
-  const { traders, loading } = useTopTradersForToken(tokenAddress);
-
-  if (loading) return <div style={{ padding: 20, textAlign: "center", color: C.mid, fontSize: 10, fontFamily: C.mono }}>Loading...</div>;
-  if (traders.length === 0) return <div style={{ padding: 20, textAlign: "center", color: C.mid, fontSize: 10, fontFamily: C.mono }}>No trades yet.</div>;
-
-  return (
-    <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      <div style={colHdr("26px 1fr 50px 50px 70px 70px 70px")}>
-        <span>#</span>
-        <span>TRADER</span>
-        <span style={{ textAlign: "right" }}>BUYS</span>
-        <span style={{ textAlign: "right" }}>SELLS</span>
-        <span style={{ textAlign: "right" }}>BUY VAL</span>
-        <span style={{ textAlign: "right" }}>SELL VAL</span>
-        <span style={{ textAlign: "right" }}>VOLUME</span>
-      </div>
-      <div style={{ overflowY: "auto", flex: 1, paddingBottom: "80px" }}>
-        {traders.map((t) => (
-          <div key={t.wallet} style={{ display: "grid", gridTemplateColumns: "26px 1fr 50px 50px 70px 70px 70px", padding: "9px 14px", borderBottom: `1px solid ${C.border}`, alignItems: "center" }}>
-            <span style={{ fontSize: 10, color: C.dim, fontFamily: C.mono }}>{t.rank}</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              {t.rank === 1 && <Trophy size={12} />}
-              <Link to={`/user/${t.wallet}`} style={{ fontSize: 11, color: C.sub, fontFamily: C.mono, textDecoration: "none" }}>{t.wallet.slice(0, 6)}...{t.wallet.slice(-4)}</Link>
-            </div>
-            <span style={{ textAlign: "right", fontSize: 11, color: C.teal, fontFamily: C.mono, fontWeight: 700 }}>{t.buys}</span>
-            <span style={{ textAlign: "right", fontSize: 11, color: C.red, fontFamily: C.mono, fontWeight: 700 }}>{t.sells}</span>
-            <span style={{ textAlign: "right", fontSize: 11, color: C.text, fontFamily: C.mono }}>${t.buyVolumeUsd?.toLocaleString()}</span>
-            <span style={{ textAlign: "right", fontSize: 11, color: C.text, fontFamily: C.mono }}>${t.sellVolumeUsd?.toLocaleString()}</span>
-            <span style={{ textAlign: "right", fontSize: 11, fontWeight: 700, fontFamily: C.mono, color: C.bright }}>${t.totalVolumeUsd?.toLocaleString()}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function TradesPanel({ tokenAddress, creatorWallet, graduated = false, pairAddress = null }) {
-  const [subtab, setSubtab] = useState("Trades");
   const [showFilter, setShowFilter] = useState(false);
   const [txFilter, setTxFilter] = useState({ txType: "All", maker: "", usdMin: "", usdMax: "" });
   const [now, setNow] = useState(Date.now());
@@ -106,48 +66,33 @@ export default function TradesPanel({ tokenAddress, creatorWallet, graduated = f
           CURVE HISTORY + LIVE UNISWAP SWAPS
         </div>
       )}
-      <div style={{ display: "flex", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-        <div style={{ padding: "6px 8px" }}>
-          <LiquidTabs
-            size="sm"
-            value={subtab}
-            onChange={setSubtab}
-            items={[
-              { id: "Trades", label: "Trades" },
-              { id: "Top Traders", label: "Top Traders" },
-            ]}
-          />
-        </div>
+      <div style={{ display: "flex", alignItems: "center", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0, padding: "6px 8px", gap: 4 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: C.bright, fontFamily: C.mono, marginRight: 8 }}>Trades</span>
         <div style={{ flex: 1 }} />
-        {subtab === "Trades" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 4, paddingRight: 8 }}>
-            {["All", "Buy", "Sell"].map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setTxFilter((f) => ({ ...f, txType: v }))}
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: 999,
-                  border: "none",
-                  fontSize: 9,
-                  fontWeight: 700,
-                  fontFamily: C.mono,
-                  cursor: "pointer",
-                  background: txFilter.txType === v ? "rgba(150,214,205,0.15)" : "transparent",
-                  color: txFilter.txType === v ? C.teal : C.mid,
-                }}
-              >
-                {v}
-              </button>
-            ))}
-            <button onClick={() => setShowFilter(true)} style={{ background: "none", border: "none", color: C.mid, cursor: "pointer", padding: "0 4px" }}><Filter size={12} /></button>
-          </div>
-        )}
+        {["All", "Buy", "Sell"].map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => setTxFilter((f) => ({ ...f, txType: v }))}
+            style={{
+              padding: "5px 10px",
+              borderRadius: 999,
+              border: "none",
+              fontSize: 10,
+              fontWeight: 700,
+              fontFamily: C.mono,
+              cursor: "pointer",
+              background: txFilter.txType === v ? "rgba(150,214,205,0.15)" : "transparent",
+              color: txFilter.txType === v ? C.teal : C.mid,
+            }}
+          >
+            {v}
+          </button>
+        ))}
+        <button type="button" onClick={() => setShowFilter(true)} style={{ background: "none", border: "none", color: C.mid, cursor: "pointer", padding: "0 4px" }}><Filter size={12} /></button>
       </div>
 
-      {subtab === "Trades" && (
-        <>
+      <>
           <div style={colHdr("56px 70px 1fr 1fr 86px")}>
             <span>AGE</span>
             <span>TYPE</span>
@@ -180,10 +125,8 @@ export default function TradesPanel({ tokenAddress, creatorWallet, graduated = f
               ))}
             </AnimatePresence>
           </div>
-        </>
-      )}
+      </>
 
-      {subtab === "Top Traders" && <TopTradersTable tokenAddress={tokenAddress} />}
       {showFilter && <TxFilterSheet onClose={() => setShowFilter(false)} onApply={setTxFilter} />}
     </div>
   );

@@ -21,7 +21,7 @@ import { bucketPriceHistory, appendPricePoint } from "../../utils/chartBucketing
 import { formatUsdPrice } from "../../utils/format";
 import { GLASS } from "../ui/GlassCard";
 
-const TIMEFRAME_LOOKBACK_HOURS = { "5m": 6, "1H": 72, "1D": 720 };
+const TIMEFRAME_LOOKBACK_HOURS = { "5m": 6, "1H": 72, "1D": 720, "All": 24 * 365 * 5 };
 
 function CandleChart({ candles, height = 260, livePrice }) {
   const W = 600;
@@ -103,7 +103,9 @@ export default function ChartSection({ tokenAddress, livePrice }) {
 
     async function load() {
       const lookbackHours = TIMEFRAME_LOOKBACK_HOURS[timeframe] || 6;
-      const since = new Date(Date.now() - lookbackHours * 3600 * 1000).toISOString();
+      const since = timeframe === "All"
+        ? new Date(0).toISOString()
+        : new Date(Date.now() - lookbackHours * 3600 * 1000).toISOString();
 
       const { data, error } = await supabase
         .from("token_price_history")
@@ -160,6 +162,7 @@ export default function ChartSection({ tokenAddress, livePrice }) {
             { id: "5m", label: "5m" },
             { id: "1H", label: "1H" },
             { id: "1D", label: "1D" },
+            { id: "All", label: "All" },
           ]}
         />
         <div style={{ flex: 1 }} />

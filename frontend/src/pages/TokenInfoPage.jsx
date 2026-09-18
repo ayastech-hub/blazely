@@ -95,7 +95,7 @@ export default function TokenInfoPage() {
   if (error || !token) return <div style={{ minHeight: "50vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: C.bg, color: C.sub, fontFamily: C.mono, gap: 8 }}>Token not found.</div>;
 
   const renderRightPanel = () => (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", minHeight: 0, background: C.panel }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0, height: "100%", background: C.panel }}>
       {tab === "Holders" && <HoldersPanel tokenAddress={token.address}
 creatorWallet={token.creator_wallet}  circulatingSupply={metrics?.circulating_supply} liquidityPair={token.liquidity_pair} graduated={token.graduated} />}
       {tab === "Dev Tokens" && <DevTokensPanel creatorWallet={token.creator_wallet} currentTokenAddress={token.address} />}
@@ -184,7 +184,7 @@ creatorWallet={token.creator_wallet}  circulatingSupply={metrics?.circulating_su
             </div>
           </>
         ) : (
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0, height: "100%" }}>
             <div style={{ padding: "8px 10px", background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0, overflowX: "auto" }}>
               <LiquidTabs
                 size="sm"
@@ -193,7 +193,7 @@ creatorWallet={token.creator_wallet}  circulatingSupply={metrics?.circulating_su
                 items={MOBILE_TABS.map((t) => ({ id: t, label: t }))}
               />
             </div>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", minHeight: 0, background: C.panel }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0, background: C.panel }}>
               {tab === "Trades" ? <TradesPanel tokenAddress={token.address} creatorWallet={token.creator_wallet} graduated={token.graduated} pairAddress={token.liquidity_pair} /> : renderRightPanel()}
             </div>
           </div>

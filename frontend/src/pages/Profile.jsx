@@ -39,8 +39,6 @@ import TransactionHistoryTab from "../tabP/TransactionHistoryTab";
 import NetworksTab from "../tabP/NetworksTab";
 import DevToolsTab from "../tabP/DevToolsTab";
 import { DashboardCard, Modal, ModalCloseButton, Toast } from "../tabP/ProfileComponents";
-import { SocialConnect } from "../tabP/SocialConnect";
-import { SocialMetrics } from "../tabP/SocialMetrics";
 
 const TABS = [
   { id: "created", label: "Created", icon: Sparkles },
@@ -245,7 +243,7 @@ const Profile = () => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="w-full max-w-6xl mx-auto space-y-4 sm:space-y-6 px-0">
         {error && (
           <div
             className="p-3.5 rounded-xl text-sm"
@@ -257,7 +255,7 @@ const Profile = () => {
 
         {/* Header card */}
         <div
-          className="p-6 sm:p-7 rounded-2xl"
+          className="p-4 sm:p-7 rounded-2xl"
           style={{ backgroundColor: C.panelSoft, border: `1px solid ${C.borderSoft}`, boxShadow: C.shadowCard }}
         >
           <div className="flex flex-col items-center text-center lg:flex-row lg:items-center lg:text-left justify-between gap-6">
@@ -287,9 +285,6 @@ const Profile = () => {
                   >
                     <ArrowUpRight size={13} />
                   </a>
-                </div>
-                <div className="mt-2 flex justify-center lg:justify-start">
-                  <SocialMetrics followingCount={following.length} watchlistCount={watchlist.length} />
                 </div>
               </div>
             </div>
@@ -340,13 +335,13 @@ const Profile = () => {
 
         {/* Unified tabs + content (one panel surface) */}
         <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: C.panel }}>
-          <div className="flex justify-center px-3 pt-3 pb-2 sm:px-5 sm:pt-4">
-            <div className="w-full max-w-xl sm:max-w-none overflow-x-auto scrollbar-hide">
+          <div className="flex justify-center px-2 pt-3 pb-2 sm:px-5 sm:pt-4">
+            <div className="w-full overflow-x-auto scrollbar-hide">
               <LiquidTabs
-                size="sm"
+                size="md"
                 value={activeTab}
                 onChange={setActiveTab}
-                className="w-full mx-auto"
+                className="w-full"
                 items={TABS.map((t) => ({
                   id: t.id,
                   label: (
@@ -359,7 +354,7 @@ const Profile = () => {
               />
             </div>
           </div>
-          <div className="px-3 pb-4 sm:px-5 sm:pb-6 pt-1 min-h-[200px]">
+          <div className="px-2 pb-4 sm:px-5 sm:pb-6 pt-1 min-h-[200px]">
             {activeTab === "created" && (
               <CreatedTokensTab
                 data={filteredCreatedTokens}
@@ -437,12 +432,6 @@ const Profile = () => {
               {nameError && <span className="text-xs" style={{ color: C.rose }}>{nameError}</span>}
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-medium" style={{ color: C.sub }}>
-                Social links
-              </label>
-              <SocialConnect userRow={user} onUpdate={handleSocialsUpdate} loading={loading} />
-            </div>
           </div>
         </div>
       </Modal>
