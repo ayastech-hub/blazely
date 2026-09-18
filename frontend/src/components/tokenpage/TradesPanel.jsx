@@ -93,7 +93,7 @@ export default function TradesPanel({ tokenAddress, creatorWallet, graduated = f
       </div>
 
       <>
-          <div style={colHdr("44px 40px 1fr 64px 56px")}>
+          <div style={colHdr("40px 34px 68px 54px 48px")}>
             <span>AGE</span>
             <span>TYPE</span>
             <span>VALUE</span>
@@ -103,14 +103,16 @@ export default function TradesPanel({ tokenAddress, creatorWallet, graduated = f
           <div style={{ overflowY: "auto", flex: 1, paddingBottom: "16px" }}>
             <AnimatePresence mode="popLayout">
               {visibleTrades.map((t) => (
-                <motion.div key={t.id} layout style={{ display: "grid", gridTemplateColumns: "44px 40px 1fr 64px 56px", padding: "5px 10px", borderBottom: `1px solid ${C.border}`, alignItems: "center", gap: 4 }}>
+                <motion.div key={t.id} layout style={{ display: "grid", gridTemplateColumns: "40px 34px 68px 54px 48px", padding: "5px 10px", borderBottom: `1px solid ${C.border}`, alignItems: "center", gap: 4 }}>
                   <span style={{ color: C.dim, fontSize: 9, fontFamily: C.mono }}>{timeAgo(t.created_at, now)}</span>
                   <span style={{ fontSize: 9, fontWeight: 700, fontFamily: C.mono, color: t.type === "buy" ? C.teal : C.red }}>{t.type === "buy" ? "Buy" : "Sell"}</span>
                   <span style={{ fontSize: 10, fontWeight: 700, fontFamily: C.mono, color: C.bright, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {t.usd_value != null
-                      ? `$${Number(t.usd_value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      ? `$${Number(t.usd_value) >= 1000
+                          ? Number(t.usd_value).toLocaleString(undefined, { maximumFractionDigits: 0 })
+                          : Number(t.usd_value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                       : t.source === "uniswap"
-                      ? `${formatWei(t.token_amount, 2)} tok`
+                      ? `${formatWei(t.token_amount, 2)}`
                       : "—"}
                   </span>
                   <Link to={`/user/${t.user_address}`} style={{ fontSize: 9, color: C.mid, fontFamily: C.mono, textDecoration: "none" }}>

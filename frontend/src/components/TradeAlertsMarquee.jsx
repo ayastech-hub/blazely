@@ -1,29 +1,50 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ExternalLink } from "lucide-react";
 import { buyEmitter } from "../utils/buyEmitter";
 import { supabase } from "../lib/supabaseClient";
 
-/* Shared with Navbar.jsx / TokenCard.jsx — keep in sync */
 const ACCENT = "var(--teal)";
-const NESTED_FILL = "bg-[var(--bg)]/25 border border-white/[0.08]";
 
-const shortenAddr = (a = "") =>
+const short = (a = "", n = 3) =>
   typeof a === "string" && a.length > 8
-    ? `0x${a.slice(2, 6).toLowerCase()}..${a.slice(-4).toLowerCase()}`
-    : a;
+    ? `${a.slice(0, 2 + n)}…${a.slice(-n)}`
+    : a || "—";
+
+/** Compact ETH from wei or already-decimal string */
+function fmtEth(raw) {
+  if (raw == null || raw === "") return "0";
+  let n = Number(raw);
+  if (!Number.isFinite(n)) return "0";
+  // Heuristic: values >> 1e9 are wei
+  if (Math.abs(n) >= 1e9) n = n / 1e18;
+  if (n === 0) return "0";
+  if (n < 0.0001) return n.toExponential(1);
+  if (n < 1) return n.toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
+  if (n < 100) return n.toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
+  if (n < 1000) return n.toFixed(2);
+  return `${(n / 1000).toFixed(1)}k`;
+}
 
 export default function TradeAlertsMarquee({
   etherscanBase = "https://basescan.org",
-  maxAlerts = 15,
+  maxAlerts = 20,
 }) {
   const [alerts, setAlerts] = useState([]);
   const [isLive, setIsLive] = useState(false);
 
   useEffect(() => {
     let channel;
-
     const TARGET_TABLE = "transactions";
+
+    const mapTrade = (trade) => ({
+      id: trade.id || `${trade.tx_hash}-${trade.created_at}`,
+      type: trade.type?.toLowerCase() === "buy" ? "buy" : "sell",
+      token: trade.token_address,
+      symbol: trade.token_symbol || null,
+      user: trade.user_address,
+      eth: trade.eth_amount,
+      tx_hash: trade.tx_hash,
+    });
 
     const loadLatestTrades = async () => {
       const { data, error } = await supabase
@@ -37,58 +58,31 @@ export default function TradeAlertsMarquee({
         setIsLive(false);
         return;
       }
-
-      const formatted = (data || []).map((trade) => ({
-        id: trade.id || trade.tx_hash + Math.random(),
-        type: trade.type?.toLowerCase() === "buy" ? "BOUGHT" : "SOLD",
-        token: trade.token_address,
-        user: trade.user_address,
-        eth: trade.eth_amount,
-        tx_hash: trade.tx_hash,
-        ts: new Date(trade.created_at).getTime(),
-      }));
-
-      setAlerts(formatted);
+      setAlerts((data || []).map(mapTrade));
     };
 
-    const subscribeRealtime = () => {
-      channel = supabase
-        .channel("trade-alerts-stream")
-        .on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: TARGET_TABLE },
-          (payload) => {
-            const trade = payload.new;
-
-            const newAlert = {
-              id: trade.id || trade.tx_hash + Date.now(),
-              type: trade.type?.toLowerCase() === "buy" ? "BOUGHT" : "SOLD",
-              token: trade.token_address,
-              user: trade.user_address,
-              eth: trade.eth_amount,
-              tx_hash: trade.tx_hash,
-              ts: Date.now(),
-            };
-
-            setAlerts((prev) => {
-              const filtered = prev.filter((item) => item.tx_hash !== newAlert.tx_hash);
-              const next = [newAlert, ...filtered].slice(0, maxAlerts);
-
-              if (newAlert.type === "BOUGHT") {
-                buyEmitter.emit("buy", newAlert.token);
-              }
-
-              return next;
-            });
-          }
-        )
-        .subscribe((status) => {
-          setIsLive(status === "SUBSCRIBED");
-        });
-    };
+    channel = supabase
+      .channel("trade-alerts-stream")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: TARGET_TABLE },
+        (payload) => {
+          const newAlert = mapTrade(payload.new);
+          setAlerts((prev) => {
+            const filtered = prev.filter((item) => item.tx_hash !== newAlert.tx_hash);
+            const next = [newAlert, ...filtered].slice(0, maxAlerts);
+            if (newAlert.type === "buy") {
+              try {
+                buyEmitter.emit?.(newAlert);
+              } catch (_) {}
+            }
+            return next;
+          });
+        }
+      )
+      .subscribe((status) => setIsLive(status === "SUBSCRIBED"));
 
     loadLatestTrades();
-    subscribeRealtime();
 
     return () => {
       if (channel) supabase.removeChannel(channel);
@@ -96,71 +90,81 @@ export default function TradeAlertsMarquee({
   }, [maxAlerts]);
 
   return (
-    <div className="w-full h-10 flex items-center text-[11px] select-none relative overflow-hidden box-border border-b border-white/[0.08] bg-white/[0.02] backdrop-blur-xl">
-      {/* Live indicator — just the dot, no status label */}
-      <div className="h-full flex items-center px-3.5 shrink-0 z-10 border-r border-white/[0.08] bg-[var(--bg)]/20">
+    <div
+      className="w-full h-9 flex items-center select-none relative overflow-hidden"
+      style={{
+        borderBottom: "1px solid var(--border)",
+        background: "var(--panel)",
+      }}
+    >
+      {/* Live pill */}
+      <div
+        className="h-full flex items-center gap-1.5 px-3 shrink-0 z-10"
+        style={{ borderRight: "1px solid var(--border)" }}
+      >
         <span
-          className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${isLive ? "animate-pulse" : ""}`}
+          className={`w-1.5 h-1.5 rounded-full ${isLive ? "animate-pulse" : ""}`}
           style={{
-            backgroundColor: isLive ? ACCENT : "var(--border-mid)",
-            boxShadow: isLive ? `0 0 6px ${ACCENT}99` : "none",
+            backgroundColor: isLive ? ACCENT : "var(--text-faint-2)",
+            boxShadow: isLive ? `0 0 8px ${ACCENT}` : "none",
           }}
         />
+        <span
+          className="text-[9px] font-bold tracking-wider uppercase hidden sm:inline"
+          style={{ color: isLive ? ACCENT : "var(--text-faint-2)", fontFamily: "var(--font-mono, monospace)" }}
+        >
+          Live
+        </span>
       </div>
 
-      {/* Rolling ticker */}
-      <div className="flex flex-1 items-center overflow-x-auto no-scrollbar h-full px-4">
-        <div className="flex items-center gap-2 whitespace-nowrap">
-          <AnimatePresence initial={false}>
-            {alerts.map((alert) => {
-              const isBuy = alert.type === "BOUGHT";
-              return (
-                <motion.div
-                  key={alert.id}
-                  layout="position"
-                  initial={{ opacity: 0, x: -50, scale: 0.92, filter: "brightness(2)" }}
-                  animate={{ opacity: 1, x: 0, scale: 1, filter: "brightness(1)" }}
-                  exit={{ opacity: 0, x: 100, transition: { duration: 0.2 } }}
-                  transition={{ type: "spring", stiffness: 260, damping: 24, mass: 0.8 }}
-                  className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg font-mono ${NESTED_FILL}`}
+      <div className="flex flex-1 items-center overflow-x-auto no-scrollbar h-full px-2 gap-1.5">
+        <AnimatePresence initial={false}>
+          {alerts.map((alert) => {
+            const isBuy = alert.type === "buy";
+            return (
+              <motion.a
+                key={alert.id}
+                href={alert.tx_hash ? `${etherscanBase}/tx/${alert.tx_hash}` : undefined}
+                target="_blank"
+                rel="noreferrer"
+                layout="position"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 320, damping: 28 }}
+                className="inline-flex items-center gap-1.5 h-6 px-2 rounded-md shrink-0 no-underline"
+                style={{
+                  background: isBuy ? "rgba(150,214,205,0.08)" : "rgba(244,63,94,0.08)",
+                  border: `1px solid ${isBuy ? "rgba(150,214,205,0.18)" : "rgba(244,63,94,0.18)"}`,
+                  fontFamily: "var(--font-mono, monospace)",
+                }}
+              >
+                <span
+                  className="text-[9px] font-bold uppercase"
+                  style={{ color: isBuy ? ACCENT : "var(--rose)" }}
                 >
-                  <span className="text-[var(--text-faint-2)] font-medium">{shortenAddr(alert.user)}</span>
+                  {isBuy ? "B" : "S"}
+                </span>
+                <span className="text-[10px] font-semibold tabular-nums" style={{ color: "var(--text-bright)" }}>
+                  {fmtEth(alert.eth)}
+                  <span style={{ color: "var(--text-faint-2)", fontWeight: 500 }}> Ξ</span>
+                </span>
+                <span className="text-[9px]" style={{ color: "var(--text-faint-2)" }}>
+                  {short(alert.user, 2)}
+                </span>
+                <span className="text-[9px] font-medium" style={{ color: "var(--text-mid)" }}>
+                  {alert.symbol ? `$${alert.symbol}` : short(alert.token, 2)}
+                </span>
+              </motion.a>
+            );
+          })}
+        </AnimatePresence>
 
-                  <span
-                    className={`font-bold text-[10px] px-1.5 py-0.5 rounded-md ${
-                      isBuy ? "bg-[var(--teal)]/10" : "bg-[var(--rose)]/10 text-[var(--rose)]"
-                    }`}
-                    style={isBuy ? { color: ACCENT } : undefined}
-                  >
-                    {isBuy ? "Buy" : "Sell"}
-                  </span>
-
-                  <span className="text-[var(--text-bright)] font-semibold">{Number(alert.eth || 0).toFixed(4)} ETH</span>
-
-                  <ArrowRight size={11} className="text-[var(--border-mid)]" />
-
-                  <span className="text-[var(--text-mid-2)] hover:text-[var(--teal)] transition-colors cursor-pointer">
-                    {shortenAddr(alert.token)}
-                  </span>
-
-                  <a
-                    href={`${etherscanBase}/tx/${alert.tx_hash}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="View transaction"
-                    className="text-[var(--border-mid)] hover:text-[var(--text-mid)] transition-colors border-l border-white/[0.08] pl-1.5 ml-0.5"
-                  >
-                    <ExternalLink size={11} />
-                  </a>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-
-          {alerts.length === 0 && (
-            <div className="text-[var(--border-mid)] text-[11px]">Waiting for trades…</div>
-          )}
-        </div>
+        {alerts.length === 0 && (
+          <span className="text-[10px]" style={{ color: "var(--text-faint-2)", fontFamily: "monospace" }}>
+            Waiting for trades…
+          </span>
+        )}
       </div>
     </div>
   );

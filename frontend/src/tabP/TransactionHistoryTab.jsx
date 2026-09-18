@@ -8,7 +8,7 @@ import Loading from "../components/ui/Loading";
 
 const colHdr = {
   display: "grid",
-  gridTemplateColumns: "44px 40px 1fr 72px 56px",
+  gridTemplateColumns: "40px 34px 64px 56px 48px",
   padding: "5px 10px",
   fontSize: 9,
   color: C.mid,
@@ -61,7 +61,7 @@ const TransactionHistoryTab = ({
               key={r.id || r.tx_hash || `${r.token_address}-${r.created_at}`}
               style={{
                 display: "grid",
-                gridTemplateColumns: "44px 40px 1fr 72px 56px",
+                gridTemplateColumns: "40px 34px 64px 56px 48px",
                 padding: "5px 10px",
                 borderBottom: `1px solid ${C.border}`,
                 alignItems: "center",
