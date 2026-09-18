@@ -18,6 +18,7 @@ const CreatedTokensTab = ({
 
   return (
     <DashboardCard
+      hideHeader
       title="Tokens created"
       subtitle="Projects you've launched on Blazely"
       icon={Sparkles}

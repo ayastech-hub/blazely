@@ -120,7 +120,29 @@ export default function TradesPanel({ tokenAddress, creatorWallet, graduated = f
         </div>
         <div style={{ flex: 1 }} />
         {subtab === "Trades" && (
-          <button onClick={() => setShowFilter(true)} style={{ background: "none", border: "none", color: C.mid, cursor: "pointer", padding: "0 8px" }}><Filter size={12} /></button>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, paddingRight: 8 }}>
+            {["All", "Buy", "Sell"].map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setTxFilter((f) => ({ ...f, txType: v }))}
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: 999,
+                  border: "none",
+                  fontSize: 9,
+                  fontWeight: 700,
+                  fontFamily: C.mono,
+                  cursor: "pointer",
+                  background: txFilter.txType === v ? "rgba(150,214,205,0.15)" : "transparent",
+                  color: txFilter.txType === v ? C.teal : C.mid,
+                }}
+              >
+                {v}
+              </button>
+            ))}
+            <button onClick={() => setShowFilter(true)} style={{ background: "none", border: "none", color: C.mid, cursor: "pointer", padding: "0 4px" }}><Filter size={12} /></button>
+          </div>
         )}
       </div>
 

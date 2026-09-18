@@ -17,41 +17,65 @@ export const DashboardCard = ({
   onSearchChange,
   searchPlaceholder = "Search...",
   headerAction,
+  hideHeader = false,
 }) => (
   <div className="flex flex-col">
-    <div className="flex items-start justify-between mb-4 gap-3 shrink-0">
-      <div className="flex items-center gap-3">
-        <div
-          className="w-9 h-9 flex items-center justify-center rounded-xl shrink-0"
-          style={{ backgroundColor: C.tealDim, color: C.teal }}
-        >
-          <Icon size={16} />
-        </div>
-        <div>
-          <h3 className="text-sm font-semibold tracking-tight" style={{ color: C.bright }}>
-            {title}
-          </h3>
-          {subtitle && (
-            <p className="text-xs mt-0.5" style={{ color: C.sub }}>
-              {subtitle}
-            </p>
+    {!hideHeader && (
+      <div className="flex items-start justify-between mb-4 gap-3 shrink-0">
+        <div className="flex items-center gap-3">
+          {Icon && (
+            <div
+              className="w-9 h-9 flex items-center justify-center rounded-xl shrink-0"
+              style={{ backgroundColor: C.tealDim, color: C.teal }}
+            >
+              <Icon size={16} />
+            </div>
           )}
+          <div>
+            <h3 className="text-sm font-semibold tracking-tight" style={{ color: C.bright }}>
+              {title}
+            </h3>
+            {subtitle && (
+              <p className="text-xs mt-0.5" style={{ color: C.sub }}>
+                {subtitle}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {count > 0 && (
+            <span
+              className="text-[11px] font-medium px-2 py-0.5 rounded-full"
+              style={{ color: C.mid, backgroundColor: C.panelRaised }}
+            >
+              {count}
+            </span>
+          )}
+          {headerAction}
         </div>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
-        {count > 0 && (
-          <span
-            className="text-[11px] font-medium px-2 py-0.5 rounded-full"
-            style={{ color: C.mid, backgroundColor: C.panel, border: `1px solid ${C.borderSoft}` }}
-          >
-            {count}
-          </span>
+    )}
+
+    {(onSearchChange || headerAction) && hideHeader && (
+      <div className="flex items-center gap-2 mb-3 shrink-0">
+        {onSearchChange && (
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder={searchPlaceholder}
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full px-3 py-2.5 pl-9 text-sm rounded-xl focus:outline-none font-sans"
+              style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--input-border)", color: "var(--input-text)" }}
+            />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: C.faint }} />
+          </div>
         )}
         {headerAction}
       </div>
-    </div>
+    )}
 
-    {onSearchChange && (
+    {onSearchChange && !hideHeader && (
       <div className="relative mb-4 shrink-0">
         <input
           type="text"

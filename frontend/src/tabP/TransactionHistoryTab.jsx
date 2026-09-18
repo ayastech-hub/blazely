@@ -25,17 +25,7 @@ const TransactionHistoryTab = ({
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between mb-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 flex items-center justify-center rounded-xl"
-            style={{ backgroundColor: C.tealDim, color: C.teal }}
-          >
-            <History size={16} />
-          </div>
-          <h3 className="text-sm font-semibold tracking-tight" style={{ color: C.bright }}>
-            Transaction history
-          </h3>
-        </div>
+        <div />
 
         <button
           onClick={onRefresh}

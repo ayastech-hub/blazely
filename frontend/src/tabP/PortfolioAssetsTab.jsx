@@ -24,6 +24,7 @@ const PortfolioAssetsTab = ({
 
   return (
     <DashboardCard
+      hideHeader
       title="Your holdings"
       subtitle="Tokens you currently hold"
       icon={TrendingUp}

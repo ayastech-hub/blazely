@@ -197,56 +197,56 @@ const PublicProfile = ({ walletAddress }) => {
           </div>
         </div>
 
-        {/* Tabs — liquid glass */}
-        <div className="overflow-x-auto scrollbar-hide">
-          <LiquidTabs
-            size="md"
-            value={activeTab}
-            onChange={setActiveTab}
-            items={TABS.map((t) => ({
-              id: t.id,
-              label: (
-                <span className="inline-flex items-center gap-1.5">
-                  <t.icon size={14} />
-                  {t.label}
-                </span>
-              ),
-            }))}
-          />
-        </div>
-
-        {/* Tab content */}
-        <div>
-          {activeTab === "created" && (
-            <CreatedTokensTab
-              data={filteredCreatedTokens}
-              loading={loading}
-              searchTerm={createdSearch}
-              setSearchTerm={setCreatedSearch}
-              isPublicView
-              DashboardCard={DashboardCard}
+        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: C.panel }}>
+          <div className="flex justify-center px-3 pt-3 pb-2 sm:px-5 sm:pt-4">
+            <LiquidTabs
+              size="sm"
+              value={activeTab}
+              onChange={setActiveTab}
+              className="w-full max-w-md mx-auto"
+              items={TABS.map((t) => ({
+                id: t.id,
+                label: (
+                  <span className="inline-flex items-center gap-1.5">
+                    <t.icon size={13} className="hidden sm:inline" />
+                    {t.label}
+                  </span>
+                ),
+              }))}
             />
-          )}
-          {activeTab === "portfolio" && (
-            <PortfolioAssetsTab
-              data={filteredPortfolio}
-              loading={loading}
-              searchTerm={portfolioSearch}
-              setSearchTerm={setPortfolioSearch}
-              DashboardCard={DashboardCard}
-            />
-          )}
-          {activeTab === "history" && (
-            <TransactionHistoryTab
-              address={viewingWallet}
-              transactions={transactions}
-              loading={loading}
-              loadingMore={loadingMoreTransactions}
-              hasMore={hasMoreTransactions}
-              onLoadMore={loadMoreTransactions}
-              onRefresh={() => {}}
-            />
-          )}
+          </div>
+          <div className="px-3 pb-4 sm:px-5 sm:pb-6 pt-1 min-h-[200px]">
+            {activeTab === "created" && (
+              <CreatedTokensTab
+                data={filteredCreatedTokens}
+                loading={loading}
+                searchTerm={createdSearch}
+                setSearchTerm={setCreatedSearch}
+                isPublicView
+                DashboardCard={DashboardCard}
+              />
+            )}
+            {activeTab === "portfolio" && (
+              <PortfolioAssetsTab
+                data={filteredPortfolio}
+                loading={loading}
+                searchTerm={portfolioSearch}
+                setSearchTerm={setPortfolioSearch}
+                DashboardCard={DashboardCard}
+              />
+            )}
+            {activeTab === "history" && (
+              <TransactionHistoryTab
+                address={viewingWallet}
+                transactions={transactions}
+                loading={loading}
+                loadingMore={loadingMoreTransactions}
+                hasMore={hasMoreTransactions}
+                onLoadMore={loadMoreTransactions}
+                onRefresh={() => {}}
+              />
+            )}
+          </div>
         </div>
       </div>
 

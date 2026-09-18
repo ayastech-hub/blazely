@@ -23,7 +23,6 @@
 // current page's tokens and renders back whatever it returns.
 import React, { useState, useEffect } from "react";
 import FilterBar from "../components/FilterBar";
-import AIChatSupport from "../components/AIChatSupport";
 import TradeAlertsMarquee from "../components/TradeAlertsMarquee";
 import TrendingTokens from "../components/TrendingTokens";
 import { ChevronLeft, ChevronRight, Twitter, Send, BookOpen } from "lucide-react";
@@ -341,7 +340,6 @@ export default function Home() {
 
           <Pagination totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} isMobile={isMobile} />
         </div>
-        <AIChatSupport />
       </div>
 
       <Footer />

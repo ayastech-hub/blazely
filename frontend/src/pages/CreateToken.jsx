@@ -567,7 +567,7 @@ const CreateToken = () => {
   };
 
   return (
-    <div className="font-mono text-[var(--text-mid)] p-3 sm:p-8 relative">
+    <div className="font-mono text-[var(--text-mid)] px-3 py-4 sm:p-8 relative w-full max-w-none">
       {/* --- Error toast --- */}
       {error && (
         <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-[100] sm:max-w-sm">
@@ -579,7 +579,7 @@ const CreateToken = () => {
 
       {/* --- Wrong network banner --- */}
       {wrongNetwork && (
-        <div className="mb-4 max-w-3xl mx-auto">
+        <div className="mb-4 w-full max-w-3xl sm:mx-auto">
           <Alert variant="warning">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <span>You're connected to the wrong network.</span>
@@ -594,9 +594,9 @@ const CreateToken = () => {
         </div>
       )}
 
-      <div className="max-w-3xl mx-auto">
+      <div className="w-full max-w-3xl sm:mx-auto">
         {/* --- Form (always visible — submitting/success now render as an overlay on top instead of replacing this) --- */}
-        <div className="bg-[var(--bg-alt)]/20 border border-[var(--border)] rounded-2xl p-4 sm:p-6 space-y-4">
+        <div className="bg-[var(--panel)] rounded-2xl p-4 sm:p-6 space-y-4 w-full">
           {/* --- Logo (moved to the top: the first thing you set for a new token) --- */}
           <GlassSurface className="rounded-[28px] p-4 flex flex-col items-center">
                   <div className="text-[10px] font-bold text-[var(--text-faint-2)] border-b border-white/[0.07] pb-2 w-full uppercase tracking-wider text-left mb-3">

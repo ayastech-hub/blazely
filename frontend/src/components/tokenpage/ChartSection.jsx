@@ -64,21 +64,18 @@ function CandleChart({ candles, height = 260, livePrice }) {
       ))}
 
       {candles.map((c, i) => {
-        const x = pad.l + i * cw + cw * 0.15;
-        const bw = cw * 0.7;
+        const x = pad.l + i * cw + cw * 0.2;
+        const bw = Math.max(cw * 0.55, 2);
         const mx = x + bw / 2;
         const bull = c.close >= c.open;
         const col = bull ? C.teal : C.red;
         const top = toY(Math.max(c.open, c.close));
         const bot = toY(Math.min(c.open, c.close));
-        const ht = Math.max(bot - top, 1.2);
-        const vh = (vols[i] / maxV) * (volH - 3);
-        const vy = H - vh;
+        const ht = Math.max(bot - top, 1.5);
         return (
           <g key={c.time}>
-            <line x1={mx} y1={toY(c.high)} x2={mx} y2={toY(c.low)} stroke={col} strokeWidth="1" />
-            <rect x={x} y={top} width={bw} height={ht} fill={col} opacity="0.85" rx="0.4" />
-            <rect x={x} y={vy} width={bw} height={vh} fill={col} opacity="0.28" />
+            <line x1={mx} y1={toY(c.high)} x2={mx} y2={toY(c.low)} stroke={col} strokeWidth="1.25" strokeLinecap="round" />
+            <rect x={x} y={top} width={bw} height={ht} fill={col} rx="1" />
           </g>
         );
       })}

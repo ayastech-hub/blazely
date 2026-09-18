@@ -182,11 +182,14 @@ export default function BuySellPanel({ token }) {
 
             return (
               <button
+                type="button"
                 onClick={() => (isConnected ? handleSwap() : show())}
                 disabled={disabled}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
-                  disabled
-                    ? "bg-[var(--panel)] text-[var(--text-faint-2)] cursor-not-allowed"
+                className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
+                  !isConnected
+                    ? "bg-teal text-[var(--bg)] hover:brightness-110"
+                    : disabled
+                    ? "bg-[var(--panel-raised)] text-[var(--text-faint-2)] cursor-not-allowed"
                     : accentBtn
                 }`}
               >
